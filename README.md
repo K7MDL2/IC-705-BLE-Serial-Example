@@ -9,4 +9,4 @@ To use it, go to the IC-705 Pairing Reception menu, then reset the M5Stack Core3
 
 The radio specs says the 705 is using BT4.2 so requires the ESP32 be in compatibility mode. BT5 is not the same as BT4.2 and earlier.  Will be interesting to try with BLE dongles on my IC-905 and other radios like the 9700.
 
-You will find folders here for a few enhanced versions.  One adds screen UI for title, frequency, and PTT state.  Also tests the buttons on a CoreS3 and CoreS3-SE, status will be shown on the Serial terminal.
+You will find folders here for a few enhanced versions.  One adds screen UI for title, frequency, PTT state, and connection state.  Also tests the buttons on a CoreS3 and CoreS3-SE, status will be shown on the Serial terminal.
