@@ -6,7 +6,7 @@
  *  Modifed by K7MDL Aug 2024 for BT connection to the IC-705 via BLE serial on a M5Stack Core3 and Core 3 SE.  Tested on a SE version
  * 
  *  This is a simplified example program showing a BLE connection to an IC-705 and getting CI-V frequency and PTT state.  
- *  All UI is on the serial terminal. 
+ *  All UI is on the serial terminal only.  Other example programs on this repo show info on the display, process button touches
  *  Go to the IC-705 Pairing Reception menu
  *  Reset the M5Stack Core3
  *  It will autoconnect and display the name in the Pairing/Connect menu
