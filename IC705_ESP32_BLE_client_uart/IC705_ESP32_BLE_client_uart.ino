@@ -317,7 +317,7 @@ void SendMessageBLE(std::string Message)
     if (1)
     //if (Mem.UseBLELongString)                                                                 // If Fast transmission is possible
      {
-      pRXCharacteristic->writeValue(Message); 
+      pRXCharacteristic->writeValue(Message.c_str()); 
       pRXCharacteristic->canNotify();
       delay(10);                                                                              // Bluetooth stack will go into congestion, if too many packets are sent
      } 
@@ -326,7 +326,7 @@ void SendMessageBLE(std::string Message)
       int parts = (Message.length()/20) + 1;
       for(int n=0;n<parts;n++)
         {   
-         pRXCharacteristic->writeValue(Message.substr(n*20, 20)); 
+         pRXCharacteristic->writeValue(Message.substr(n*20, 20).c_str()); 
          pRXCharacteristic->canNotify();
          delay(40);                                                                           // Bluetooth stack will go into congestion, if too many packets are sent
         }
