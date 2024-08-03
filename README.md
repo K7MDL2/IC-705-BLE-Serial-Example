@@ -16,46 +16,44 @@ UUID from device:
 I noted that on BT Classic, the BT address is shown on the 705 Paired devices list.  For BLE the UUID I send is not used and a number is auto_assigned starting with 1, incrmenting for each new device I try pairing with a unique name.  
 
 CI-V Pairing and Sign in state engine:
-In the IC-705_BLE_Decoder_Simple program I now track the state of pairing and sign in.  If we are connected and not yet paired, we will get a reply to all 3 sign in/pairing messages. The 0x63 wil lreturn with a 1 on sucessful pairing and 0 if already paired (assuming opther messages are returned OK). Will retry signing in if we can connect but not get the expected paired and/or signed in responses.
+In the IC-705_BLE_Decoder_Simple program I now track the state of pairing and sign in.  If we are connected and not yet paired, we will get a reply to all 3 sign in/pairing messages. The 0x63 will return with a 1 on successful pairing and 0 if already paired (assuming other messages are returned OK). Will retry signing in if we can connect but not get the expected paired and/or signed in responses.
 
-assuming we have a BLE connction to server (radio) we get these CI-V sign in response patterns:
-
+Assuming we have a BLE connection to server (radio) we get these CI-V sign in response patterns:
 Send out all 3 messages to connect to CIV
+      
+Looking at other code it it looked like it started with sending a UUID string. From where? The number on the radio is formatted as a 6-byte BT address.  The radio does not reply but otherwise works goes on and pairs, communicates.
+I think it should be a BT address but efforts to send one with and without colons I got no response and the radio assigned a number starting with 1.  I tried all sorts of combos of numbers for the BT address (hex, bcd, colons) none got a response.  To b clear, this is not BLE directly, but a CI-V message sent to the 705 to set up the 705 pairing. 
+Last I tried not sending msg 61 at all.  It still paired and auto-assigned a number.
 
-// Looking at other code it it looked like it started with sending a UUID string. From where? The number on the radio is formatted as a 6-byte BT address
-// The radio does not reply but otherwise works goes on and pairs, communicates.
-// I think it should be a BT address but efforts to send a fake one with and without colons I got no response and the radio assigned a number starting with 1.
-// I tried all sorts of comboes of numers for the BT address (hex, bcd, colons) none got a response
-// Las I tried not sending msg 61 at all.  It stil lpaired and auto assigned a number.
-// Conclusion: FE F1 00 61 is not the ID string, or more likely for BLE, it does not use one and alawys auto assigns a number in the radio.
+Conclusion: FE F1 00 61 is not the ID string, or more likely for BLE, it does not use one and always auto-assigns a number in the radio.
 
-// ****** Not used in latest code - left here to document attempts to send one and my observations
-ADDR            = 0xFE, 0xF1, 0x00, 0x61, BT_Address string, 0xFD
-radio reply     = None Observed
-// ************************************************************************************************
-
-// ********  Below is a working sequence **********************************************************
-
-NAME            = 0xFE, 0xF1, 0x00, 0x62, name string, 0xFD  // ASppears to be limited to 16 bytes
-radio reply     = 0xFE, 0xF1, 0x00, 0x62, 0xFD
-
-TOKEN           = 0xFE, 0xF1, 0x00, 0x63, 0xEE, 0x39, 0x09, 0x10, 0xFD
-radio reply     = 0xFE, 0xF1, 0x00, 0x63, 0x00, 0xFD  //  0 is already paired PAIR = EXISTING
-radio reply     = 0xFE, 0xF1, 0x00, 0x63, 0x01, 0xFD  //  1 pairing accepted  PAIR = SUCCESS 
-
-CI-V bus access granted (CIV_CONN)
-radio reply     = 0xFE, 0xF1, 0x00, 0x64, 0xFD    // CI-V buss access is granted
-
+      // ****** Not used in latest code - left here to document attempts to send one and my observations
+      ADDR            = 0xFE, 0xF1, 0x00, 0x61, BT_Address string, 0xFD
+      radio reply     = None Observed
+      // ************************************************************************************************
+      
+      // ********  Below is a working sequence **********************************************************
+      
+      NAME            = 0xFE, 0xF1, 0x00, 0x62, name string, 0xFD  // Appears to be limited to 16 bytes in the 705 display field
+      radio reply     = 0xFE, 0xF1, 0x00, 0x62, 0xFD
+      
+      TOKEN           = 0xFE, 0xF1, 0x00, 0x63, 0xEE, 0x39, 0x09, 0x10, 0xFD  // a fixed value
+      radio reply     = 0xFE, 0xF1, 0x00, 0x63, 0x00, 0xFD  //  byte 4 = 0 is already paired - PAIR = EXISTING
+      radio reply     = 0xFE, 0xF1, 0x00, 0x63, 0x01, 0xFD  //  byte 4 = 1 is pairing accepted - PAIR = SUCCESS 
+      
+      CI-V bus access granted (CIV_granted)
+      radio reply     = 0xFE, 0xF1, 0x00, 0x64, 0xFD    // CI-V bus access is granted
+      
 ******************************  Notes *************************************************************
 
 When Pairing, we get these reponses  
-NAME. TOKEN, PAIR==SUCCESS, CIV_CONN
+NAME, TOKEN, PAIR==SUCCESS, CIV_CONN
 
-If already paired, we get these reponses
+If already paired, we get these fewer reponses
 TOKEN, PAIR=EXISTING, CIV_CONN
 
-If we are not already paired and the radio is not in pairing reception mode, there are no CIV responses but we will remain connected to the radio BLE server. We can retry until we get disconnected or power off. 
+If we are not already paired and the radio is not in pairing reception mode, there are no CIV responses but we will remain connected to the radio BLE server.  More precisely, we need to reconnect at the BLE layer and resend the CI-V layer until the radio answers, which could be never, or a long time. We can retry until we get disconnected or power off. 
 
-If the radio is connected to another device, then same as above, no Ci_V response but stays connected.  Radio accepts up to 4 connections so if there are enough headsets, mics, PTT buttons, CI-V monitors/decoders connected, might get a server connection fail.
+If the radio is connected to another device, then same as above, no CI-V response, but stays connected. Radio accepts up to 4 connections so if there are enough headsets, mics, PTT buttons, CI-V monitors/decoders connected, you might get a server connection fail.
 
-I have observed taht if the pairing process does not complete for what ever reason, the BLE link will disconnect after jsut a few seconds. This requires running through the connect to server function while waiting fro a CIV Access completion.  This would be a normal scenario if the radio is not in pairing mode, turned off, or out of range.
+I have observed that if the pairing process does not complete for what ever reason, the BLE link will disconnect after just a few seconds. This requires running through the client (aka central) connect-to-server (aka peripheral) function while waiting for a CI-V Access completion.  This would be a normal scenario if the radio is not in pairing mode, turned off, or out of range.
