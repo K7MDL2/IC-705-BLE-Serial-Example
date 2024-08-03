@@ -34,7 +34,7 @@ ADDR            = 0xFE, 0xF1, 0x00, 0x61, BT_Address string, 0xFD
 radio reply     = None Observed
 // ************************************************************************************************
 
-// ********  Below is a workign sequence **********************************************************
+// ********  Below is a working sequence **********************************************************
 
 NAME            = 0xFE, 0xF1, 0x00, 0x62, name string, 0xFD  // ASppears to be limited to 16 bytes
 radio reply     = 0xFE, 0xF1, 0x00, 0x62, 0xFD
@@ -58,3 +58,4 @@ If we are not already paired and the radio is not in pairing reception mode, the
 
 If the radio is connected to another device, then same as above, no Ci_V response but stays connected.  Radio accepts up to 4 connections so if there are enough headsets, mics, PTT buttons, CI-V monitors/decoders connected, might get a server connection fail.
 
+I have observed taht if the pairing process does not complete for what ever reason, the BLE link will disconnect after jsut a few seconds. This requires running through the connect to server function while waiting fro a CIV Access completion.  This would be a normal scenario if the radio is not in pairing mode, turned off, or out of range.
