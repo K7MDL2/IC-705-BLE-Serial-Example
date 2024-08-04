@@ -63,3 +63,19 @@ Aug 3, 2024 Note: The extended demo file IC-705_BLE_Decoder_Simple.ino has exten
       pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
 
 I also did more experiments with passing BT addresses in various formats but so far the radio has not acknowledged any 0x61 messages and the displayed address is always 00:00:00:00:00:xx where xx starts with 01 for each new BLE client paired.  Do not know if that is expected or not.
+
+The stuck connection state debug is below, has an unkwown ESP error.
+
+            Establishing a connection to device address: 30:31:7d:33:bb:7f
+            - Created client
+            [ 42643][I][BLEDevice.cpp:622] addPeerDevice(): add conn_id: 1, GATT role: client
+            [ 42648][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_REG_EVT
+            [ 42658][D][BLEClient.cpp:178] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_REG_EVT
+            [ 72672][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_DISCONNECT_EVT
+            [ 72672][D][BLEClient.cpp:178] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_DISCONNECT_EVT
+            [ 72683][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_OPEN_EVT
+            [ 72693][D][BLEClient.cpp:178] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_OPEN_EVT
+            [ 72704][E][BLEClient.cpp:239] gattClientEventHandler(): Failed to connect, status=Unknown ESP_ERR error
+            [ 72713][I][BLEDevice.cpp:637] removePeerDevice(): remove: 1, GATT role client
+            - Connected to server
+            [ 72720][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_UNREG_EVT
