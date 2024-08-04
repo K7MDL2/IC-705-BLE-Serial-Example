@@ -380,8 +380,7 @@ void CIV_Connect(void)
   //String helloValue = "Hello Remote Server";
   //pRXCharacteristic->writeValue(helloValue.c_str(), helloValue.length());
   //connected = true;
-  return true;
-}
+  }
 
 void printDeviceAddress() {
   const uint8_t* point = esp_bt_dev_get_address();
