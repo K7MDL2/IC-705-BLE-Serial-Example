@@ -73,7 +73,14 @@
 #include "esp_bt_device.h"
 #include <M5CoreS3.h>
 //#include <M5Unified.h>
-#include <gob_unifiedButton.hpp>
+
+
+
+//#define M5BTNS
+#ifdef M5BTNS
+  #include <gob_unifiedButton.hpp>
+  goblib::UnifiedButton unifiedButton;
+#endif
 
 // The remote Nordic UART service service we wish to connect to.
 // This service exposes two characteristics: one for transmitting and one for receiving (as seen from the client).
@@ -87,9 +94,10 @@ static BLEUUID charUUID_RX("14cf8002-1ec2-d408-1b04-2eb270f14203");   // RX Char
 // the server can send data to the client as notifications.
 static BLEUUID charUUID_TX("14cf8002-1ec2-d408-1b04-2eb270f14203");   // TX Characteristic
 
-goblib::UnifiedButton unifiedButton;
+int scanTime = 10; //In seconds
+static BLEScan *pBLEScan;
 
-static BLEAddress *pServerAddress;
+static BLEAddress *pServerAddress = NULL;
 static boolean doConnect = false;
 static boolean connected = false;
 static BLERemoteCharacteristic* pTXCharacteristic;
@@ -103,10 +111,15 @@ uint64_t prev_frequency = 0;
 uint8_t   band = 254;
 uint8_t PTT = 0;
 uint8_t prev_PTT = 1;
-bool UUID_confirm = false;
+bool BT_ADDR_confirm = false;
 bool Name_confirm = false;
 bool Token_confirm = false;
 bool Pairing_Accepted = false;
+bool CIV_granted = false;
+bool BLE_connected = false;
+const uint8_t notificationOff[] = {0x0, 0x0};
+const uint8_t notificationOn[] = {0x1, 0x0};
+bool onoff = true;
 
 #define POLL_RADIO            30   // poll the radio for frequency and other parameters
 
@@ -162,7 +175,26 @@ char* formatVFO(uint64_t vfo)
 	return vfo_str;
 }
 
-//#define WATCH_SERIAL
+
+class MyClientCallback : public BLEClientCallbacks 
+{
+  void onConnect(BLEClient* pclient) {
+      //doConnect = true;
+      BLE_connected = true;  // tracks state of BLE level connection
+      Serial.println("Connected to BLE server event");
+  }
+
+  void onDisconnect(BLEClient* pclient) {
+      connected = false; // tacks state of CIV connection
+      doConnect = true; //  gateway to connect and pair processes.
+      BLE_connected = false;  // tracks state of BLE level connection
+      Serial.println("Lost BLE server connection event flag set on Disconnect ");
+      //Scan_BLE_Servers();
+  }
+};
+
+
+#define WATCH_SERIAL
 
 static void notifyCallback(
   BLERemoteCharacteristic* pBLERemoteCharacteristic,
@@ -184,26 +216,30 @@ static void notifyCallback(
         Serial.println();
       #endif
 
-      if (!connected)
+      if (1) //(!connected)
       {
         if (pData[1] == 0xF1 && pData[2] == 0x00)
         {
           switch (pData[3])
           {
-            case 0x62:
-              Serial.println("Got UUID message confirmation, proceed");
-              UUID_confirm = true;
-              
+            case 0x61:
+              Serial.println("Got BT_ADDR message confirmation, proceed");
+              BT_ADDR_confirm = true;              
               break;
-            case 0x63:            
-              Serial.println("Got Name message confirmation, proceed");
+            case 0x62:            
+              Serial.println("Got NAME message confirmation, proceed");
               Name_confirm = true;
+              break;
+            case 0x63:
+              Serial.println("Got TOKEN message confirmation, proceed");
+              Token_confirm = true;
               if (pData[4] == 0x01)
                 Pairing_Accepted = true;  // Pairing action worked.  Once pair this wil return 0
               break;
             case 0x64:
-              Serial.println("Got Token message confirmation, proceed");
-              Token_confirm = true;
+              Serial.println("CI-V bus ACCESS granted, proceed");
+              CIV_granted = true;
+              //connected = true;
               break;
           }
         }
@@ -230,17 +266,29 @@ static void notifyCallback(
   }
 }
 
+//inline uint8_t bcdByte(const uint8_t x) const { return  (((x & 0xf0) >> 4) * 10) + (x & 0x0f); }
+inline uint8_t bcdByte(const uint8_t x) { return  (((x & 0xf0) >> 4) * 10) + (x & 0x0f); }
+// input is between 0 and 99 decimal.  output 0 to 0x99
+//inline uint8_t bcdByteEncode(const uint8_t x) const { return ((x / 10) << 4) + (x % 10); }
+inline uint8_t bcdByteEncode(const uint8_t x) { return ((x / 10) << 4) + (x % 10); }
 
+//**************************************************************************************
+//
+//        Connect to Server
+//
+//**************************************************************************************
 bool connectToServer(BLEAddress pAddress) {
   Serial.print("Establishing a connection to device address: ");
   Serial.println(pAddress.toString().c_str());
+
   M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
   M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
   M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
-  M5.Lcd.printf("Connecting to radio ...");
+  M5.Lcd.printf("Connecting to radio BLE..");
 
   BLEClient*  pClient  = BLEDevice::createClient();
   Serial.println(" - Created client");
+  pClient->setClientCallbacks(new MyClientCallback());
 
   // Connect to the remove BLE Server.
   pClient->connect(pAddress);
@@ -256,7 +304,7 @@ bool connectToServer(BLEAddress pAddress) {
     pClient->disconnect();
     return false;
   }
-  Serial.print(" - Found our service ");
+  Serial.println(" - Found our service ");
   //Serial.println(pClient->getPeerAddress());
 
   // Obtain a reference to the TX characteristic of the Nordic UART service on the remote BLE server.
@@ -294,25 +342,39 @@ bool connectToServer(BLEAddress pAddress) {
 
   if(pTXCharacteristic->canNotify())
       pTXCharacteristic->registerForNotify(notifyCallback);
+ 
+  delay(200);
+  CIV_Connect();
+  return true;
+}
 
-  // For testing I hard coded the pairing messages to the IC-705!
+//  send these messages to pair and/or log in to radio and get access to CIV bus
+void CIV_Connect(void)
+{
+  Serial.println("Connecting to radio CIV bus ...");
+ // For testing I hard coded the pairing messages to the IC-705!
   delay(50);
-  // using UUID =  "00001102-0000-1000-8000-00805F9B34FB" for testing
-  uint8_t CIV_ID0[] = {0xFE,0xF1,0x00,0x61,0x30,0x30,0x30,0x30,0x31,0x31,0x30,0x32,0x2D,0x30,0x30,0x30,0x30,0x2D,0x31,0x30,0x30,0x30,0x2D,0x38,0x30,0x30,0x30,0x2D,0x30,0x30,0x38,0x30,0x35,0x46,0x39,0x42,0x33,0x34,0x46,0x42,0xFD};  // Send our UUID 
+
+  // using BT_Address   BT_ADDRESS "48:27:E2:79:12:51"
+  //const uint8_t* bt_addr = esp_bt_dev_get_address();  // can get own BT address this way.  Need colons?
+  //uint8_t CIV_ID0[11] = {0xFE,0xF1,0x30,0x61,0x48,0x27,0xE2,0x79,0x45,0x51,0xFD};  // Send our BT_ADDR 
+  uint8_t CIV_ID0[] = {0xFE,0xF1,0x00,0x61,0x34,0x38,0x32,0x037,0x45,0x32,0x37,0x39,0x31,0x32,0x35,0x31,0xFD};  // Send our BT_ADDR 
+  //uint8_t CIV_ID0[] = {0xFE,0xF1,0x30,0x61,0x48,0x3A,0x27,0x3A,0xE2,0x3A,0x79,0x3A,0x45,0x3A,0x51,0xFD};  // Send our BT_ADDR 
   pRXCharacteristic->writeValue(CIV_ID0, sizeof(CIV_ID0));
   pRXCharacteristic->canNotify();
-  delay(20);
-  // name is "IC-705 Decoder 2"
-  uint8_t CIV_ID1[] = {0xFE, 0xF1, 0x00, 0x62, 0x49, 0x43, 0x2D, 0x37, 0x30, 0x35, 0x20, 0x44, 0x65, 0x63, 0x6F, 0x64, 0x65, 0x72, 0x20, 0x32, 0xFD};  // Send Name
+  delay(50);
+  
+  // name is "IC-705 Decoder 3"
+  uint8_t CIV_ID1[] = {0xFE, 0xF1, 0x00, 0x62, 0x49, 0x43, 0x2D, 0x37, 0x30, 0x35, 0x20, 0x44, 0x65, 0x63, 0x6F, 0x64, 0x65, 0x72, 0x20, 0x33, 0xFD};  // Send Name
   pRXCharacteristic->writeValue(CIV_ID1, sizeof(CIV_ID1));
   pRXCharacteristic->canNotify();
-  delay(30);  // a small delay was required or this message would be missed (collision likely).
+  delay(50);  // a small delay was required or this message would be missed (collision likely).
 
   // Send Token
   uint8_t CIV_ID2[] = {0xFE, 0xF1, 0x00, 0x63, 0xEE, 0x39, 0x09, 0x10, 0xFD}; // Send Token
   pRXCharacteristic->writeValue(CIV_ID2, 9, true);
   pRXCharacteristic->canNotify();
-  delay(20);
+  delay(50);
 
 //pRXCharacteristic->canNotify();
   //String helloValue = "Hello Remote Server";
@@ -361,6 +423,23 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     } // onResult
 }; // MyAdvertisedDeviceCallbacks
 
+void Scan_BLE_Servers(void)
+{
+  // Retrieve a Scanner and set the callback we want to use to be informed when we
+  // have detected a new device. Specify that we want active scanning and start the
+  // scan to run for 30 seconds
+  BLEScan* pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setInterval(1349);
+  pBLEScan->setWindow(449); // less or equal setInterval value
+  pBLEScan->setActiveScan(true);
+  BLEScanResults foundDevices = pBLEScan->start(scanTime, false);
+  ////pBLEScan->start(scanTime, false);
+  Serial.print("Devices found: "); Serial.println(foundDevices.getCount());
+  Serial.println("Scan done!");
+  pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
+}
+
 // ----------------------------------------
 //    get band from frequency 
 // ----------------------------------------
@@ -378,27 +457,37 @@ byte getBand(uint32_t freq)
 void display_PTT(uint8_t PTT_state)
 {
   static uint8_t prev_PTT_state = 1;
-  char PTT_Tx[] = "Tx";
-  char PTT_Rx[] = "Rx";
+  char PTT_Tx[] = " Tx ";
+  char PTT_Rx[] = " Rx ";
 
   if (PTT_state != prev_PTT_state)
   {
     Serial.print("*** PTT = ");Serial.println(PTT_state);
-    M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
-    M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.setCursor(260, 190); //Set the location of the cursor to the coordinates X and Y
-    if (prev_PTT_state)
-      M5.Lcd.printf("%s", PTT_Tx);
-    else 
-      M5.Lcd.printf("%s", PTT_Rx);
 
-    M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.setCursor(260, 190); //Set the location of the cursor to the coordinates X and Y
-    if (PTT_state)
+    M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
+    M5.Lcd.setCursor(230, 190); //Set the location of the cursor to the coordinates X and Y
+    if (prev_PTT_state)
+    {
+      M5.Lcd.setTextColor(LIGHTGREY, BLACK); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
       M5.Lcd.printf("%s", PTT_Tx);
+    }
     else 
+    {
+      M5.Lcd.setTextColor(WHITE, RED); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
       M5.Lcd.printf("%s", PTT_Rx);
-  
+    }
+
+    M5.Lcd.setCursor(230, 190); //Set the location of the cursor to the coordinates X and Y
+    if (PTT_state)
+    {
+      M5.Lcd.setTextColor(WHITE, RED); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.printf("%s", PTT_Tx);
+    }
+    else 
+    {
+      M5.Lcd.setTextColor(LIGHTGREY, BLACK); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.printf("%s", PTT_Rx);
+    }
     prev_PTT_state = PTT_state;
   }
  }
@@ -416,7 +505,7 @@ void display_Band(uint8_t _band)
     M5.Lcd.setCursor(80, 120); //Set the location of the cursor to the coordinates X and Y
     M5.Lcd.printf("Band: %3d", prev_band);
 
-    M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.setTextColor(CYAN); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
     M5.Lcd.setCursor(80, 120); //Set the location of the cursor to the coordinates X and Y
     M5.Lcd.printf("Band: %3d", band);
     prev_band = _band;
@@ -443,179 +532,6 @@ void display_Freq(uint64_t freq)
     prev_freq = freq;
   }
 }
-
-void setup() {
-  M5.begin();
-  unifiedButton.begin(&M5.Display);
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println("Starting Arduino BLE Central Mode (Client) Nordic UART Service");
-  M5.Lcd.fillScreen(background_color);
-  M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
-  M5.Lcd.setCursor(30, 30); //Set the location of the cursor to the coordinates X and Y
-  M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-  M5.Lcd.printf("IC-705 BLE Band Decoder");
-  BLEDevice::init("");
-
-  // Retrieve a Scanner and set the callback we want to use to be informed when we
-  // have detected a new device. Specify that we want active scanning and start the
-  // scan to run for 30 seconds.
-  BLEScan* pBLEScan = BLEDevice::getScan();
-  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
-  pBLEScan->setActiveScan(true);
-  pBLEScan->start(30);
-} // End of setup.cover
-
-const uint8_t notificationOff[] = {0x0, 0x0};
-const uint8_t notificationOn[] = {0x1, 0x0};
-bool onoff = true;
-
-void loop() 
-{
-  static uint32_t time_last = millis();
-  
-  M5.update();
-  unifiedButton.update(); // Must be call after M5.update. (Changed to call after M5.update() since 0.1.0)
-
-  // M5.BtnX can be used to obtain status
-  if(M5.BtnA.wasHold())
-  {
-      Serial.println("Button A held");
-  }
-  else if(M5.BtnA.wasClicked())
-  {
-      Serial.println("Button A pressed");
-  }
-
-  if(M5.BtnB.wasHold())
-  {
-      Serial.println("Button B held");
-  }
-  else if(M5.BtnB.wasClicked())
-  {
-      Serial.println("Button B pressed");
-  }
-
-  if(M5.BtnC.wasHold())
-  {
-      Serial.println("Button C held");
-  }
-  else if(M5.BtnC.wasClicked())
-  {
-      Serial.println("Button C pressed");
-  }
-
-  // Drawing Buttons
-  unifiedButton.draw();
-
-  // If the flag "doConnect" is true then we have scanned for and found the desired
-  // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
-  // connected we set the connected flag to be true.
-  M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
-  if (doConnect == true) 
-  {
-    if (connectToServer(*pServerAddress)) 
-    {
-      Serial.println("We are now connected to the Radio, checking Pairing and Sign in Status.");
-      
-      if (Name_confirm && Token_confirm)  //Got minimum response from radio
-      {
-        if (Pairing_Accepted)
-          Serial.println("Pairing_Accepted");  // only get this whe a pairing is request.  false on regular sign in
-
-        bool go_on = false;
-        if (!UUID_confirm && !Pairing_Accepted && Name_confirm && Token_confirm) // continue on
-        //if (!UUID_confirm && Pairing_Accepted && Token_confirm) 
-        {
-          Serial.println("Paired already, continue to sign in");
-          go_on = true;
-        }
-        
-        if (UUID_confirm && Name_confirm && Pairing_Accepted && Token_confirm || go_on)   // pairing succeeded and singed in or already paired and singed in
-        {
-          Serial.println("Sign-in completed");
-          connected = true;
-          doConnect = false;
-          M5.Lcd.fillScreen(background_color);
-          M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
-          M5.Lcd.setCursor(20, 30); //Set the location of the cursor to the coordinates X and Y
-          M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-          M5.Lcd.printf("IC-705 BLE Band Decoder");
-          M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-          M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
-          M5.Lcd.printf("Connected to Radio");
-          delay(1000);
-          M5.Lcd.fillScreen(background_color);
-          M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
-          M5.Lcd.setCursor(20, 30); //Set the location of the cursor to the coordinates X and Y
-          M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-          M5.Lcd.printf("IC-705 BLE Band Decoder");
-        }
-        else 
-        {
-          connected = false;
-          Serial.println("No Sign-In confirmation from Radio");
-          M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-          M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
-          M5.Lcd.printf("No Sign-In confirmation from Radio");
-        }
-      } 
-    }
-    else 
-    {
-      Serial.println("We have failed to connect to the server; there is nothing more we will do.");
-      M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-      M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
-      M5.Lcd.printf("Failed Connection to Radio");
-      doConnect = false;
-    }
-  }
-  // If we are connected to a peer BLE Server perform the following actions every five seconds:
-  //   Toggle notifications for the TX Characteristic on and off.
-  //   Update the RX characteristic with the current time since boot string.
-  if (connected) {
-    if (onoff) {
-      //Serial.println("Notifications turned on");
-      pTXCharacteristic->getDescriptor(BLEUUID((uint16_t)0x2902))->writeValue((uint8_t*)notificationOn, 2, true);
-    } else {
-      //Serial.println("Notifications turned off");
-      pTXCharacteristic->getDescriptor(BLEUUID((uint16_t)0x2902))->writeValue((uint8_t*)notificationOff, 2, true);
-    }
-
-    // Toggle on/off value for notifications.
-    //onoff = onoff ? 0 : 1;
-    onoff = 1;
-
-    if (millis() >= time_last + POLL_RADIO)   // poll every X ms
-    {
-      // Set the characteristic's value to be the array of bytes that is actually a string
-      //String timeSinceBoot = "Time since boot: " + String(millis()/1000);
-      //Serial.println("Poll radio");
-      uint8_t CIV_frequency[] = {0xFE, 0xFE, radio_address, 0xE0, 0x03, 0xFD};
-      pRXCharacteristic->writeValue(CIV_frequency, sizeof(CIV_frequency), true);
-      pRXCharacteristic->canNotify();
-      delay(10);
-
-      //Serial.println("Poll radio for TX/RX state");
-      uint8_t CIV_TX[] = {0xFE, 0xFE, radio_address, 0xE0, 0x1C, 0x00, 0xFD};
-      pRXCharacteristic->writeValue(CIV_TX, sizeof(CIV_TX), true);
-      pRXCharacteristic->canNotify();
-      delay(10);
-
-      //SendMessageBLE(CIV_frequency);
-      //pRXCharacteristic->writeValue(timeSinceBoot.c_str(), timeSinceBoot.length());
-      //pRXCharacteristic->canNotify();
-
-      // Update the M5 screen
-      display_Freq(frequency);
-      display_PTT(PTT);
-      display_Band(band);
-      time_last = millis();
-    }  // poll radio
-  }// if connected
-  //delay(20); // Delay five seconds between loops.
-} // End of loop
-
 
 //--------------------------------------------                                                //
 // BLE 
@@ -647,4 +563,194 @@ void SendMessageBLE(std::string Message)
    } 
 }
 
+void draw_initial_screen(void)
+{
+  M5.Lcd.fillScreen(background_color);
+  M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+  M5.Lcd.setCursor(20, 30); //Set the location of the cursor to the coordinates X and Y
+  M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  M5.Lcd.printf("IC-705 BLE Band Decoder");
 
+  M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+  M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
+  M5.Lcd.printf("Connected to CI-V");
+  
+  delay(1000);
+  
+  M5.Lcd.fillScreen(background_color);
+  M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+  M5.Lcd.setCursor(20, 30); //Set the location of the cursor to the coordinates X and Y
+  M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  M5.Lcd.printf("IC-705 BLE Band Decoder");
+}
+
+#ifdef M5BTNS
+void check_M5Buttons(void)
+{
+  unifiedButton.update(); // Must be call after M5.update. (Changed to call after M5.update() since 0.1.0)
+
+    // M5.BtnX can be used to obtain status
+    if(M5.BtnA.wasHold())
+    {
+        Serial.println("Button A held");
+    }
+    else if(M5.BtnA.wasClicked())
+    {
+        Serial.println("Button A pressed");
+    }
+
+    if(M5.BtnB.wasHold())
+    {
+        Serial.println("Button B held");
+    }
+    else if(M5.BtnB.wasClicked())
+    {
+        Serial.println("Button B pressed");
+    }
+
+    if(M5.BtnC.wasHold())
+    {
+        Serial.println("Button C held");
+    }
+    else if(M5.BtnC.wasClicked())
+    {
+        Serial.println("Button C pressed");
+    }
+
+    // Drawing Buttons
+    unifiedButton.draw();
+}
+#endif
+
+void setup() {
+  M5.begin();
+
+  #ifdef M5BTNS
+    unifiedButton.begin(&M5.Display);
+  #endif
+  
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("Starting Arduino BLE Central Mode (Client) Nordic UART Service");
+  M5.Lcd.fillScreen(background_color);
+  M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+  M5.Lcd.setCursor(20, 30); //Set the location of the cursor to the coordinates X and Y
+  M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  M5.Lcd.printf("IC-705 BLE Band Decoder");
+  
+  BLEDevice::init("IC-705-BLE-Decoder");
+  doConnect = true;
+  Serial.println("Setup Done");
+} // End of setup.cover
+
+void loop() 
+{
+  static uint32_t time_last = millis();
+  
+  M5.update();
+  
+  #ifdef M5BTNS
+    check_M5Buttons();
+  #endif
+
+  // If the flag "doConnect" is true then we have scanned for and found the desired
+  // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
+  // connected we set the connected flag to be true.
+  M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+
+  if (!BLE_connected || !connected)
+  {        
+      Serial.printf("doConnect1 - Lost connection, starting BLE scanner - connected = %d  Token = %d  CIV_Granted = %d  BLE_connected = %d\n", connected, Token_confirm, CIV_granted, BLE_connected);        
+      Scan_BLE_Servers();
+  }
+  
+  if (doConnect == true) 
+  {
+    Serial.printf("doConnect2 - calling connect-to-server - connected = %d  Token = %d  CIV_Granted = %d  BLE_connected = %d\n", connected, Token_confirm, CIV_granted, BLE_connected);
+
+    if (connectToServer(*pServerAddress)) 
+    {      
+      Serial.printf("doConnect3 - post-connect to server - connected = %d  Token = %d  CIV_Granted = %d  BLE_connected = %d\n", connected, Token_confirm, CIV_granted, BLE_connected);
+      
+      if (Pairing_Accepted && Token_confirm)
+          Serial.println("Pairing_Accepted");  // only get this whe a pairing is request.  false on regular sign in
+
+      if (!Pairing_Accepted && Token_confirm) // continue on
+          Serial.println("Paired already, continue to sign in");
+    
+      if (CIV_granted)   // pairing succeeded and singed in or already paired and singed in
+      {
+        Serial.println("Sign-in completed");
+        connected = true;
+        doConnect = false;
+        Name_confirm = Token_confirm = CIV_granted = false;  // reset 
+        draw_initial_screen();
+      }
+      else 
+      {
+        //connected = false;
+        Serial.println("No Sign-In confirmation from Radio");
+        M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+        M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
+        M5.Lcd.printf("No Sign-In confirmation from Radio");
+        CIV_Connect();
+      } 
+    }
+    else 
+    {
+      Serial.println("We have failed to connect to the server; there is nothing more we will do.");
+      M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
+      M5.Lcd.printf("Failed Connection to Radio");
+      doConnect = true;
+      Scan_BLE_Servers();  // kick of the process from the start
+    }
+  }
+
+  // If we are connected to a peer BLE Server perform the following actions every five seconds:
+  //   Toggle notifications for the TX Characteristic on and off.
+  //   Update the RX characteristic with the current time since boot string.
+  if (connected) 
+  {
+    if (onoff) {
+      //Serial.println("Notifications turned on");
+      pTXCharacteristic->getDescriptor(BLEUUID((uint16_t)0x2902))->writeValue((uint8_t*)notificationOn, 2, true);
+    } else {
+      //Serial.println("Notifications turned off");
+      pTXCharacteristic->getDescriptor(BLEUUID((uint16_t)0x2902))->writeValue((uint8_t*)notificationOff, 2, true);
+    }
+    // Toggle on/off value for notifications.
+    //onoff = onoff ? 0 : 1;
+    onoff = 1;
+
+    if (millis() >= time_last + POLL_RADIO)   // poll every X ms
+    {
+      // Set the characteristic's value to be the array of bytes that is actually a string
+      //String timeSinceBoot = "Time since boot: " + String(millis()/1000);
+      //Serial.println("Poll radio");
+      uint8_t CIV_frequency[] = {0xFE, 0xFE, radio_address, 0xE0, 0x03, 0xFD};
+      pRXCharacteristic->writeValue(CIV_frequency, sizeof(CIV_frequency), true);
+      pRXCharacteristic->canNotify();
+      delay(10);
+
+      //Serial.println("Poll radio for TX/RX state");
+      uint8_t CIV_TX[] = {0xFE, 0xFE, radio_address, 0xE0, 0x1C, 0x00, 0xFD};
+      pRXCharacteristic->writeValue(CIV_TX, sizeof(CIV_TX), true);
+      pRXCharacteristic->canNotify();
+      delay(10);
+
+      //SendMessageBLE(CIV_frequency);
+      //pRXCharacteristic->writeValue(timeSinceBoot.c_str(), timeSinceBoot.length());
+      //pRXCharacteristic->canNotify();
+
+      // Update the M5 screen
+      display_Freq(frequency);
+      display_PTT(PTT);
+      display_Band(band);
+      time_last = millis();
+    }  // poll radio
+  }// if connected
+
+  //delay(20); // Delay five seconds between loops.
+
+} // End of loop
