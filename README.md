@@ -70,3 +70,7 @@ I also did more experiments with passing BT addresses in various formats but so 
 
 So as of Aug 4, I think the Decoder_Sinple version is a pretty robust template to add fancy UI, SD card config, band decoder and PTT breakout, etc.  This for me was my first BLE project, jsut happenm o pick one that seems to have an undocumented inteface to the radio.  Also the examples for BLE UART all seems to be server side.  Another oddity is Icom chose to make the RX and TX characteristic UUIDs the same, most products are different IDs. I assume this is because CI-V is a simplex bus.
 
+While he reconnection is far beter, the longer yu use and look at the debug, there are still issues.  Ther is what looks like a scnario that tries to write to a connection that is not ready yet.  YOU have to tunr on Error level debug to see the events.  I also spotted a crash reboots.  So not out of woods yet.  
+
+I think the BLE address think is still an open issue.  When a connection is down for long enough it seems like you have to (at times) re-pair to reconnect. Maybe it needs a valid BT address to correctly remember your connection.  It feels like it takes a long disconnect time for the radio to lose that memory.  Maybe something times out.
+
