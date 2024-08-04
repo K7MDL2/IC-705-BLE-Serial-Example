@@ -74,8 +74,6 @@
 #include <M5CoreS3.h>
 //#include <M5Unified.h>
 
-
-
 //#define M5BTNS
 #ifdef M5BTNS
   #include <gob_unifiedButton.hpp>
@@ -94,21 +92,21 @@ static BLEUUID charUUID_RX("14cf8002-1ec2-d408-1b04-2eb270f14203");   // RX Char
 // the server can send data to the client as notifications.
 static BLEUUID charUUID_TX("14cf8002-1ec2-d408-1b04-2eb270f14203");   // TX Characteristic
 
-int scanTime = 10; //In seconds
-static BLEScan *pBLEScan;
-
+int scanTime = 5; //In seconds
+static BLEScan *pBLEScan = NULL;
+//static BLEClient *pClient = NULL;
 static BLEAddress *pServerAddress = NULL;
 static boolean doConnect = false;
 static boolean connected = false;
 static BLERemoteCharacteristic* pTXCharacteristic;
 static BLERemoteCharacteristic* pRXCharacteristic;
 uint8_t radio_address = 0xA4;   // A4 for IC-705, AC for IC-905
-uint16_t  background_color = BLACK;
-uint16_t  text_color = WHITE;
+uint16_t background_color = BLACK;
+uint16_t text_color = WHITE;
 uint64_t frequency = 0;
 const uint32_t decMulti[]    = {1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1};
 uint64_t prev_frequency = 0;
-uint8_t   band = 254;
+uint8_t band = 254;
 uint8_t PTT = 0;
 uint8_t prev_PTT = 1;
 bool BT_ADDR_confirm = false;
@@ -175,7 +173,6 @@ char* formatVFO(uint64_t vfo)
 	return vfo_str;
 }
 
-
 class MyClientCallback : public BLEClientCallbacks 
 {
   void onConnect(BLEClient* pclient) {
@@ -186,13 +183,12 @@ class MyClientCallback : public BLEClientCallbacks
 
   void onDisconnect(BLEClient* pclient) {
       connected = false; // tacks state of CIV connection
-      doConnect = true; //  gateway to connect and pair processes.
+      doConnect = false; //  gateway to connect and pair processes.
       BLE_connected = false;  // tracks state of BLE level connection
       Serial.println("Lost BLE server connection event flag set on Disconnect ");
       //Scan_BLE_Servers();
   }
 };
-
 
 #define WATCH_SERIAL
 
@@ -277,7 +273,8 @@ inline uint8_t bcdByteEncode(const uint8_t x) { return ((x / 10) << 4) + (x % 10
 //        Connect to Server
 //
 //**************************************************************************************
-bool connectToServer(BLEAddress pAddress) {
+bool connectToServer(BLEAddress pAddress) 
+{  
   Serial.print("Establishing a connection to device address: ");
   Serial.println(pAddress.toString().c_str());
 
@@ -288,6 +285,14 @@ bool connectToServer(BLEAddress pAddress) {
 
   BLEClient*  pClient  = BLEDevice::createClient();
   Serial.println(" - Created client");
+  
+  //if (pAddress == NULL)
+  //{
+  //  //pClient->disconnect();
+  //  Serial.println("COnnect to server: address is NULL, skipping until we get a good address");
+  //  return false;
+  //}
+  
   pClient->setClientCallbacks(new MyClientCallback());
 
   // Connect to the remove BLE Server.
@@ -405,7 +410,8 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     /**
         Called for each advertising BLE server.
     */
-    void onResult(BLEAdvertisedDevice advertisedDevice) {
+    void onResult(BLEAdvertisedDevice advertisedDevice) 
+    {
       Serial.print("BLE Advertised Device found - ");
       Serial.println(advertisedDevice.toString().c_str());
 
@@ -638,7 +644,7 @@ void setup() {
   M5.Lcd.printf("IC-705 BLE Band Decoder");
   
   BLEDevice::init("IC-705-BLE-Decoder");
-  doConnect = true;
+  doConnect = false;
   Serial.println("Setup Done");
 } // End of setup.cover
 
@@ -662,8 +668,10 @@ void loop()
       Serial.printf("doConnect1 - Lost connection, starting BLE scanner - connected = %d  Token = %d  CIV_Granted = %d  BLE_connected = %d\n", connected, Token_confirm, CIV_granted, BLE_connected);        
       Scan_BLE_Servers();
   }
-  
-  if (doConnect == true) 
+
+  // The only time this should be true is when a recent scan found and active client address.  No old disconnected addresses please  
+  // Scan Server should be the only place this gets set to true.  Otherwise we use a stale address and will get stuck.
+  if (doConnect == true)  // && !BLE_connected && pServerAddress != NULL)  
   {
     Serial.printf("doConnect2 - calling connect-to-server - connected = %d  Token = %d  CIV_Granted = %d  BLE_connected = %d\n", connected, Token_confirm, CIV_granted, BLE_connected);
 
@@ -701,7 +709,7 @@ void loop()
       M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
       M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
       M5.Lcd.printf("Failed Connection to Radio");
-      doConnect = true;
+      //doConnect = true;
       Scan_BLE_Servers();  // kick of the process from the start
     }
   }

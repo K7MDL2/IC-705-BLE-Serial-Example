@@ -58,24 +58,10 @@ If the radio is connected to another device, then same as above, no CI-V respons
 
 I have observed that if the pairing process does not complete for what ever reason, the BLE link will disconnect after just a few seconds. This requires running through the client (aka central) connect-to-server (aka peripheral) function while waiting for a CI-V Access completion.  This would be a normal scenario if the radio is not in pairing mode, turned off, or out of range.
 
-Aug 3, 2024 Note: The extended demo file IC-705_BLE_Decoder_Simple.ino has extensions to the stripped down uart demo file to to communicate with the 705.  I have been working on improving the ability to recover from disconnects.  As of Aug 3,2024 it does pretty good for pairing and reconnecting on short term disconnects,  However, if you turn off the the radio and wait a while, the connect-to-server function gets stuck at the "Connected to server" step.  With debug on the last BLECLient event is ESP_GATTC_UNREG_EVT  which is client unregistered.  Now to figure out how to recover, or avoid that.  Othe rchanges are targeted at avoiding malloc error (which I saw) when rerunning Scan_BLE_Servers() by clearing the list each scan.
+Aug 3, 2024 Note: The extended demo file IC-705_BLE_Decoder_Simple.ino has extensions to the stripped down uart demo file to to communicate with the 705.  I have been working on improving the ability to recover from disconnects.  As of Aug 3,2024 it does pretty good for pairing and reconnecting on short term disconnects,  However, if you turn off the the radio and wait a while, the connect-to-server function gets stuck at the "Connected to server" step.  With debug on the last BLECLient event is ESP_GATTC_UNREG_EVT  which is client unregistered. See Issue # for details.  The soluton was simple - avoid this state!.  In the onDisconnect callback doConnect is set to false.  This causes the main loop top run the scanner scanner until it finds a vaid radio. The only place that should set doConnect to true is in the Scanner callback onResult function when a valid radio is found and the address is set.   
+
+Other changes are targeted at avoiding malloc errors (which I saw) when rerunning Scan_BLE_Servers() by clearing the discovered list each scan.
       
       pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
 
 I also did more experiments with passing BT addresses in various formats but so far the radio has not acknowledged any 0x61 messages and the displayed address is always 00:00:00:00:00:xx where xx starts with 01 for each new BLE client paired.  Do not know if that is expected or not.
-
-The stuck connection state debug is below, has an unkwown ESP error.
-
-            Establishing a connection to device address: 30:31:7d:33:bb:7f
-            - Created client
-            [ 42643][I][BLEDevice.cpp:622] addPeerDevice(): add conn_id: 1, GATT role: client
-            [ 42648][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_REG_EVT
-            [ 42658][D][BLEClient.cpp:178] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_REG_EVT
-            [ 72672][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_DISCONNECT_EVT
-            [ 72672][D][BLEClient.cpp:178] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_DISCONNECT_EVT
-            [ 72683][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_OPEN_EVT
-            [ 72693][D][BLEClient.cpp:178] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_OPEN_EVT
-            [ 72704][E][BLEClient.cpp:239] gattClientEventHandler(): Failed to connect, status=Unknown ESP_ERR error
-            [ 72713][I][BLEDevice.cpp:637] removePeerDevice(): remove: 1, GATT role client
-            - Connected to server
-            [ 72720][D][BLEDevice.cpp:148] gattClientEventHandler(): gattClientEventHandler [esp_gatt_if: 3] ... ESP_GATTC_UNREG_EVT
