@@ -3,13 +3,18 @@
  *
  *  Central Mode (client) BLE UART for ESP32 - Tested on CoreS3 SE
  *
- *  Modifed by K7MDL Aug 2024 for BT connection to the IC-705 via BLE serial on a M5Stack Core3 and Core 3 SE.  Tested on a SE version
+ *  Modifed by K7MDL Aug 4, 2024 for BT connection to the IC-705 via BLE serial on a M5Stack Core3 and Core 3 SE.  Tested on a SE version
  * 
  *  This is a simplified example program showing a BLE connection to an IC-705 and getting CI-V frequency and PTT state.  
  *  All UI is on the serial terminal only.  Other example programs on this repo show info on the display, process button touches
  *  Go to the IC-705 Pairing Reception menu
  *  Reset the M5Stack Core3
- *  It will autoconnect and display the name in the Pairing/Connect menu
+ *  It will autoconnect and display the name in the Pairing/Connect menu 
+ *  If a connection is lost, you must reset to reconnect, there is no live scan and reconnect in this version.
+ *     See the other more advanced programs for auto-reconnect upon connection loss.
+ *
+ * NOTE: This version only takes one BLE server scan.  Sometimes it needs more passes. 
+ *       If you do not see a connection reset again, it was probably missed, or not in the pairing screen.
  *
  ********************************   Below is the original code header/credits **************************************************  
  *
@@ -167,25 +172,32 @@ bool connectToServer(BLEAddress pAddress) {
 
   // For tesating I hard codeded the pairing messages to the IC-705!
 
-  // using UUID =  "00001101-0000-1000-8000-00805F9B34FB" for testing
+
   uint8_t CIV_ID0[] = {0xFE,0xF1,0x00,0x61,0x30,0x30,0x30,0x30,0x31,0x31,0x30,0x31,0x2D,0x30,0x30,0x30,0x30,0x2D,0x31,0x30,0x30,0x30,0x2D,0x38,0x30,0x30,0x30,0x2D,0x30,0x30,0x38,0x30,0x35,0x46,0x39,0x42,0x33,0x34,0x46,0x42,0xFD};  // Send our UUID 
   pRXCharacteristic->writeValue(CIV_ID0, sizeof(CIV_ID0));
   pRXCharacteristic->canNotify();
   delay(20);
+
   // name is "IC705 BT Decoder"
   uint8_t CIV_ID1[] = {0xFE, 0xF1, 0x00, 0x62, 0x49, 0x43, 0x37, 0x30, 0x35, 0x2D, 0x42, 0x54, 0x2D, 0x44, 0x65, 0x63, 0x6F, 0x64, 0x65, 0x72, 0xFD};  // Send Name
   pRXCharacteristic->writeValue(CIV_ID1, sizeof(CIV_ID1));
   pRXCharacteristic->canNotify();
   delay(20);  // a small delay was required or this message would be missed (collision likely).
+
   // Send Token
   uint8_t CIV_ID2[] = {0xFE, 0xF1, 0x00, 0x63, 0xEE, 0x39, 0x09, 0x10, 0xFD}; // Send Token
   pRXCharacteristic->writeValue(CIV_ID2, 9);
   pRXCharacteristic->canNotify();
   delay(20);
 
-//pRXCharacteristic->canNotify();
-  //String helloValue = "Hello Remote Server";
+// if pairing,  get reply with       0xFE, 0xF1, 0x00, 0x62, 0xFD
+// if pairing,  get reply with       0xFE, 0xF1, 0x00, 0x63, 0x01, 0xFD  // pair confirmed
+// if already paired, get reply with 0xFE, 0xF1, 0x00, 0x63, 0x00, 0xFD  // already paired
+// if all good, will get reply with  0xFE, 0xF1, 0x00, 0x64, 0xFD        // CI-V bus access granted
+
+//String helloValue = "Hello Remote Server";
   //pRXCharacteristic->writeValue(helloValue.c_str(), helloValue.length());
+
   connected = true;
   return true;
 }
@@ -243,7 +255,11 @@ void setup() {
   BLEScan* pBLEScan = BLEDevice::getScan();
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
   pBLEScan->setActiveScan(true);
-  pBLEScan->start(30);
+  //pBLEScan->start(30);
+  BLEScanResults foundDevices = pBLEScan->start(5, false);
+  Serial.print("Devices found: ");
+  Serial.println(foundDevices.getCount());
+  Serial.println("Scan done!");
 } // End of setup.
 
 
@@ -266,8 +282,8 @@ void loop() {
     doConnect = false;
   }
 
-  // If we are connected to a peer BLE Server perform the following actions every five seconds:
-  //   Toggle notifications for the TX Characteristic on and off.
+  onoff = 1;  // want to read from the radio
+  //   Can toggle notifications for the TX Characteristic on and off.
   //   Update the RX characteristic with the current time since boot string.
   if (connected) {
     if (onoff) {
@@ -280,11 +296,10 @@ void loop() {
 
     // Toggle on/off value for notifications.
     //onoff = onoff ? 0 : 1;
-    onoff = 1;
+    
 
-    // Set the characteristic's value to be the array of bytes that is actually a string
-    //String timeSinceBoot = "Time since boot: " + String(millis()/1000);
     //Serial.println("Poll radio");
+    // uncomment this if you have BT CIV echo back turned off
     uint8_t CIV_frequency[] = {0xFE, 0xFE, radio_address, 0xE0, 0x03, 0xFD};
     pRXCharacteristic->writeValue(CIV_frequency, sizeof(CIV_frequency));
     pRXCharacteristic->canNotify();
@@ -294,10 +309,6 @@ void loop() {
     uint8_t CIV_TX[] = {0xFE, 0xFE, radio_address, 0xE0, 0x1C, 0x00, 0xFD};
     pRXCharacteristic->writeValue(CIV_TX, sizeof(CIV_TX));
     pRXCharacteristic->canNotify();
-
-    //SendMessageBLE(CIV_frequency);
-    //pRXCharacteristic->writeValue(timeSinceBoot.c_str(), timeSinceBoot.length());
-    //pRXCharacteristic->canNotify();
   }
 
   delay(100); // Delay five seconds between loops.
