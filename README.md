@@ -16,45 +16,55 @@ UUID from device:
 I noted that on BT Classic, the BT address is shown on the 705 Paired devices list.  For BLE the UUID I send is not used and a number is auto_assigned starting with 1, incrmenting for each new device I try pairing with a unique name.  
 
 CI-V Pairing and Sign in state engine:
-In the IC-705_BLE_Decoder_Simple program I now track the state of pairing and sign in.  If we are connected and not yet paired, we will get a reply to all 3 sign in/pairing messages. The 0x63 will return with a 1 on successful pairing and 0 if already paired (assuming other messages are returned OK). Will retry signing in if we can connect but not get the expected paired and/or signed in responses.
+In the IC-705_BLE_Decoder_Simple program I now track the state of pairing and sign in.  The BLE scanner will be restarted on a failed connection attempt, or keep scanning looking for a qualified server (the radio).  THE messages are so far undocumented. Looking at 1 code sample found, it sends a UUID string. From where? For BT classic SPP the BT address is displayed on the radio, formatted as a 6-byte BT address with colons.  For BLE a sequencial number a assigned starting with 1. The 2nd connection is 00:00:00:00:00:02 for example.
 
-Assuming we have a BLE connection to server (radio) we get these CI-V sign in response patterns:
-Send out all 3 messages to connect to CIV
-      
-Looking at other code it it looked like it started with sending a UUID string. From where? The number on the radio is formatted as a 6-byte BT address.  The radio does not reply but otherwise works goes on and pairs, communicates.
-I think it should be a BT address but efforts to send one with and without colons I got no response and the radio assigned a number starting with 1.  I tried all sorts of combos of numbers for the BT address (hex, bcd, colons) none got a response.  To b clear, this is not BLE directly, but a CI-V message sent to the 705 to set up the 705 pairing. 
-Last I tried not sending msg 61 at all.  It still paired and auto-assigned a number.
+The 3 messages to pair or reconnect are 0x61, 0x62, 0x63. 0x64 is the final reply on success. The radio does not reply to a 0x61 msg but does use the number as evidenced by it creating a new pairing entry if you keep the same name. If you change the number, keep the name, and try to connect it will fail with a disconnect event.  I tried not sending msg 61 and it still pairs and auto-assigns a number a normal.
 
-Conclusion: FE F1 00 61 is not the ID string, or more likely for BLE, it does not use one and always auto-assigns a number in the radio.
+Conclusion: 0xFE 0xF1 0x00 0x61 is the UUID. THE UUIS is 32 bytes. The total msg length must be 41 bytes to get a 0x62 msg reply. You can still get a pairing and reconnect with less but the 0x62 reply message is suppressed.
 
-      // ****** Not used in latest code - left here to document attempts to send one and my observations
-      ADDR            = 0xFE, 0xF1, 0x00, 0x61, BT_Address string, 0xFD
-      radio reply     = None Observed
+Message format details:
+
       // ************************************************************************************************
       
+Observation: If the ID message 0x61 sent is of a certain lemgth (41 bytes, 36 for the ID) then the name (0x62) reply is sent, otherwise the 0x62 is suppressed, still get the token reply.  Maybe a reject message collision, ?  Sending a BT address results in no reply for 0x62 (Name). Still works though. If the state engine requries the name reply mesg though, then have to get the ID right.
+
+When only the ID number was changed a 2nd pairing with the same name but address shows as #2. So it is looking at the number even though there is no reply.
+Change the ID length (hence the ID value) and a reconnect is rejected.
+
+Try to connect with no existing matching pairing or radio not in pairing mode and you get an error resulting a a disconnect.
+The below is seen whenyo have Warning or Error level debug turned on.
+
+[  8513][E][BLERemoteCharacteristic.cpp:598] writeValue(): esp_ble_gattc_write_char: rc=259 Unknown ESP_ERR error
+[  8523][E][BLERemoteCharacteristic.cpp:581] writeValue(): Disconnected
+
+
       // ********  Below is a working sequence **********************************************************
       
-      NAME            = 0xFE, 0xF1, 0x00, 0x62, name string, 0xFD  // Appears to be limited to 16 bytes in the 705 display field
+      UUID            = 0xFE, 0xF1, 0x00, 0x61, UUID, 0xFD  - must be 41bytes total, 36 for the UUID.
+      radio reply     = None Observed
+
+      NAME            = 0xFE, 0xF1, 0x00, 0x62, name string, 0xFD  // Name must be exactly 16 bytes!  - Too short and no reply - 21 bytes total 
       radio reply     = 0xFE, 0xF1, 0x00, 0x62, 0xFD
       
-      TOKEN           = 0xFE, 0xF1, 0x00, 0x63, 0xEE, 0x39, 0x09, 0x10, 0xFD  // a fixed value
+      TOKEN           = 0xFE, 0xF1, 0x00, 0x63, 0xEE, 0x39, 0x09, 0x10, 0xFD  // a fixed value 9 byes total
       radio reply     = 0xFE, 0xF1, 0x00, 0x63, 0x00, 0xFD  //  byte 4 = 0 is already paired - PAIR = EXISTING
       radio reply     = 0xFE, 0xF1, 0x00, 0x63, 0x01, 0xFD  //  byte 4 = 1 is pairing accepted - PAIR = SUCCESS 
       
       CI-V bus access granted (CIV_granted)
       radio reply     = 0xFE, 0xF1, 0x00, 0x64, 0xFD    // CI-V bus access is granted
       
+
 ******************************  Notes *************************************************************
 
-When Pairing, we get these reponses  
-NAME, TOKEN, PAIR==SUCCESS, CIV_CONN
+When Pairing, we get these reponses .  PAIR is an attribute of the TOKEN message, byte 4.
+NAME, TOKEN, PAIR==SUCCESS, CIV_CONNECTED
 
 If already paired, we get these fewer reponses
-TOKEN, PAIR=EXISTING, CIV_CONN
+TOKEN, PAIR=EXISTING, CIV_CONNECTED
 
-If we are not already paired and the radio is not in pairing reception mode, there are no CIV responses but we will remain connected to the radio BLE server.  More precisely, we need to reconnect at the BLE layer and resend the CI-V layer until the radio answers, which could be never, or a long time. We can retry until we get disconnected or power off. 
+If we are not already paired and the radio is not in pairing reception mode, there are no CIV responses but we will remain a BLE server disconnect.  The code needs to restart scanning, get a new or different server address, and try again.  More precisely, need to reconnect at the BLE layer and resend the CI-V layer until the radio answers, which could be never, or a long time. We can retry until we get disconnected or power off. One of the problems with the long retry is the possiblity of malloc errors and heap crashes.
 
-If the radio is connected to another device, then same as above, no CI-V response, but stays connected. Radio accepts up to 4 connections so if there are enough headsets, mics, PTT buttons, CI-V monitors/decoders connected, you might get a server connection fail.
+If the radio is connected to another device, then same as above, no CI-V response, but stays BLE connected (?? verify this). Radio accepts up to 4 connections (as I read the docs found) so if there are enough headsets, mics, PTT buttons, CI-V monitors/decoders connected, you might get a server connection fail.
 
 I have observed that if the pairing process does not complete for what ever reason, the BLE link will disconnect after just a few seconds. This requires running through the client (aka central) connect-to-server (aka peripheral) function while waiting for a CI-V Access completion.  This would be a normal scenario if the radio is not in pairing mode, turned off, or out of range.
 
@@ -70,7 +80,7 @@ I also did more experiments with passing BT addresses in various formats but so 
 
 So as of Aug 4, I think the Decoder_Sinple version is a pretty robust template to add fancy UI, SD card config, band decoder and PTT breakout, etc.  This for me was my first BLE project, jsut happenm o pick one that seems to have an undocumented inteface to the radio.  Also the examples for BLE UART all seems to be server side.  Another oddity is Icom chose to make the RX and TX characteristic UUIDs the same, most products are different IDs. I assume this is because CI-V is a simplex bus.
 
-While he reconnection is far beter, the longer yu use and look at the debug, there are still issues.  Ther is what looks like a scnario that tries to write to a connection that is not ready yet.  YOU have to tunr on Error level debug to see the events.  I also spotted a crash reboots.  So not out of woods yet.  
+While he reconnection is far beter, the longer you use and look at the debug, there are still issues.  There is what looks like a scenario that tries to write to a connection that is not ready yet. You have to turn on Error level debug to see the events.  I also spotted a crash reboots.  So not out of woods yet.  
 
-I think the BLE address think is still an open issue.  When a connection is down for long enough it seems like you have to (at times) re-pair to reconnect. Maybe it needs a valid BT address to correctly remember your connection.  It feels like it takes a long disconnect time for the radio to lose that memory.  Maybe something times out.
+When I thought everything was working I later found nothing or little works. I now think much of this was due to my trying to track the state of each message success and BLE link status. When changing the contents of the ID or Name message there replies stopped so the state engine failed.  Now I understand better when you get replies  and when you don't so I think it will be more sane now.  I just look for the final success message and track the BLE link status which is how you know about connection failures/rejections.   For this I am now using isConnected() (when there is a valid pointer).
 
