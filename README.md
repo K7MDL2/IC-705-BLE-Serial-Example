@@ -70,9 +70,11 @@ Try to connect with no existing matching pairing or radio not in pairing mode an
 
 The below is seen when you have Warning or Error level debug turned on.
 
-[  8513][E][BLERemoteCharacteristic.cpp:598] writeValue(): esp_ble_gattc_write_char: rc=259 Unknown ESP_ERR error
-[  8523][E][BLERemoteCharacteristic.cpp:581] writeValue(): Disconnected
+      [  8513][E][BLERemoteCharacteristic.cpp:598] writeValue(): esp_ble_gattc_write_char: rc=259 Unknown ESP_ERR error
+      [  8523][E][BLERemoteCharacteristic.cpp:581] writeValue(): Disconnected
 
+
+Connect Sequence
 
       // ********  Below is a working sequence **********************************************************
       
@@ -93,10 +95,12 @@ The below is seen when you have Warning or Error level debug turned on.
 ******************************  Notes *************************************************************
 
 When Pairing, we get these reponses .  PAIR is an attribute of the TOKEN message, byte 4.
-NAME, TOKEN, PAIR==SUCCESS, CIV_CONNECTED
+
+      NAME, TOKEN, PAIR==SUCCESS, CIV_CONNECTED
 
 If already paired, we get these fewer reponses
-TOKEN, PAIR=EXISTING, CIV_CONNECTED
+
+      TOKEN, PAIR=EXISTING, CIV_CONNECTED
 
 If we are not already paired and the radio is not in pairing reception mode, there are no CIV responses but we will receive a BLE server disconnect. The code needs to restart scanning, get a new or different server address, and try again.  More precisely, need to reconnect at the BLE layer and resend the CI-V layer until the radio answers, which could be never, or a long time. We can retry until we get disconnected or power off. One of the problems with the long retry is the possiblity of malloc errors and heap crashes.
 
@@ -114,9 +118,11 @@ Other changes are targeted at avoiding malloc errors (which I saw) when rerunnin
 
 I also did more experiments with passing BT addresses in various formats but so far the radio has never acknowledged any 0x61 messages and the displayed address is always 00:00:00:00:00:xx where xx starts with 01 for each new BLE client paired.  Do not know if that is expected or not.
 
-So as of Aug 4, I think the Decoder_Sinple version is a pretty robust template to add fancy UI, SD card config, band decoder and PTT breakout, etc.  This for me was my first BLE project, jsut happenm o pick one that seems to have an undocumented inteface to the radio.  Also the examples for BLE UART all seems to be server side.  Another oddity is Icom chose to make the RX and TX characteristic UUIDs the same, most products are different IDs. I assume this is because CI-V is a simplex bus.
+So as of Aug 4, I think the Decoder_Sinple version is a pretty robust template to add fancy UI, SD card config, band decoder and PTT breakout, etc.  This for me was my first BLE project, jsut happenm o pick one that seems to have an undocumented inteface to the radio.  Also the examples for BLE UART all seems to be server side.  Another oddity is Icom chose to make the RX and TX characteristic UUIDs the same, most products are different IDs. I assume this is because CI-V is a simplex bus.  
 
-While he reconnection is far beter, the longer you use and look at the debug, there are still issues.  There is what looks like a scenario that tries to write to a connection that is not ready yet. You have to turn on Error level debug to see the events.  I also spotted a crash reboots.  So not out of woods yet.  
+While the reconnection is far better, the longer you use and look at the debug, there are still issues seen.  There is what looks like a scenario that tries to write to a connection that is not ready yet. You have to turn on Error level debug to see the events.  I also spotted crash reboots.  So not out of woods yet.  
 
-When I thought everything was working I later found nothing or little works. I now think much of this was due to my trying to track the state of each message success and BLE link status. When changing the contents of the ID or Name message there replies stopped so the state engine failed.  Now I understand better when you get replies  and when you don't so I think it will be more sane now.  I just look for the final success message and track the BLE link status which is how you know about connection failures/rejections.   For this I am now using isConnected() (when there is a valid pointer).
+**Update: Aug 7 this is working pretty good for me now and have seen few odd events. I have moved onto the BT classic version to actually crank out a fully functional decoder since the IO hardware I wanted to use does not want to work easily with the new Core3 yet.
+
+Aug 4th : When I thought everything was working I later found nothing or little works. I now think much of this was due to my trying to track the state of each message success and BLE link status. When changing the contents of the ID or Name message there replies stopped so the state engine failed.  Now I understand better when you get replies  and when you don't so I think it will be more sane now.  I just look for the final success message and track the BLE link status which is how you know about connection failures/rejections.   For this I am now using isConnected() (when there is a valid pointer).
 
