@@ -72,17 +72,20 @@
  *
  */
 
+//#include <M5Stack.h>
 #include "BLEDevice.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #include <M5CoreS3.h>
+#include "MODULE_4IN8OUT.h"
 
-#define WATCH_SERIAL              // Print data received from the radio over the CI-V bus
-
+#define MOD_4IN_8OUT              // enable the 4input 8output MOSFET IO module
+//#define WATCH_SERIAL              // Print data received from the radio over the CI-V bus
+#define WATCH_DECODER             // monitor the decoder in and output pin state
 #define POLL_TX              90   // poll the radio for TX/RX status.  Can pass through PTT to specific IO pins per band (PTT breakout)
-#define POLL_FREQ           400   // poll the radio for frequency and other parameters - can add transverter offsets
+#define POLL_FREQ           250   // poll the radio for frequency and other parameters - can add transverter offsets
 
-// #define IC905                   // 905 has 6bytes for frequency vs. 5 bytes on other radios to support bands 10GHz and higher
+// #define IC905                   // future use: The IC-905 has 5 bytes for frequency for bands < 10Ghz and 6 bytes above to support bands 10GHz and higher
 #define IC705                     // Specify which radio. Some CIV commands have different numbers
 
 //#define M5BTNS
@@ -90,6 +93,8 @@
   #include <gob_unifiedButton.hpp>
   goblib::UnifiedButton unifiedButton;
 #endif
+
+MODULE_4IN8OUT module;
 
 // The remote Nordic UART service service we wish to connect to.
 // This service exposes two characteristics: one for transmitting and one for receiving (as seen from the client).
@@ -200,6 +205,9 @@ char* formatVFO(uint64_t vfo)
 	return vfo_str;
 }
 
+// The onDisconnect() callback functioun worked but am using pClient->isCOnnected() instead.
+// It also arrives asynchronously which has to be handled as such.  Not using this now.
+// TO use these, uncomment the 
 class MyClientCallback : public BLEClientCallbacks 
 {
   void onConnect(BLEClient* pclient) {
@@ -581,10 +589,35 @@ void draw_initial_screen(void)
   M5.Lcd.printf("IC-705 BLE Band Decoder");
 }
 
-void setup() {
+void Mod_4in8out(void)
+{
+  //M5.Lcd.drawString("4IN8OUT MODULE", 60, 80, 4);
+  //M5.Lcd.drawString("FW VERSION:" + String(module.getVersion()), 70, 120, 4);
+  //M5.Lcd.drawString("Click BtnB Update Addr to 0x66", 60, 160, 2);
+  if (M5.BtnB.wasPressed()) {
+      if (module.setDeviceAddr(0x66)) {
+          Serial.println("Update Addr: 0x66");
+         // M5.Lcd.drawString("Update Addr: 0x66 success", 60, 200, 2);
+        }
+  }
+}
+
+void setup() 
+{
   M5.begin();
   Serial.begin(115200);
   
+  #ifdef MOD_4IN_8OUT
+    while (!module.begin(&Wire, 21, 22, MODULE_4IN8OUT_ADDR)) 
+    {
+        Serial.println("4IN8OUT INIT ERROR");
+        M5.Lcd.setTextSize(1); // to Set the size of text from 0 to 255
+        M5.Lcd.println("4IN8OUT INIT ERROR");
+        delay(1000);
+    };
+    Serial.println("4IN8OUT INIT SUCCESS");
+  #endif 
+
   #ifdef M5BTNS
     unifiedButton.begin(&M5.Display);
   #endif
@@ -613,9 +646,10 @@ void loop() {
     check_M5Buttons();
   #endif
 
-  // If the flag "doConnect" is true then we have scanned for and found the desired
-  // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
-  // connected we set the connected flag to be true.
+  #ifdef MOD_4IN_8OUT
+    Mod_4in8out();
+  #endif
+
   M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
 
   // If the flag "doConnect" is true then we have scanned for and found the desired
