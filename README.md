@@ -64,7 +64,7 @@ Conclusion: 0xFE 0xF1 0x00 0x61 is the UUID. The UUID is 36 bytes. The total msg
 
 Message format details:
 
-// ********************************************************************************************
+************************************************************************************
       
 Observation: If the ID message 0x61 sent is of a certain lemgth (41 bytes, 36 for the ID) then the name (0x62) reply is sent, otherwise the 0x62 is suppressed, still get the token reply.  Maybe a reject message collision, ?  Sending a BT address results in no reply for 0x62 (Name). Still works though. If the state engine requires the name reply msg, then you have to get the ID right.
 
