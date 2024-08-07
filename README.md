@@ -1,6 +1,6 @@
 # IC-705-BLE, BT Classic, and USB Host Serial Examples
 
-Disclainmer: this is a work in progress!
+Disclaimer: this is a work in progress!
 
 Demonstrates how to connect to the Icom IC-705 using 1 of 3 methods.  Most BT connections to the IC-705 to date (Aug 2024) have been made using BT classic SPP. With the newer MStack Core3, which uses an ESP32-S3, it does not support BT classic SPP, only has WiFi and BT5 compatible BLE.
 
