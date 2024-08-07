@@ -40,7 +40,7 @@ I set the default radio CI-V address to 0. It will autodetect the radio address 
 
 I plan to make this an SD card config file choice later, or a menu button.  Same for swapping between BT and USB Host ports modes.  
 
-For BT mode, set your radio's BT address in the code.
+For BT Clsssic mode, set your radio's BT address in the top of the main file.  Not required for BLE.  If using multiple BLE, alter the UUID number slightly to differentiate.  For both you may want to chagn the name so they display on the 705 uniquely.  The name must be 16 characters exactly.
 
 Pairing is simple and silent, and will auto-reconnect as long you you do not delete the Pairing from the radio.
 
