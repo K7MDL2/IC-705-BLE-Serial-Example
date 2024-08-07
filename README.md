@@ -20,7 +20,7 @@ Folders on this repo:
 
 3. M5Stack_Core_Basic_CI-V_Band_Decoder. I need to get a working package done soon so went with the old Core Basic module.  This is BT classic SPP and I use USB Host Serial and 4In/8out modules plus a DIN or PLC base so I can mount it. The HMI Encoder/Switch module also works when I am ready for it. For features this has asimple UIO with Frequency, band and PTT status. Will add some things like time and grid square.  The 4in/8out module is used for buffred IO (if used) and USB V1.2 module (for USB host if used). Thius one is a work in progress, the 2 above are mostly done as examples. 
 
-I am now starting to add in the code for the IO module for band decoding outputs and to break out PTT per band. As these targeted radios only have 1 PTT jack for all bands, a method to route PTT to external RF amplifiers is needed. Set a single variable in the code for Host or BT mode, and set the radio CI-V bus address if needed. There is a dormant function to auto-discover the model I-V address, I may activate that later.  This code is set up to make changing between USB and BT easily done by the UI. On my ToDo list along with more limited UI work.
+I am now starting to add in the code for the IO module for band decoding outputs and to break out PTT per band. As these targeted radios only have 1 PTT jack for all bands, a method to route PTT to external RF amplifiers is needed. Set a single variable in the code for Host or BT mode, and set the radio CI-V bus address if needed. There is a function in use now that auto-discovers the model's CI-V address.  This code is set up to make changing between USB and BT easily done by the UI. On my ToDo list along with more limited UI work.
 
 This version has the USB host capability but as of Aug 7, 2024 it runs for a limited time and stops. Hoping to solve that soon. The USB Host code example I built on supports several CPU types and I left that code in place for the case I want to later try this on Pico or some other model.
 
@@ -36,7 +36,11 @@ On my Teensy projects I run up to 3 virtual serial ports on both the Device and 
 
 To Use this with an IC-705:
 
-In the software be sure to set the radio_address to 0xA4, it is likely the default now. The IC-905 is 0xAC. I plan to make this an SD card config file choice later, or a menu button.  Same for swapping between BT and USB Host ports modes.
+I set the default radio CI-V address to 0. It will autodetect the radio address on startup when it sees the first messages. Turn the VFO dial to accelerate this. In the software, you can set the radio_address to 0xA4, for the IC-905, 0xAC. 
+
+I plan to make this an SD card config file choice later, or a menu button.  Same for swapping between BT and USB Host ports modes.  
+
+For BT mode, set your radio's BT address in the code.
 
 Pairing is simple and silent, and will auto-reconnect as long you you do not delete the Pairing from the radio.
 
