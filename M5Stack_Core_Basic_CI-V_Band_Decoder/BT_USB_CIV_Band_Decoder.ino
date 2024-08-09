@@ -683,11 +683,9 @@ void bt_loop(void)
   if (BT_enabled && !btConnected)
   //while (BT_enabled) 
   {  //} && btPaired) { 
-        for (int i=0; i < 200; i++)
+    while (!chk_Buttons())
     {
       delay(1);
-      if (chk_Buttons())
-        return;
     }
 
     draw_new_screen();
@@ -708,12 +706,6 @@ void bt_loop(void)
     else
       Serial.println("BT Transceiver not connected");
     
-    for (int i=0; i < 200; i++)
-    {
-      delay(1);
-      if (chk_Buttons())
-        return;
-    }
     draw_new_screen();
   }
 }
@@ -911,9 +903,9 @@ void display_Freq(uint64_t freq, bool force)
     M5.Lcd.setTextSize(4); // to Set the size of text from 0 to 255
 
     //M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.fillRect(0, 60, 319, 50, background_color);
-    M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf( "%13s", formatVFO(prev_freq));
+    M5.Lcd.fillRect(0, 80, 319, 40, background_color);
+    //M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
+    //M5.Lcd.printf( "%13s", formatVFO(prev_freq));
 
     M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
     M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
@@ -1004,6 +996,7 @@ void restart_USBH(void)
   Serial.println("Btn C pressed or restart called  -------------------- USB Selected ------------------------------");
   frequency = 0;
   SerialBT.disconnect();
+  SerialBT.end();
 }
 
 uint8_t chk_Buttons(void)
@@ -1015,7 +1008,16 @@ uint8_t chk_Buttons(void)
     restart_BT();
     return 1;
   }
-  if (M5.BtnC.wasReleased() || M5.BtnA.isPressed())    //M5.BtnC.pressedFor(1000, 200)) 
+  
+  if (M5.BtnB.wasReleased() || M5.BtnB.isPressed())    //  M5.BtnB.pressedFor(1000, 200)) 
+  {
+    radio_address = 0;
+    Serial.println("Scan for new radio address");
+    Get_Radio_address();
+    return 1;
+  }
+
+  if (M5.BtnC.wasReleased() || M5.BtnC.isPressed())    //M5.BtnC.pressedFor(1000, 200)) 
   {
     restart_USBH();
     return 1;
@@ -1036,27 +1038,6 @@ void app_loop(void)
     display_Freq(frequency, false);
     display_PTT(PTT, false);
     display_Band(band, false);  // true means draw the icon regardless of state
-  }
-  
-  if(USBH_connected && btConnected) {   // prioritize cable over BT for CIV bus data
-    //BT_enabled - true;
-    
-    if (!BT_enabled)
-    {
-      //SerialBT.flush();
-      //SerialBT.disconnect();
-      //SerialBT.end();
-      //btConnected = false;
-      //Serial.println("USB Host connected, disconnected BT");
-      //SerialHost.flush();
-      //delay(500);
-      //SerialHost.setDtrRts(bool dtr, bool rts);   // useful in case we have external PTT source, can key radio via USB DTR with USB Send enabled in radio
-    }
-    else
-    {
-
-
-    }
   }
 
   poll_radio();
