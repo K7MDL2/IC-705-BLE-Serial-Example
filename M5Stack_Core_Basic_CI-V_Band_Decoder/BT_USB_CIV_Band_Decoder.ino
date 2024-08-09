@@ -98,11 +98,10 @@
 //#include <M5Unified.h>
 #include "CIV.h"
 
-bool run_BT_on_startup = false;  // switches to BT after normal at startup, always tries the USB host first for stability
-bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #define IC705 0xA4
 #define IC905 0xAC
-uint8_t radio_address = IC705;  //Transceiver address.  0 allows auto-detect on first messages form radio
+uint8_t radio_address = 0;  //Transceiver address.  0 allows auto-detect on first messages form radio
 
 // ######################################################################
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
@@ -447,8 +446,7 @@ void printFrequency(uint8_t data_len) {
       frequency += (read_buffer[i] & 0x0F) * mul; mul *= 10;    // * decMulti[i * 2 + 1];
       frequency += (read_buffer[i] >> 4) * mul; mul   *= 10;      //  * decMulti[i * 2];
     }
-  Serial.printf("Freq %-11llu  datalen = %d\n", frequency, data_len);
-  Serial.printf("btConnected %d  USBH_connected %d   BT_enabled %d\n", btConnected, USBH_connected, BT_enabled);
+  Serial.printf("printfrequency: Freq %-11llu   datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   radio_address %X\n", frequency, data_len, btConnected, USBH_connected, BT_enabled, radio_address);
 }
 
 #ifdef SSP
@@ -520,7 +518,7 @@ void processCatMessages() {
   uint8_t data_len = 0;
   uint8_t data[20] = {};
 
-  while ((BT_enabled && btConnected && SerialBT.available()) || (!BT_enabled && USBH_connected && SerialHost.available()))  // &&  USBH_connected))
+  while ( btConnected && SerialBT.available() || !BT_enabled && SerialHost.available())  // &&  USBH_connected))
   {
     bool knowncommand = true;
     int i;
@@ -532,7 +530,7 @@ void processCatMessages() {
     if ((msg_len = readLine()) > 0) {
 
       //#define SEE_RAW
-      #ifdef SEE_RAW
+      #ifndef SEE_RAW
         Serial.print("Rx Raw Msg: ");
         for (uint8_t k = 0; k < msg_len; k++) {
           Serial.print(read_buffer[k], HEX);
@@ -682,7 +680,7 @@ char *formatVFO(uint64_t vfo) {
 
 void bt_loop(void) 
 {
-  if (BT_enabled && !SerialBT.connected())
+  if (BT_enabled && !btConnected)
   //while (BT_enabled) 
   {  //} && btPaired) { 
         for (int i=0; i < 200; i++)
@@ -973,7 +971,6 @@ void app_setup(void)
 
   if (BT_enabled)
     restart_BT();
-    //BT_Setup();  // turn on BlueTooth Classic SPP client and connect to a radio server
   else
     restart_USBH();
 
@@ -982,8 +979,13 @@ void app_setup(void)
 
 void restart_BT(void)
 {
+  if (btConnected) 
+  {
+    Serial.println("restart_BT was called but we are already connected!");  
+       return;
+  }
   BT_enabled = true;
-  Serial.println("Btn A pressed    ******************** BT Selected ******************************");
+  Serial.println("Btn A pressed  or restart called  ******************** BT Selected ******************************");
   frequency = 0;
   BT_Setup();
   delay(700);
@@ -993,11 +995,15 @@ void restart_BT(void)
 
 void restart_USBH(void)
 {
+  if (!BT_enabled) 
+  {
+    Serial.println("restart_USBH was called but we are already enabled");  
+       return;
+  }
   BT_enabled = false;
-  Serial.println("Btn C pressed    -------------------- USB Selected ------------------------------");
+  Serial.println("Btn C pressed or restart called  -------------------- USB Selected ------------------------------");
   frequency = 0;
-  if (btConnected) 
-    SerialBT.disconnect();
+  SerialBT.disconnect();
 }
 
 uint8_t chk_Buttons(void)
@@ -1053,19 +1059,12 @@ void app_loop(void)
     }
   }
 
-  //if(!run_BT_on_startup && !USBH_connected && (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0))   // do after a normal USB Host startup
-  //{
-  //  (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0) 
-  //  restart_USBH();
-  //  run_BT_on_startup = false;  // only do this on first boot
-  //}
-
   poll_radio();
 
   bt_loop();  // handle all BT serial messaging in place of the USB host serial
 
-  //if (Get_Radio_address())  // can autodiscuver CI-V address if not predefined.
-  //    chk_Buttons();
+  if (Get_Radio_address())  // can autodiscuver CI-V address if not predefined.
+      chk_Buttons();
 
   processCatMessages();  // look for delayed or unsolicited messages from radio
 }
