@@ -44,6 +44,7 @@
   #else
     // Default CS and INT are pin 5, 35
     M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic
+    M5_USBH_Host USBHost1(&SPI, 18, 23, 19, 5, 35);  // Core basic
     //M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 10);  // Core3 
   #endif
 #else

@@ -1,4 +1,4 @@
-/*************************************************************************
+/*********************************************************************
       ICOM CI-V Band Decoder and PTT breakout
       K7MDL 8/2024
 
@@ -38,6 +38,7 @@
 
 *********************************************************************
 *********************************************************************
+
  Adafruit invests time and resources providing this open source code,
  please support Adafruit and open-source hardware by purchasing
  products from Adafruit!
@@ -70,64 +71,62 @@
  * will forward all characters from Serial to SerialHost and vice versa.
  */
 
-#define DEBUG_SERIAL   // shuts off USB host messages to the terminal during dev.
-
 // nRF52 and ESP32 use freeRTOS, we may need to run USBhost.task() in its own rtos's thread.
-// Since USBHost.task() will put loop() into dormant state and preUSBH_connectedvent followed code from running
+// Since USBHost.task() will put loop() into dormant state and prevent followed code from running
 // until there is USB host event.
 #if defined(ARDUINO_NRF52_ADAFRUIT) || defined(ARDUINO_ARCH_ESP32)
   #define USE_FREERTOS
 #endif
 
-#include <Arduino.h>
-#include <M5Stack.h>
-#include "BluetoothSerial.h"
 // USBHost is defined in usbh_helper.h
 #include "usbh_helper.h"
+#include <Arduino.h>
+#include "BluetoothSerial.h"
+#include <M5Stack.h>
 
-extern void app_loop(void);
-extern void app_setup(void);
-
-bool USBH_connected = false;
+bool USBH_connected;
+extern bool BT_enabled;
+extern bool btConnected;
+extern uint64_t frequency;
 
 // CDC Host object
+Adafruit_USBH_CDC SerialHost1;
 Adafruit_USBH_CDC SerialHost;
-
-// Will eventually need a message broker that coordinates our radio requests with any from an externel PC.  
-// This would require picking offany replies to our messages and not forward them t the PC 
-//    to not interfere with WSJT-X by giving it unexpected reponses.
 
 // forward Seral <-> SerialHost
 void forward_serial(void) {
   uint8_t buf[64];
+  uint8_t buf1[64];
 
-  #ifndef DEBUG_SERIAL
   // Serial -> SerialHost
-  if (Serial.available()) {
-    size_t count = Serial.read(buf, sizeof(buf));
-    if (SerialHost && SerialHost.connected()) {
-      SerialHost.write(buf, count);
-      SerialHost.flush();
-    }
-  }
-
+  //if (Serial.available()) {
+  //  size_t count = Serial.read(buf, sizeof(buf));
+  //  if (SerialHost && SerialHost.connected()) {
+  //    SerialHost.write(buf, count);
+  //    SerialHost.flush();
+  //  }
+  //}
+/*
   // SerialHost -> Serial
   if (SerialHost.connected() && SerialHost.available()) {
     size_t count = SerialHost.read(buf, sizeof(buf));
-    
-    // normally we want to pass on the radio to a [possibly conencted PC but for dev and debug we want ot shut this off
-    // Also will want to share a common read buffer
-   
-      Serial.write(buf, count);
-      Serial.flush();
+    Serial.write(buf, count);
+    Serial.flush();
   }
-  #endif
+  // SerialHost1 -> Serial
+  if (SerialHost1.connected() && SerialHost1.available()) {
+    size_t count = SerialHost1.read(buf1, sizeof(buf1));
+    Serial.write(buf1, count);
+    Serial.flush();
+  }
+  */
 }
 
 #if defined(CFG_TUH_MAX3421) && CFG_TUH_MAX3421
 //--------------------------------------------------------------------+
 // Using Host shield MAX3421E controller
 //--------------------------------------------------------------------+
+#define CFG_TUD_COUNT 2
 
 #ifdef USE_FREERTOS
 
@@ -143,6 +142,14 @@ void usbhost_rtos_task(void *param) {
     USBHost.task();
   }
 }
+
+void usbhost1_rtos_task(void *param) {
+  (void) param;
+  while (1) {
+    USBHost1.task();
+  }
+}
+
 #endif
 
 //
@@ -153,19 +160,22 @@ void setup() {
 
   // init host stack on controller (rhport) 1
   USBHost.begin(1);
+  USBHost1.begin(1);
 
   // Initialize SerialHost
   SerialHost.begin(115200);
+  SerialHost1.begin(115200);
 
 #ifdef USE_FREERTOS
   // Create a task to run USBHost.task() in background
   xTaskCreate(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 3, NULL);
+  xTaskCreate(usbhost1_rtos_task, "usbh1", USBH_STACK_SZ, NULL, 3, NULL);
 #endif
   
 //  while ( !Serial ) delay(10);   // wait for native usb
   Serial.println("TinyUSB Host Serial Setup Done");
 
-  app_setup();  // call to our ESP32 app setup stuff
+  app_setup();  // setup app stuff
 }
 
 
@@ -178,10 +188,12 @@ void loop() {
 
   #ifndef USE_FREERTOS
     USBHost.task();
+    USBHost1.task();
   #endif
 
-  forward_serial();  // leave this heare
-  app_loop();       // call to our application main loop
+  //forward_serial();
+  
+  app_loop();   // call to application main loop
 }
 
 #elif defined(ARDUINO_ARCH_RP2040)
@@ -190,18 +202,16 @@ void loop() {
 //--------------------------------------------------------------------+
 
 //------------- Core0 -------------//
-void setup() 
-{
+void setup() {
   Serial.begin(115200);
   // while ( !Serial ) delay(10);   // wait for native usb
   Serial.println("TinyUSB Host Serial Echo Example");
-  app_setup();   // call to our app setup stuff
+  //app_setup();  // setup app stuff
 }
 
-void loop() 
-{  
+void loop() {
   forward_serial();
-  app_loop();   // call to application main loop
+  //app_loop();   // call to application main loop
 }
 
 //------------- Core1 -------------//
@@ -237,15 +247,22 @@ void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx,
 void tuh_cdc_mount_cb(uint8_t idx) {
   // bind SerialHost object to this interface index
   SerialHost.mount(idx);
-  Serial.println("****** SerialHost is connected to a new CDC device");
+  Serial.println("\n****** SerialHost is connected to a new CDC device");
   USBH_connected = true;
+  frequency = 0;
+  //BT_enabled= false;
   delay(1200);  // Delay first Tx or get a hang.
+  //SerialHost.flush();
 }
 
 // Invoked when a device with CDC interface is unmounted
 void tuh_cdc_umount_cb(uint8_t idx) {
   SerialHost.umount(idx);
-  Serial.println("****** SerialHost is disconnected");
+  Serial.println("\n****** SerialHost is disconnected");
   USBH_connected = false;
+  frequency = 0;  // force the screen to update if reconnecting to same frequency
+  //btConnected = false;
+  //BT_enabled = true;
+  ESP.restart();
 }
 

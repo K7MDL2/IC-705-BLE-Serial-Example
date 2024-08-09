@@ -40,13 +40,22 @@ I set the default radio CI-V address to 0. It will autodetect the radio address 
 
 I plan to make this an SD card config file choice later, or a menu button.  Same for swapping between BT and USB Host ports modes.  
 
-For BT Clsssic mode, set your radio's BT address in the top of the main file.  Not required for BLE.  If using multiple BLE, alter the UUID number slightly to differentiate.  For both you may want to chagn the name so they display on the 705 uniquely.  The name must be 16 characters exactly.
+For BT Classic mode, set your radio's BT address in the top of the main file.  Not required for BLE.  If using multiple BLE devices, alter the UUID number slightly to differentiate them.  For both you may want to change the name so they display on the 705 uniquely.  The name must be 16 characters exactly.
 
 Pairing is simple and silent, and will auto-reconnect as long you you do not delete the Pairing from the radio.
 
 To use it, go to the IC-705 Pairing Reception menu, then reset the M5Stack Core3. On boot up the ESP32-S3 will silently pair with the radio. The Pairing Reception menu will close quickly.  The device name (BT705 CIV Decoder) will show as connected in the Pairing/Connect menu.  To delete the device, touch the device name, disconnect, then long touch the device name, delete the pairing.
 
 The radio specs says the 705 is using BT4.2 so requires the ESP32 be in compatibility mode. BT5 is not the same as BT4.2 and earlier.  Will be interesting to try with BLE dongles on my IC-905 and other radios like the 9700.
+
+On 8/8/2024 I tried to auto-switch between BT and USB Host.  It gets very tricky.  You can configure BT to start up but can do so only after the USB Host has been run through a bit, else the USB host task hangs, usually causing an OS watchdog timeout and reboot, but often not. Also you only get 1 plug and unplug cycle, else timeout.  In this case a reboot is faster and easy way to work around this for now. The USB disconnect event calls ESP.restart().  
+
+Instead of auto-failover, I now have 2 buttons that switch between modes.  Doing this avoids restarts and is pretty fast. A (Left button) is BT mode, C (right button) is USB mode.  Hold the A (BT) button until you see the screen change to "Connecting to BT".  I am using auto-address discovery by default and you can swap between 2 radios this way.
+
+I tried to configure the USB Host and Peripheral (main) ports for 2 virtual serial channels. So far have not got it to work. It requires changing a config file setting. The Arduino library is preconfigured so wont pick up some edits.  They use a KConfig file approach with Cmake and have you to run esp idf.py menuconfig (once you loaded the TinyUSB component) in your project directory 'main' folder which is not set up like Arduino. the menuconfiug writes out the KConfig file where the library will look for it and override the default. CFG_TUD_COUNT 2 is the key. The ESP32-S3, maybe all ESPs, did not support this until a few months ago. There is one example file cdc-multi, but requires the above process to work.  
+
+I studied the timing of sent vs reply messages between BT and USB.  Huge difference.  On both the IC-905 and IC-705 the radio responds to all commands received in batch every 5 seconds or so. Seems pretty long. I dont think I saw this with the Teeny verson since I was getting fast PTT status. I fail to see yet how teh ESP code here is responsible. Blame it on the library! I can send transmit commands very fast. No idea if they are actually sent out real time.   The radio sends out new frequwncy values when you turn the VFO very fast and I get all of those. For a while every 4th replay was missing the first part. I rebooot theradio and never saw it again. That was USB.  BT however is very fast and every TX is answered immediately, within a few milliseconds if not the same.  So not a CPU issue, I am thinking FreRTOS host stack bugs, buffering delays.
+
 
 Technical Details:
 

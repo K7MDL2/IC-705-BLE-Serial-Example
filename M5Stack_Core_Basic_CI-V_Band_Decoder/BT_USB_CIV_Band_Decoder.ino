@@ -94,13 +94,15 @@
 
 #include <Arduino.h>
 #include "BluetoothSerial.h"
-#include <M5Stack.h>
+//#include <M5Stack.h>
+//#include <M5Unified.h>
 #include "CIV.h"
 
-bool BT_enabled = 0;  // configuration toggle between BT and USB
+bool run_BT_on_startup = false;  // switches to BT after normal at startup, always tries the USB host first for stability
+bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #define IC705 0xA4
 #define IC905 0xAC
-uint8_t radio_address = IC905;  //Transceiver address
+uint8_t radio_address = IC705;  //Transceiver address.  0 allows auto-detect on first messages form radio
 
 // ######################################################################
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
@@ -109,8 +111,9 @@ uint8_t radio_address = IC905;  //Transceiver address
 uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };
 // ######################################################################
 
-#define DATA_PIN 5  // GPIO18 input/output
-#define TUNE_PIN 2  // GPIO26 (output)
+// These pins are used byte the USB Host sheild M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic
+//#define DATA_PIN 5  // GPIO18 input/output
+//#define TUNE_PIN 2  // GPIO26 (output)
 
 #define CONTROLLER_ADDRESS 0xE0  //Controller address
 #define BROADCAST_ADDRESS 0x00
@@ -120,12 +123,14 @@ uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_RADIO_PTT    47  // poll the radio for PTT status odd numbers to stagger them ia bit
-#define POLL_RADIO_FREQ  218  // poll the radio for frequency
-#define POLL_RADIO_UTC 65132  // poll radio for time and location
+#define POLL_RADIO_PTT    27  // poll the radio for PTT status odd numbers to stagger them ia bit
+#define POLL_RADIO_FREQ   508  // poll the radio for frequency
+#define POLL_RADIO_UTC  65132  // poll radio for time and location
 
 uint8_t UTC = 1;  // 0 local time, 1 UTC time
 extern Adafruit_USBH_CDC SerialHost;
+extern Adafruit_USBH_CDC SerialHost1;
+
 extern bool USBH_connected;
 //#define SSP                           // use BT SSP - pair with a passkey
 //#ifdef SSP
@@ -161,40 +166,56 @@ const uint64_t decMulti[] = { 100000000000, 10000000000, 1000000000, 100000000, 
 #define BAUD_RATES_SIZE 4
 const uint16_t baudRates[BAUD_RATES_SIZE] = { 19200, 9600, 4800, 1200 };
 
-char title[] = "CI-V Band Decoder";
+enum band_idx {B_AM,B_160M,B_80M,B_60M,B_40M,B_30M,B_20M,B_17M,B_15M,B_12M,B_10M,B_6M,B_FM,B_AIR,
+                 B_2M,B_1_25M,B70cm,B_33cm,B_23cm,B_13cm,B_9cm,B_6cm,B_3cm,B_GEN};
+
+#define NUM_OF_BANDS B_GEN+1
+
+struct Bands {
+    char        band_name[6];  // Freindly name or label.  Default here but can be changed by user.
+    uint64_t    edge_lower;     // band edge limits for TX and for when to change to next band when tuning up or down.
+    uint64_t    edge_upper;
+};
+
+const struct Bands bands[NUM_OF_BANDS] = {
+  {   "AM",      535,     1705 },   // AM
+  { "160M",     1800,     2000 },   // 160m
+  {  "80M",     3500,     4000 },   // 80m
+  {  "60M",     5351,     5367 },   // 60m
+  {  "40M",     7000,     7300 },   // 40m
+  {  "30M",    10100,    10150 },   // 30m
+  {  "20M",    14000,    14350 },   // 20m
+  {  "17M",    18068,    18168 },   // 17m
+  {  "15M",    21000,    21450 },   // 15m
+  {  "12M",    24890,    24990 },   // 12m
+  {  "10M",    28000,    29700 },   // 10m
+  {   "6M",    50000,    54000 },   // 6m
+  {   "FM",    88000,   108000 },   // FM
+  {  "Air",   118000,   137000 },   // AIR
+  {   "2M",   144000,   148000 },   // 2m
+  {"1.25M",   222000,   225000 },   // 222
+  { "70cm",   430000,   450000 },   // 430/440
+  { "33cm",   902000,   928000 },   // 902
+  { "23cm",  1240000,  1300000 },   // 1296Mhz
+  { "13cm",  2304000,  2450000 },   // 2.3 and 2.4GHz
+  {  "9cm",  3300000,  3500000 },   // 3.3GHz
+  {  "6cm",  5650000,  5925000 },   // 5.7GHz
+  {  "3cm", 10000000, 10500000 },   // 10GHz
+  { "GENE", 0,       123000000 }    // 10GHz
+};
+
+char title[] = "CIV Band Decoder";   // make exactly 16 chards if used as the BT device name
 void callback(esp_spp_cb_event_t, esp_spp_cb_param_t *);
 uint16_t baud_rate;            //Current baud speed
-uint32_t readtimeout;          //Serial port read timeout
-uint8_t read_buffer[127];      //Read buffer
+uint32_t readtimeout = 10;          //Serial port read timeout
+static uint8_t read_buffer[2048];      //Read buffer
 uint64_t frequency;            //Current frequency in Hz
-uint8_t band = 254;
+uint8_t band = B_GEN;
 uint32_t timer;
 uint16_t background_color = BLACK;
 uint16_t text_color = WHITE;
 uint8_t PTT = 0;
 uint8_t prev_PTT = 1;
-
-#define NUM_OF_BANDS 18
-const uint32_t bands[][2] = {
-  { 1800, 2000 },      // 160m
-  { 3500, 4000 },      // 80m
-  { 5351, 5367 },      // 60m
-  { 7000, 7300 },      // 40m
-  { 10100, 10150 },    // 30m
-  { 14000, 14350 },    // 20m
-  { 18068, 18168 },    // 17m
-  { 21000, 21450 },    // 15m
-  { 24890, 24990 },    // 12m
-  { 28000, 29700 },    // 10m
-  { 50000, 54000 },    // 6m
-  { 144000, 148000 },  // 2m
-  { 430000, 450000 },   // 430/440
-  { 902000, 928000 },   // 902
-  { 1240000, 1300000 },   // 1296Mhz
-  { 2304000, 2450000 },   // 2.3 and 2.4GHz
-  { 5650000, 5925000 },   // 5.7GHz
-  { 10000000, 10500000 }   // 10GHz
-};
 
 String modes;
 
@@ -213,11 +234,11 @@ void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {  // 34
     btConnected = true;
     btPaired = true;
-    Serial.println("Client Connected");
+    Serial.println("BT Client Connected");
   } else if (event == ESP_SPP_CLOSE_EVT)  // 27
   {
     btConnected = false;
-    if (btPaired) Serial.println("Client disconnected");  // suppress when we are not paired yet
+    if (btPaired) Serial.println("BT Client disconnected");  // suppress when we are not paired yet
   }
 }
 
@@ -245,7 +266,9 @@ uint8_t readLine(void) {
   uint8_t byte;
   uint8_t counter = 0;
   uint32_t ed = readtimeout;  // not initialized!
-  if (BT_enabled) {
+
+  if (BT_enabled) 
+  {
     while (btConnected) {
       while (!SerialBT.available()) {
         if (--ed == 0 || !btConnected) return 0;  // leave the loop if BT connection is lost
@@ -259,10 +282,12 @@ uint8_t readLine(void) {
 
       if (counter >= sizeof(read_buffer)) return 0;
     }
-  } else {
+  } 
+  else 
+  {
     while (USBH_connected) {
       while (!SerialHost.available()) {
-        if (--ed == 0 || !USBH_connected) return 0;  // leave the loop if BT connection is lost
+        if (--ed == 0 || !USBH_connected) return 0;  // leave the loop if connection is lost
       }
       ed = readtimeout;
       byte = SerialHost.read();
@@ -287,7 +312,7 @@ bool searchRadio() {
 
     //Serial.println("Send out Frequency Request");
     sendCatRequest(CIV_C_F_READ, 0, 0);
-    delay(10);
+    delay(500);
     //Serial.println("Look for response from radio");
 
     if (readLine() > 0) {
@@ -304,11 +329,11 @@ bool searchRadio() {
 // ----------------------------------------
 //    get band from frequency
 // ----------------------------------------
-byte getBand(uint32_t freq) {
+byte getBand(uint64_t freq) {
   for (uint8_t i = 0; i < NUM_OF_BANDS; i++) {
-    if (freq >= bands[i][0] && freq <= bands[i][1]) {
-      if (i == NUM_OF_BANDS) return NUM_OF_BANDS;  // T1 tuner does not have different settings for 2m and UHF
-      return i + 1;
+    if (freq >= bands[i].edge_lower && freq <= bands[i].edge_upper) {
+      if (i >= B_GEN) return B_GEN;
+      return i;
     }
   }
   return 0xFF;  // no band for considered frequency found
@@ -320,7 +345,7 @@ byte getBand(uint32_t freq) {
 void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t Data_len)  // first byte in Data is length
 {
   int8_t msg_len;
-  uint8_t req[12] = { START_BYTE, START_BYTE, radio_address, CONTROLLER_ADDRESS };
+  uint8_t req[50] = { START_BYTE, START_BYTE, radio_address, CONTROLLER_ADDRESS };
 
   //Serial.print("sendCatRequest: USBH_connected = "); Serial.println(USBH_connected);
 
@@ -349,33 +374,7 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   Serial.print(" msg_len = "); Serial.print(msg_len); Serial.println(" END");
 #endif
 
-  if (BT_enabled && !SerialBT.isClosed() && SerialBT.connected()) 
-  {
-    if (msg_len < sizeof(req) - 1)  // ensure our data is not longer than our buffer
-    {
-#ifdef SEE_RAWT
-      Serial.print("Snd BT Msg: ");
-#endif
-      for (uint8_t i = 0; i <= msg_len; i++) {
-#ifdef SEE_RAWT
-        Serial.print(req[i], HEX);
-#endif
-        if (!SerialBT.write(req[i]))
-          Serial.println("sendCatRequest: BT tx: error");
-#ifdef SEE_RAWT
-        Serial.print(",");
-#endif
-      }
-#ifdef SEE_RAWT
-      Serial.print(" END TX MSG, msg_len = "); Serial.println(msg_len);
-#endif
-    } 
-    else 
-    {
-      Serial.println("sendCatRequest: BT buffer overflow");
-    }
-  } 
-  else if (USBH_connected) 
+  if (USBH_connected)
   {
     if (msg_len < sizeof(req) - 1)  // ensure our data is not longer than our buffer
     {
@@ -401,7 +400,34 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
     {
       Serial.println("sendCatRequest: USB Host buffer overflow");
     }
-  } else
+  }
+  else if (btConnected && !SerialBT.isClosed() && SerialBT.connected()) 
+  {
+    if (msg_len < sizeof(req) - 1)  // ensure our data is not longer than our buffer
+    {
+#ifdef SEE_RAWT
+      Serial.print("Snd BT Msg: ");
+#endif
+      for (uint8_t i = 0; i <= msg_len; i++) {
+#ifdef SEE_RAWT
+        Serial.print(req[i], HEX);
+#endif
+        if (!SerialBT.write(req[i]))
+          Serial.println("sendCatRequest: BT tx: error");
+#ifdef SEE_RAWT
+        Serial.print(",");
+#endif
+      }
+#ifdef SEE_RAWT
+      Serial.print(" END TX MSG, msg_len = "); Serial.println(msg_len);
+#endif
+    } 
+    else 
+    {
+      Serial.println("sendCatRequest: BT buffer overflow");
+    }
+  }
+  else
     Serial.println(" No open BT or USB Host ports to send to");
 }
 
@@ -422,6 +448,7 @@ void printFrequency(uint8_t data_len) {
       frequency += (read_buffer[i] >> 4) * mul; mul   *= 10;      //  * decMulti[i * 2];
     }
   Serial.printf("Freq %-11llu  datalen = %d\n", frequency, data_len);
+  Serial.printf("btConnected %d  USBH_connected %d   BT_enabled %d\n", btConnected, USBH_connected, BT_enabled);
 }
 
 #ifdef SSP
@@ -459,14 +486,14 @@ void BTAuthCompleteCallback(bool success) {
 // ----------------------------------------
 void sendBit(int bit) {
 
-  digitalWrite(DATA_PIN, HIGH);
+  //digitalWrite(DATA_PIN, HIGH);
   if (bit != 0) {
     delay(4);
   } else {
     delayMicroseconds(1500);
   }
 
-  digitalWrite(DATA_PIN, LOW);
+  //digitalWrite(DATA_PIN, LOW);
   delayMicroseconds(1500);
 }
 
@@ -493,7 +520,7 @@ void processCatMessages() {
   uint8_t data_len = 0;
   uint8_t data[20] = {};
 
-  while ((BT_enabled && SerialBT.available()) || (!BT_enabled && SerialHost.available()))  // &&  USBH_connected))
+  while ((BT_enabled && btConnected && SerialBT.available()) || (!BT_enabled && USBH_connected && SerialHost.available()))  // &&  USBH_connected))
   {
     bool knowncommand = true;
     int i;
@@ -504,17 +531,17 @@ void processCatMessages() {
 
     if ((msg_len = readLine()) > 0) {
 
-//#define SEE_RAW
-#ifdef SEE_RAW
-      Serial.print("Rx Raw Msg: ");
-      for (uint8_t k = 0; k < msg_len; k++) {
-        Serial.print(read_buffer[k], HEX);
-        Serial.print(",");
-      }
-      Serial.print(" msg_len = ");
-      Serial.print(msg_len);
-      Serial.println(" END");
-#endif
+      //#define SEE_RAW
+      #ifdef SEE_RAW
+        Serial.print("Rx Raw Msg: ");
+        for (uint8_t k = 0; k < msg_len; k++) {
+          Serial.print(read_buffer[k], HEX);
+          Serial.print(",");
+        }
+        Serial.print(" msg_len = ");
+        Serial.print(msg_len);
+        Serial.println(" END");
+      #endif
       if (read_buffer[0] == START_BYTE && read_buffer[1] == START_BYTE) {
         if (read_buffer[3] == radio_address) {
           if (read_buffer[2] == CONTROLLER_ADDRESS || read_buffer[2] == BROADCAST_ADDRESS) {
@@ -578,16 +605,16 @@ void sendBand(byte band) {
   const long maxWaitTime = 50;
 
   // Pull the TUNE_PIN line high for half a second
-  digitalWrite(TUNE_PIN, HIGH);
+  //digitalWrite(TUNE_PIN, HIGH);
   delay(500);
-  digitalWrite(TUNE_PIN, LOW);
+  //digitalWrite(TUNE_PIN, LOW);
 
   // The ATU will pull the DATA_PIN line HIGH for 50ms
 
   previousTime = millis();
   //while(digitalRead(DATA_PIN) == LOW) {
   // Measure time the while loop is active, and jump out after maxWaiTime.
-  // This esnures that the program does not lock in case the communication
+  // This ensures that the program does not lock in case the communication
   // with the ATU is temporarly broken
 
   //unsigned long currentTime = millis();
@@ -610,26 +637,30 @@ void sendBand(byte band) {
   // Gap between digits is 1.5ms LOW
 
   // 1st bit
-  sendBit(band & 8);
-  sendBit(band & 4);
-  sendBit(band & 2);
-  sendBit(band & 1);
+  //sendBit(band & 8);
+  //sendBit(band & 4);
+  //sendBit(band & 2);
+  //sendBit(band & 1);
 
   // Leave the line LOW
-  digitalWrite(DATA_PIN, LOW);
+  //digitalWrite(DATA_PIN, LOW);
 
   // and switch it back to an input
-  pinMode(DATA_PIN, INPUT);
+  //pinMode(DATA_PIN, INPUT);
 }
 
 void draw_new_screen(void)
 {
   M5.Lcd.fillScreen(background_color);
   M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
-  M5.Lcd.setCursor(1, 20); //Set the location of the cursor to the coordinates X and Y
+  M5.Lcd.setCursor(20, 20); //Set the location of the cursor to the coordinates X and Y
   M5.Lcd.setTextColor(YELLOW); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
   M5.Lcd.printf(title);    
   //M5.Lcd.drawString(title, 1, 20, text_color);
+  // write the Band and PTT icons
+  display_Freq(frequency, true);
+  display_PTT(PTT, true);
+  display_Band(band, true);  // true means draw the icon regardless of state
 }
 //
 //    formatVFO()
@@ -649,49 +680,74 @@ char *formatVFO(uint64_t vfo) {
   return vfo_str;
 }
 
-void bt_loop(void) {
-  while (BT_enabled && !btConnected && btPaired) {
-    M5.Lcd.fillScreen(background_color);
+void bt_loop(void) 
+{
+  if (BT_enabled && !SerialBT.connected())
+  //while (BT_enabled) 
+  {  //} && btPaired) { 
+        for (int i=0; i < 200; i++)
+    {
+      delay(1);
+      if (chk_Buttons())
+        return;
+    }
+
+    draw_new_screen();
+    Serial.println("BT Loop");
     M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     //M5.Lcd.drawString("Connecting ...", 40, 40, 2);
     M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
-    M5.Lcd.setCursor(10, 60);  //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Connecting ...");
+    M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
+    M5.Lcd.printf("Connecting to BT ...");
 
     btConnected = SerialBT.connect(bd_address, role);
     if (btConnected) {
-      Serial.println("Transceiver reconnected");
-
-      M5.Lcd.setCursor(10, 60);  //Set the location of the cursor to the coordinates X and Y
-      M5.Lcd.printf("Transceiver reconnected");
-
-      delay(500);  // let the operator see something
-
-      M5.Lcd.fillScreen(background_color);
-      M5.Lcd.setTextSize(3);            // to Set the size of text from 0 to 255
-      M5.Lcd.setCursor(1, 20);         //Set the location of the cursor to the coordinates X and Y
-      M5.Lcd.setTextColor(YELLOW);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.printf("IC-705 BT Band Decoder");
+      Serial.println("BT Transceiver reconnected");
       prev_band = 255;
       prev_frequency = 0;  // cause the screen to refresh
-      break;
+      //break;
     }
+    else
+      Serial.println("BT Transceiver not connected");
+    
+    for (int i=0; i < 200; i++)
+    {
+      delay(1);
+      if (chk_Buttons())
+        return;
+    }
+    draw_new_screen();
   }
 }
 
-void Get_Radio_address(void) {
+uint8_t Get_Radio_address(void) {
+  uint8_t retry_Count = 0;
   if ((BT_enabled && btConnected) || (USBH_connected && !BT_enabled))  // handle both USB and BT
   {
-    while (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0) {
+    while (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0) 
+    {      
       if (!searchRadio()) {
-        Serial.println("Radio not found");
+        chk_Buttons();
+        Serial.print("Radio not found - retry count = ");Serial.println(retry_Count);
+        M5.Lcd.fillRect(0, 60, 319, 50, background_color);
+        M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+        M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
+        M5.Lcd.printf("Searching for Radio %d", retry_Count);
+        delay(500);
+        if (retry_Count++ > 4)
+          break;
       } else {
-        Serial.print("Radio found at ");
-        Serial.print(radio_address, HEX);
+        Serial.print("Radio found at "); Serial.print(radio_address, HEX);
+        M5.Lcd.fillRect(0, 60, 319, 50, background_color);
+        M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+        M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
+        M5.Lcd.printf("Radio Found at %X", radio_address);
         Serial.println();
+        draw_new_screen();
       }
     }
   }
+  return retry_Count;
 }
 
 // ----------------------------------------
@@ -699,13 +755,14 @@ void Get_Radio_address(void) {
 // ----------------------------------------
 void usbh_setup(void) {
   //Serial.begin(115200);
-
 }
 
 //
 // Sets up the screen to show some connection state
 //
-void BT_Setup(void) {
+void BT_Setup(void) 
+{
+
 #if defined(SSP2) && defined(BT)  // (passkey sharing)
   //SerialBT.setPin("1234"); // doesn't seem to change anything
   SerialBT.enableSSP();
@@ -714,13 +771,14 @@ void BT_Setup(void) {
   //DiscoverAsync();  // get a list of radios with available serial ports
 #endif
 
+  draw_new_screen();
   M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
-  M5.Lcd.setCursor(10, 60);  //Set the location of the cursor to the coordinates X and Y
-  M5.Lcd.printf("Connecting ...");
+  M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
+  M5.Lcd.printf("Connecting to BT ...");
 
   SerialBT.register_callback(callback);
   // Setup bluetooth as master:
-  if (!SerialBT.begin("BT CI-V Decoder ", true))  // true = master  must be 16 characters exactly
+  if (!SerialBT.begin(title, true))  // true = master  must be 16 characters exactly
   {
     Serial.println("An error occurred initializing Bluetooth");
     //abort();
@@ -730,38 +788,54 @@ void BT_Setup(void) {
   }
 
   btConnected = SerialBT.connect(bd_address, role);
-  delay(1000);  // give time for title screen
+  delay(1000);  // give some time
+  draw_new_screen();
   Serial.print("btPaired = "); Serial.println(btPaired);
   Serial.print("btConnected = "); Serial.println(btConnected);
+ 
   if (btConnected) {
     btPaired = true;
     //M5.Lcd.fillScreen(background_color);
-    M5.Lcd.setTextColor(background_color);
+    M5.Lcd.fillRect(40, 80, 319, 40, background_color);
+    M5.Lcd.setTextColor(text_color);
     M5.Lcd.setTextSize(2);            // to Set the size of text from 0 to 255
-    M5.Lcd.setCursor(10, 60);         //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Connecting ...");  // erase connecting
+    M5.Lcd.setCursor(40, 80);         //Set the location of the cursor to the coordinates X and Y
+    M5.Lcd.printf("Connected & Paired to BT");  // erase connecting
   } else
-    Serial.println("Pair to Radio");
+      Serial.println("Pair to Radio");
+  draw_new_screen();
 }
 
 // -----------------------------------------------------------------------
 //         Poll tadio for PTT and when CIV Echo Back is off, frequency
 // --------------------------------------------------------------------------
-void poll_radio(void) {
+void poll_radio(void) 
+{
   static uint32_t time_last_freq = millis();
   static uint32_t time_last_UTC = millis();
   static uint32_t time_last_ptt = millis();
 
-  if ((!BT_enabled && !USBH_connected) || (BT_enabled && !btConnected)) {
-    Serial.println("poll_radio: No ports open, nothing to do");
+  if (USBH_connected && btConnected)
+    //Serial.println("poll_radio: Both enabled, Switch to USB Host port");
+    //Serial.print("+");
+  if (USBH_connected && !btConnected)
+    //Serial.println("poll_radio: Using USB Host port");
+    ;//Serial.print("U");
+  if (!USBH_connected && btConnected)
+    //Serial.println("poll_radio: Using BT port");
+    ;//Serial.print("B");
+  if (!USBH_connected && !btConnected) {
+    //Serial.println("poll_radio: No ports open, nothing to do");
+    //Serial.print("-");
     return;  // nothing to send to
   }
 
-  if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0) {
+  if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0)
+  {
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
     {
       sendCatRequest(CIV_C_F_READ, 0, 0);  // Get TX status
-      delay(2);
+      delay(10);
       processCatMessages();
       band = getBand(frequency / 1000);
       time_last_freq = millis();
@@ -770,18 +844,18 @@ void poll_radio(void) {
     if (millis() >= time_last_ptt + POLL_RADIO_PTT)  // poll every X ms
     {
       sendCatRequest(CIV_C_TX, 0, 0);  // Get TX status
-      delay(2);
+      delay(10);
       processCatMessages();
       time_last_ptt = millis();
     }
 
     if (millis() >= time_last_UTC + POLL_RADIO_UTC)  // poll every X ms
     {
-      if (radio_address == 0xAC)                   //905
+      if (radio_address == IC905)                   //905
         sendCatRequest(CIV_C_UTC_READ_905, 0, 0);  //CMD_READ_FREQ);
-      else if (radio_address == 0xA4)              // 705
+      else if (radio_address == IC705)              // 705
         sendCatRequest(CIV_C_UTC_READ_705, 0, 0);  //CMD_READ_FREQ);
-      delay(5);
+      delay(10);
       processCatMessages();
       sendCatRequest(CIV_C_MY_POSIT_READ, 0, 0);  //CMD_READ_FREQ);
       delay(10);
@@ -791,13 +865,13 @@ void poll_radio(void) {
   }
 }
 
-void display_PTT(uint8_t PTT_state)
+void display_PTT(uint8_t PTT_state, bool force)
 {
   static uint8_t prev_PTT_state = 1;
   char PTT_Tx[] = " Tx ";
   char PTT_Rx[] = " Rx ";
 
-  if (PTT_state != prev_PTT_state)
+  if (PTT_state != prev_PTT_state || force)
   {
     Serial.print("*** PTT = ");Serial.println(PTT_state);
 
@@ -829,46 +903,51 @@ void display_PTT(uint8_t PTT_state)
   }
  }
 
-void display_Freq(uint64_t freq)
+void display_Freq(uint64_t freq, bool force)
 {
   static uint64_t prev_freq;
-  if (freq != prev_freq)
+  if (freq != prev_freq && frequency != 0 && !force)
   {    
-    Serial.printf("VFOA: %13sMHz - Band: %d\n", formatVFO(freq), band);
-    Serial.println(freq);
+    Serial.printf("VFOA: %13sMHz - Band: %s\n", formatVFO(freq), bands[band].band_name);
+    //Serial.println(freq);
     M5.Lcd.setTextSize(4); // to Set the size of text from 0 to 255
 
-    M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.setCursor(1, 80); //Set the location of the cursor to the coordinates X and Y
+    //M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.fillRect(0, 60, 319, 50, background_color);
+    M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
     M5.Lcd.printf( "%13s", formatVFO(prev_freq));
 
     M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.setCursor(1, 80); //Set the location of the cursor to the coordinates X and Y
+    M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
     M5.Lcd.printf( "%13s", formatVFO(freq));
 
-    prev_freq = freq;
+    if (force)
+      prev_freq = 0;
+    else 
+      prev_freq = freq;
   }
 }
 
-void display_Band(uint8_t _band)
+void display_Band(uint8_t _band, bool force)
 {
   static uint8_t prev_band = 255;
   
-  if (_band != prev_band)
+  if (_band != prev_band || force)
   {    
     
     //sendBand(band);   // change the IO pins to match band
     
-    Serial.printf("Band %d\n", band);
+    Serial.printf("Band %s\n", bands[band].band_name);
 
     M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
     M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.fillRect(0, 70, 319, 40, background_color);
     M5.Lcd.setCursor(70, 130); //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Band: %3d", prev_band);
+    M5.Lcd.printf("Band: %s", bands[prev_band].band_name);
 
     M5.Lcd.setTextColor(CYAN); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
     M5.Lcd.setCursor(70, 130); //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Band: %3d", band);
+    M5.Lcd.printf("Band: %s", bands[band].band_name);
     prev_band = _band;
   }
 }
@@ -885,32 +964,108 @@ void display_Band(uint8_t _band)
 void app_setup(void) 
 {
   M5.begin();
+  M5.Power.begin();
+  //M5.Power.setPowerVin(1);
+  Serial.println(M5.Power.getBatteryLevel());
   M5.Lcd.setBrightness(120);
-  draw_new_screen();
+  
+  usbh_setup();  // Just talk normal USB serial
 
   if (BT_enabled)
-    BT_Setup();  // turn on BlueTooth Classic SPP client and connect to a radio server
+    restart_BT();
+    //BT_Setup();  // turn on BlueTooth Classic SPP client and connect to a radio server
   else
-    usbh_setup();  // Just talk normal USB serial
+    restart_USBH();
+
+  draw_new_screen();
+}
+
+void restart_BT(void)
+{
+  BT_enabled = true;
+  Serial.println("Btn A pressed    ******************** BT Selected ******************************");
+  frequency = 0;
+  BT_Setup();
+  delay(700);
+  SerialBT.flush();
+ 
+}
+
+void restart_USBH(void)
+{
+  BT_enabled = false;
+  Serial.println("Btn C pressed    -------------------- USB Selected ------------------------------");
+  frequency = 0;
+  if (btConnected) 
+    SerialBT.disconnect();
+}
+
+uint8_t chk_Buttons(void)
+{ 
+  M5.update();
+  
+  if (M5.BtnA.wasReleased() || M5.BtnA.isPressed())    //  M5.BtnA.pressedFor(1000, 200)) 
+  {
+    restart_BT();
+    return 1;
+  }
+  if (M5.BtnC.wasReleased() || M5.BtnA.isPressed())    //M5.BtnC.pressedFor(1000, 200)) 
+  {
+    restart_USBH();
+    return 1;
+  }
+  return 0;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // called by main USBHost comms loop
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void app_loop(void) {
+void app_loop(void) 
+{
+  chk_Buttons();
+  
+  //Serial.print(".");
+  if (frequency != 0)
+  {
+    display_Freq(frequency, false);
+    display_PTT(PTT, false);
+    display_Band(band, false);  // true means draw the icon regardless of state
+  }
+  
+  if(USBH_connected && btConnected) {   // prioritize cable over BT for CIV bus data
+    //BT_enabled - true;
+    
+    if (!BT_enabled)
+    {
+      //SerialBT.flush();
+      //SerialBT.disconnect();
+      //SerialBT.end();
+      //btConnected = false;
+      //Serial.println("USB Host connected, disconnected BT");
+      //SerialHost.flush();
+      //delay(500);
+      //SerialHost.setDtrRts(bool dtr, bool rts);   // useful in case we have external PTT source, can key radio via USB DTR with USB Send enabled in radio
+    }
+    else
+    {
 
-  //Serial.print("USBH_connected = "); Serial.println(USBH_connected);
+
+    }
+  }
+
+  //if(!run_BT_on_startup && !USBH_connected && (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0))   // do after a normal USB Host startup
+  //{
+  //  (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0) 
+  //  restart_USBH();
+  //  run_BT_on_startup = false;  // only do this on first boot
+  //}
 
   poll_radio();
 
   bt_loop();  // handle all BT serial messaging in place of the USB host serial
 
-  Get_Radio_address();  // can autodiscuver CI-V address if not predefined.
+  //if (Get_Radio_address())  // can autodiscuver CI-V address if not predefined.
+  //    chk_Buttons();
 
   processCatMessages();  // look for delayed or unsolicited messages from radio
-
-  display_Freq(frequency);
-  display_PTT(PTT);
-  display_Band(band);
-  
 }
