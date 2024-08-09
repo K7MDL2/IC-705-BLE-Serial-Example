@@ -98,7 +98,7 @@
 //#include <M5Unified.h>
 #include "CIV.h"
 
-bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #define IC705 0xA4
 #define IC905 0xAC
 uint8_t radio_address = 0;  //Transceiver address.  0 allows auto-detect on first messages form radio
@@ -649,6 +649,7 @@ void sendBand(byte band) {
 
 void draw_new_screen(void)
 {
+  //erial.println("+++++++++draw new screen");
   M5.Lcd.fillScreen(background_color);
   M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
   M5.Lcd.setCursor(20, 20); //Set the location of the cursor to the coordinates X and Y
@@ -700,7 +701,7 @@ void bt_loop(void)
     if (btConnected) {
       Serial.println("BT Transceiver reconnected");
       prev_band = 255;
-      prev_frequency = 0;  // cause the screen to refresh
+      frequency = 0;  // cause the screen to refresh
       //break;
     }
     else
@@ -719,20 +720,21 @@ uint8_t Get_Radio_address(void) {
       if (!searchRadio()) {
         chk_Buttons();
         Serial.print("Radio not found - retry count = ");Serial.println(retry_Count);
-        M5.Lcd.fillRect(0, 60, 319, 50, background_color);
+        M5.Lcd.fillRect(15, 70, 319, 40, background_color);
         M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
         M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
         M5.Lcd.printf("Searching for Radio %d", retry_Count);
-        delay(500);
+        delay(1000);
         if (retry_Count++ > 4)
           break;
       } else {
         Serial.print("Radio found at "); Serial.print(radio_address, HEX);
-        M5.Lcd.fillRect(0, 60, 319, 50, background_color);
+        M5.Lcd.fillRect(15, 70, 319, 40, background_color);
         M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
         M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
         M5.Lcd.printf("Radio Found at %X", radio_address);
         Serial.println();
+        delay(1000);
         draw_new_screen();
       }
     }
@@ -786,7 +788,7 @@ void BT_Setup(void)
   if (btConnected) {
     btPaired = true;
     //M5.Lcd.fillScreen(background_color);
-    M5.Lcd.fillRect(40, 80, 319, 40, background_color);
+    M5.Lcd.fillRect(40, 70, 319, 40, background_color);
     M5.Lcd.setTextColor(text_color);
     M5.Lcd.setTextSize(2);            // to Set the size of text from 0 to 255
     M5.Lcd.setCursor(40, 80);         //Set the location of the cursor to the coordinates X and Y
@@ -896,14 +898,15 @@ void display_PTT(uint8_t PTT_state, bool force)
 void display_Freq(uint64_t freq, bool force)
 {
   static uint64_t prev_freq;
-  if (freq != prev_freq && frequency != 0 && !force)
+
+  if ((freq != prev_freq && frequency != 0) || force)
   {    
     Serial.printf("VFOA: %13sMHz - Band: %s\n", formatVFO(freq), bands[band].band_name);
     //Serial.println(freq);
     M5.Lcd.setTextSize(4); // to Set the size of text from 0 to 255
 
     //M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.fillRect(0, 80, 319, 40, background_color);
+    M5.Lcd.fillRect(5, 70, 319, 40, background_color);
     //M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
     //M5.Lcd.printf( "%13s", formatVFO(prev_freq));
 
@@ -931,7 +934,7 @@ void display_Band(uint8_t _band, bool force)
 
     M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
     M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.fillRect(0, 70, 319, 40, background_color);
+    M5.Lcd.fillRect(70, 120, 319, 30, background_color);
     M5.Lcd.setCursor(70, 130); //Set the location of the cursor to the coordinates X and Y
     M5.Lcd.printf("Band: %s", bands[prev_band].band_name);
 
