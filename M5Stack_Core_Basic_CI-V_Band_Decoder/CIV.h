@@ -20,6 +20,224 @@ inline uint8_t bcdByte(const uint8_t x) { return  (((x & 0xf0) >> 4) * 10) + (x 
 //inline uint8_t bcdByteEncode(const uint8_t x) const { return ((x / 10) << 4) + (x % 10); }
 inline uint8_t bcdByteEncode(const uint8_t x) { return ((x / 10) << 4) + (x % 10); }
 
+/* ========================================
+ *  geo.c
+ *
+ *  Converts Lat and Long to extended maidenhead grid squares 
+ *
+ * ========================================
+*/
+
+/* geo.c Ham Radio functions for orientation on earth – Copyright 2010 This program is free software; you can redistribute it
+* and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either
+* version 3, or (at your option) any later version.
+* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+* You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+/*
+*
+* Next the function that converts the position to the Maidenhead locator. It could easily have been written just to 
+* accept two arguments for the position, but in this case the structure is passed by address to the function for evaluation. 
+*
+* The return value of the function is best provided by the calling routine, so the second argument is the address of a string
+* (i.e. an array of type char) where the function will return the result. This is quite a bit more complicated that most
+* languages which use dynamic memory allocation and garbage collection to allow functions to return strings.
+*
+* I use the return value here to indicate success or failure, but have no failure conditions. I suppose a latitude of less than -90 or more than +90 would suffice. For longitude I thing wrapping (e.g. 181E = 179W) is sufficient, which is what the function does.
+*
+*/
+
+/* Global variables for handling GPS conversion to Maindernhead grid square  */
+#define NMEA_MAX_LENGTH  (120)
+#define GRIDSQUARE_LEN  (9u)
+char Grid_Square[GRIDSQUARE_LEN];   /* 10 char grid square max to be used - store d here as last known good Grid Flash icon if no valid GPS input*/
+
+struct position {
+    double latitude;
+    double longitude;
+};
+
+struct position p[1] = {};
+
+static char Latitude[14];    /* size to hold longest values supplied by GPS, assuming 10 plus null for now   */
+static char Longitude[14];
+extern char Grid_Square[];
+extern struct position p[];
+/*
+* The algorithm is fairly straightforward. The scaling array provides divisors to divide up the space into the required number of sections,
+* which is 18 for for the field, 10 for the square, 24 for the subsquare, 10 for the extended square, then 24, then 10. 
+* The limit is 6 pairs which is 2 more than is used even in the most detailed versions (8 characters in all). 
+* The divisor is also used in the fmod function to narrow down the range to the next highest order square that we’re dividing up.
+* The scaling array could be precalculated, but I figure the optimizing compiler would take care of that. 
+* I also thought the values could be scaled up at the beginning of the function, then use integer arithmetic to do the conversion. 
+* It might be a bit faster.
+*
+*/
+
+/*
+To run it “./geo lat long”, e.g. “./geo 43.999 -79.495” which yields FN03gx09
+*/
+
+/*  Parse the GPS NMEA ASCII GPGGA string for the time, latitude and longitude  */
+
+// reverses a string 'str' of length 'len' 
+void reverse(char *str, int len) 
+{ 
+    int i=0, j=len-1, temp; 
+    while (i<j) 
+    { 
+        temp = str[i]; 
+        str[i] = str[j]; 
+        str[j] = temp; 
+        i++; j--; 
+    } 
+} 
+ // Converts a given integer x to string str[].  d is the number 
+ // of digits required in output. If d is more than the number 
+ // of digits in x, then 0s are added at the beginning. 
+int intToStr(int x, char str[], int d) 
+{ 
+    int i = 0; 
+    while (x) 
+    { 
+        str[i++] = (x%10) + '0'; 
+        x = x/10; 
+    } 
+  
+    // If number of digits required is more, then 
+    // add 0s at the beginning 
+    while (i < d) 
+        str[i++] = '0'; 
+  
+    reverse(str, i); 
+    str[i] = '\0'; 
+    return i; 
+} 
+
+ // Converts a floating point number to string. 
+void ftoa(float n, char *res, int afterpoint) 
+{ 
+    // Extract integer part 
+    int ipart = (int)n; 
+  
+    // Extract floating part 
+    float fpart = n - (float)ipart; 
+  
+    // convert integer part to string 
+    int i = intToStr(ipart, res, 0); 
+  
+    // check for display option after point 
+    if (afterpoint != 0) 
+    { 
+        res[i] = '.';  // add dot 
+  
+        // Get the value of fraction part upto given no. 
+        // of points after dot. The third parameter is needed 
+        // to handle cases like 233.007 
+        fpart = fpart * pow(10, afterpoint); 
+  
+        intToStr((int)fpart, res + i + 1, afterpoint); 
+    } 
+}
+
+int positionToMaidenhead(char m[])
+{
+
+    const int pairs=4;
+    const double scaling[]={360.,360./18.,(360./18.)/10., \
+    ((360./18.)/10.)/24.,(((360./18.)/10.)/24.)/10., \
+    ((((360./18.)/10.)/24.)/10.)/24., \
+    (((((360./18.)/10.)/24.)/10.)/24.)/10.};
+    int i;
+    int index;
+
+    for (i=0;i<pairs;i++)
+    {
+        index = (int)floor(fmod((180.0+p->longitude), scaling[i])/scaling[i+1]); 
+        m[i*2] = (i&1) ? 0x30+index : (i&2) ? 0x61+index : 0x41+index;
+        index = (int)floor(fmod((90.0+p->latitude), (scaling[i]/2))/(scaling[i+1]/2));
+        m[i*2+1] = (i&1) ? 0x30+index : (i&2) ? 0x61+index : 0x41+index;
+    }
+    m[pairs*2]=0;
+    return 1;  // success
+}
+
+/*  Convert Alt and Lon to MH now */
+
+int Convert_to_MH(void)
+{
+    char m[9];
+
+   // if(GPS_Status == GPS_STATUS_LOCK_INVALID || msg_Complete == 0)   
+   //     return 1;  /* if we are here with invalid data then exit.  LAt and LOnwill have text which cannot be computered of cour     */
+    /*  Get from GPS Serial input later */
+    p->latitude=atof(Latitude);
+    p->longitude=atof(Longitude);
+
+    if (positionToMaidenhead(m))
+    {   
+        strncpy(Grid_Square,m,8);
+        return 1;  // Success               
+    }
+    else
+    {
+        strcpy(Grid_Square,"Invalid\0");
+        return 0; // fail      /*  Can use later to skip displaying anything when have invalid or no GPS input   */
+    }
+}
+
+void ConvertToMinutes(char _gps_msg[])
+{
+    double  longitude_d, longitude_m, latitude_d, latitude_m;
+    char    ns='?', ew='?';
+    char    Degrees[13];
+    char    Minutes[13];
+    char    tempstring[12];
+    char *ptr = _gps_msg;
+
+    strncpy(Latitude, ptr, 9);      
+    strncpy(Degrees,Latitude,2);
+    Degrees[2] = '\0';
+    latitude_d = atoi(Degrees);
+    strncpy(Minutes,&Latitude[2],7);
+    Minutes[9] = '\0';
+    latitude_m = atof(Minutes);
+    latitude_m /= 60;
+    latitude_d = latitude_d + latitude_m;    
+    ftoa(latitude_d, tempstring, 6);  
+  
+    /*  use N/S to set neg or pos */ 
+    ptr = strchr(ptr+1, ',');
+    ns = ptr[1] == ',' ? '?' : ptr[1];  /*  get the north south letter */
+    if(ns == 'S')
+        sniprintf(Latitude, 11, "%c%s", '-', tempstring);       /*  the ftoa function does not handle neg numbers */
+    else
+        sniprintf(Latitude, 11, "%c%s", ' ', tempstring);    
+  
+    ptr = strchr(ptr+1, ',');
+    strncpy(Longitude, ptr+1, 10);
+    strncpy(Degrees,Longitude,3);
+    Degrees[3] = '\0';
+    longitude_d = atoi(Degrees);
+    strncpy(Minutes,&Longitude[3],8);
+    Minutes[9] = '\0';
+    longitude_m = atof(Minutes);
+    longitude_m /= 60;
+    longitude_d = longitude_d + longitude_m;
+    ftoa(longitude_d, tempstring, 9);
+    
+    ptr = strchr(ptr+1, ',');
+    ew = ptr[1] == ',' ? '?' : ptr[1];
+    
+    /*  use E/W to set neg or pos */
+    if(ew == 'W')
+        sniprintf(Longitude, 13, "%c%s", '-', tempstring);        /*  the ftoa function does not handle neg numbers */    
+    else
+        sniprintf(Longitude, 13, "%c%s", ' ', tempstring); 
+}        
+ 
 
 // command "body" of the CIV commands currently in use
 // Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.
@@ -164,7 +382,7 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
 //  3. add the new switch case statement with the new enum index
 //
 
-//#define DBG_CIV1
+#define DBG_CIV1
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t read_buffer[])
 { 
@@ -258,6 +476,14 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
               Serial.printf("UTC Time: %d:%d:%d  %d/%d/20%d\n",_hr,_min,_sec,_month,_day,_yr); 
               setTime(_hr,_min,_sec,_day,_month,_yr);  // display UTC time
             }
+
+            // Extract and Process Lat and Long for Maidenhead Grid Square stored in global Grid_Square[]
+            char GPS_Msg[NMEA_MAX_LENGTH] = {"4746.92382,N,12201.98606,W\0"};
+            //strcpy(GPS_Msg, "4746.92382,N,12201.98606,W\0"};
+            ConvertToMinutes(GPS_Msg);
+            Convert_to_MH();
+            Serial.printf("CIV.H: Lat = %s  Long = %s  Grid Square is %s\n", Latitude, Longitude, Grid_Square);
+
             break;
           }  // MY Position
 
@@ -265,4 +491,5 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           //knowncommand = false;
   }
 }
+
 #endif // CIV.ino header file

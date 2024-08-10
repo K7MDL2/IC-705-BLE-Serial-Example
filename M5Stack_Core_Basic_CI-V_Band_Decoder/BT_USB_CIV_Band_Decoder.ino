@@ -219,6 +219,7 @@ uint16_t background_color = BLACK;
 uint16_t text_color = WHITE;
 uint8_t PTT = 0;
 uint8_t prev_PTT = 1;
+extern char Grid_Square[];
 
 String modes;
 
@@ -873,6 +874,7 @@ void draw_new_screen(void)
   display_Band(band, true);  // true means draw the icon regardless of state
   display_Xvtr(1, true);
   display_Time(UTC, true);
+  display_Grid(Grid_Square, true);
 }
 
 //  _UTC does nothing now but can be used to change a future clock label
@@ -1022,6 +1024,27 @@ void display_Band(uint8_t _band, bool _force)
   }
 }
 
+void display_Grid(char _grid[], bool _force)
+{
+  static char _last_grid[9] = {};
+  // call to convert the strings for Lat and long fronm CIV to floats and then caluclate grid 
+  if ((strcmp(_last_grid, _grid)) || _force)
+  {    
+    int x = 8;
+    int y = 184;
+    int f = 4;
+    //sendBand(band);   // change the IO pins to match band
+    Serial.println(_grid);
+    M5.Lcd.setTextDatum(ML_DATUM); 
+    Serial.printf("Grid Square = %s\n",_grid);
+    M5.Lcd.setTextColor(background_color, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.drawString("" + String(_grid), x, y, f);
+    M5.Lcd.setTextColor(TFT_DARKGREEN, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.drawString("" + String(_grid), x, y, f);
+    strcpy(_last_grid, _grid);
+  }
+}
+
 void restart_BT(void)
 {
   if (btConnected) 
@@ -1129,6 +1152,7 @@ void app_loop(void)
     display_PTT(PTT, false);
     display_Band(band, false);  // true means draw the icon regardless of state
     display_Xvtr(1, false);
+    display_Grid(Grid_Square, false);
   }
 
   poll_radio();
