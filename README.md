@@ -14,9 +14,9 @@ Demonstrates how to connect to the Icom IC-705 using 1 of 3 methods.  Most BT co
 
 Here is a Core Basic as of Aug 9, 2024.  Now sporting a UI makeover.  BT Classic and USB Host options, plus the USB to the PC.  Note the button labels to switch connection modes.  Search will force a look for a new radio address.  Probably replace with a menu system.  XV icon is lit up when a transverter band is active from a (future) band select window, or input wiring from a radio or switch.  The TX icon emulates the 705/905 TX status icon.  It is polling TX every 27ms or so. A bit better option is to connect the send output (PTT) into one of the decoder 4 inputs where it will get routed to an output based on the band active.  
 
-Lat, Long, Time, Date are all in the CAT myPosition message. Grid is not passed along via CI-V. I calculate the grid square and display on the screen.  An 8 digit Grid Sqaure location was added below the Band: label after the photo below was taken.  
+Lat, Long, Time, Date are all in the CAT myPosition message. Grid is not passed along via CI-V so I calculate the 8-digit grid square and display on the screen below the Band: label.  Also added a transverter status icon in prep for that feature coming up.
 
-![Aug-9-2024_UI_makeover-small](https://github.com/user-attachments/assets/c933bbaa-b04f-4ece-adbf-eba15ba29e78)
+![Aug-10-2024_UI_Xvtr_grid](https://github.com/user-attachments/assets/98c3a17e-c408-4c06-ae43-b29185718601)
 
 
 A Core3-SE connected via BLE to the IC-705
@@ -35,7 +35,7 @@ Old and New models posing for a family picture.  The Core3-SE has 4-In/8-Out, HM
 
 2. IC-705_BLE_Decoder_Simple: This an extended version of the simple program above.  Nothing fancy but it will auto-reconnect a soon as it can find the server again.  I may add a few features but it is largely done, serving its purpose for now.  This and the UART example above were tested on a M5Stack Core3-SE. The CPU model is new and the IO libraries are still catching up. I have not yet got the HMI encoder and 4In/8Out module working. Or the USB Host moduleyet, just have not tested that yet.
 
-3. M5Stack_Core_Basic_CI-V_Band_Decoder. This is BT Classic SPP and USB Host.  The USB Host code example I built on supports several CPU types and I left that code in place for the case I want to later try this on Pico or some other model.  I need to get a working package done soon so went with the old Core Basic module which has no BLE.  I use USB Host Serial and 4In/8out modules plus a DIN or PLC base so I can mount it. The HMI Encoder/Switch module also works when I am ready for it. For features this has a simple UI with Frequency, band and PTT status. Will add some things like time and grid square. This one is a work in progress, the 2 above are mostly done as examples. 
+3. M5Stack_Core_Basic_CI-V_Band_Decoder. This is BT Classic SPP and USB Host.  The USB Host code example I built on supports several CPU types and I left that code in place for the case I want to later try this on Pico or some other model.  I need to get a working package done soon so went with the old Core Basic module which has no BLE.  I use USB Host Serial and 4In/8out modules plus a DIN or PLC base so I can mount it. The HMI Encoder/Switch module also works when I am ready for it. UI has Frequency, band, PTT, Xvtr, Time, dater, grid square and menu buttons. This one is a work in progress, the 2 above are mostly done as examples. 
 
 I am now starting to add in the code for the IO module for band decoding outputs and to break out PTT per band. As these targeted radios only have 1 PTT jack for all bands, a method to route PTT to external RF amplifiers is needed. Set a single variable in the code for Host or BT mode, and set the radio CI-V bus address if needed. There is a function in use now that auto-discovers the model's CI-V address.  This code is set up to make changing between USB and BT easily done by the UI. On my ToDo list along with more limited UI work.
 
