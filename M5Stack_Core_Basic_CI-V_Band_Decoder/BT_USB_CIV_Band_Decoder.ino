@@ -91,14 +91,18 @@
 
       It is important now to set the "bd_address" in the next lines!
 *************************************************************************/
-
-#include <Arduino.h>
-#include "BluetoothSerial.h"
-//#include <M5Stack.h>
+#include <M5Stack.h>
 //#include <M5Unified.h>
-#include "CIV.h"
+//#include <Arduino.h>
 
-bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+#include <Wire.h>
+#include "BluetoothSerial.h"
+#include "MODULE_4IN8OUT.h"
+MODULE_4IN8OUT module;
+#include "CIV.h"
+#include "time.h"
+
+bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #define IC705 0xA4
 #define IC905 0xAC
 uint8_t radio_address = 0;  //Transceiver address.  0 allows auto-detect on first messages form radio
@@ -123,8 +127,8 @@ uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
 #define POLL_RADIO_PTT    27  // poll the radio for PTT status odd numbers to stagger them ia bit
-#define POLL_RADIO_FREQ   508  // poll the radio for frequency
-#define POLL_RADIO_UTC  65132  // poll radio for time and location
+#define POLL_RADIO_FREQ  508  // poll the radio for frequency
+#define POLL_RADIO_UTC  1000  // poll radio for time and location
 
 uint8_t UTC = 1;  // 0 local time, 1 UTC time
 extern Adafruit_USBH_CDC SerialHost;
@@ -203,7 +207,7 @@ const struct Bands bands[NUM_OF_BANDS] = {
   { "GENE", 0,       123000000 }    // 10GHz
 };
 
-char title[] = "CIV Band Decoder";   // make exactly 16 chards if used as the BT device name
+String title = "CIV Band Decoder";   // make exactly 16 chards if used as the BT device name
 void callback(esp_spp_cb_event_t, esp_spp_cb_param_t *);
 uint16_t baud_rate;            //Current baud speed
 uint32_t readtimeout = 10;          //Serial port read timeout
@@ -455,10 +459,10 @@ void BTConfirmRequestCallback(uint32_t numVal) {
   confirmRequestPending = true;
   Serial.print("Confirmation ID: ");
   Serial.println(numVal);
-  M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-  M5.Lcd.setTextSize(2);                              // to Set the size of text from 0 to 255
-  M5.Lcd.setCursor(10, 90);                           //Set the location of the cursor to the coordinates X and Y
-  M5.Lcd.printf(" Passkey is %d\n", numVal);
+  //M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  //M5.Lcd.setTextSize(2);                              // to Set the size of text from 0 to 255
+  //M5.Lcd.setCursor(10, 90);                           //Set the location of the cursor to the coordinates X and Y
+  //M5.Lcd.drawString(" Passkey is %d" + String(numVal), 10, 90, 5);
   temp_passkey = numVal;
   SerialBT.confirmReply(true);
 }
@@ -468,10 +472,10 @@ void BTAuthCompleteCallback(bool success) {
     Serial.println("Pairing success!!");
     btPaired = true;
     confirmRequestPending = false;
-    M5.Lcd.setTextColor(background_color);            //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.setTextSize(2);                            // to Set the size of text from 0 to 255
-    M5.Lcd.setCursor(10, 90);                         //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf(" Passkey is %d\n", temp_passkey);  // erase passkey from screen now that we are paired
+    //M5.Lcd.setTextColor(background_color);            //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+    //M5.Lcd.setTextSize(2);                            // to Set the size of text from 0 to 255
+    //M5.Lcd.setCursor(10, 90);                         //Set the location of the cursor to the coordinates X and Y
+    //M5.Lcd.drawString(" Passkey is %d" + String(temp_passkey), 10, 90, 5);  // erase passkey from screen now that we are paired
   } else {
     Serial.println("Pairing failed, (Timed out or rejected by user!!");
     btPaired = false;
@@ -647,38 +651,6 @@ void sendBand(byte band) {
   //pinMode(DATA_PIN, INPUT);
 }
 
-void draw_new_screen(void)
-{
-  //erial.println("+++++++++draw new screen");
-  M5.Lcd.fillScreen(background_color);
-  M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
-  M5.Lcd.setCursor(20, 20); //Set the location of the cursor to the coordinates X and Y
-  M5.Lcd.setTextColor(YELLOW); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-  M5.Lcd.printf(title);    
-  //M5.Lcd.drawString(title, 1, 20, text_color);
-  // write the Band and PTT icons
-  display_Freq(frequency, true);
-  display_PTT(PTT, true);
-  display_Band(band, true);  // true means draw the icon regardless of state
-}
-//
-//    formatVFO()
-//
-char *formatVFO(uint64_t vfo) {
-  static char vfo_str[20] = { "" };
-  //if (ModeOffset < -1 || ModeOffset > 1)
-  //vfo += ModeOffset;  // Account for pitch offset when in CW mode, not others
-
-  uint32_t MHz = (vfo / 1000000 % 1000000);
-  uint16_t Hz = (vfo % 1000);
-  uint16_t KHz = ((vfo % 1000000) - Hz) / 1000;
-  sprintf(vfo_str, "%lu.%03u.%03u", MHz, KHz, Hz);
-
-  ///sprintf(vfo_str, "%-13s", "012345.123.123");  // 999GHZ max  47G = 47000.000.000
-  ///DPRINT("New VFO: ");DPRINTLN(vfo_str);
-  return vfo_str;
-}
-
 void bt_loop(void) 
 {
   if (BT_enabled && !btConnected)
@@ -691,11 +663,11 @@ void bt_loop(void)
 
     draw_new_screen();
     Serial.println("BT Loop");
-    M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+    //M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     //M5.Lcd.drawString("Connecting ...", 40, 40, 2);
-    M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
-    M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Connecting to BT ...");
+    //M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
+    //M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
+    //M5.Lcd.drawString("Connecting to BT ...", 40, 80, 3);
 
     btConnected = SerialBT.connect(bd_address, role);
     if (btConnected) {
@@ -720,19 +692,19 @@ uint8_t Get_Radio_address(void) {
       if (!searchRadio()) {
         chk_Buttons();
         Serial.print("Radio not found - retry count = ");Serial.println(retry_Count);
-        M5.Lcd.fillRect(15, 70, 319, 40, background_color);
-        M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
-        M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
-        M5.Lcd.printf("Searching for Radio %d", retry_Count);
+        //M5.Lcd.fillRect(15, 70, 319, 40, background_color);
+        //M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+        //M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
+        //M5.Lcd.drawString("Searching for Radio %d" + String(retry_Count), 15, 80, 3);
         delay(1000);
         if (retry_Count++ > 4)
           break;
       } else {
         Serial.print("Radio found at "); Serial.print(radio_address, HEX);
-        M5.Lcd.fillRect(15, 70, 319, 40, background_color);
-        M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
-        M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
-        M5.Lcd.printf("Radio Found at %X", radio_address);
+        //M5.Lcd.fillRect(15, 70, 319, 40, background_color);
+        //M5.Lcd.setTextSize(2); // to Set the size of text from 0 to 255
+        //M5.Lcd.setCursor(15, 80); //Set the location of the cursor to the coordinates X and Y
+        //M5.Lcd.drawString("Radio Found at %X" + String(radio_address), 15, 80, 3);
         Serial.println();
         delay(1000);
         draw_new_screen();
@@ -764,9 +736,9 @@ void BT_Setup(void)
 #endif
 
   draw_new_screen();
-  M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
-  M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
-  M5.Lcd.printf("Connecting to BT ...");
+  //M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
+  //M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
+  //M5.Lcd.drawString("Connecting to BT ...", 40, 80, 3);
 
   SerialBT.register_callback(callback);
   // Setup bluetooth as master:
@@ -788,11 +760,11 @@ void BT_Setup(void)
   if (btConnected) {
     btPaired = true;
     //M5.Lcd.fillScreen(background_color);
-    M5.Lcd.fillRect(40, 70, 319, 40, background_color);
-    M5.Lcd.setTextColor(text_color);
-    M5.Lcd.setTextSize(2);            // to Set the size of text from 0 to 255
-    M5.Lcd.setCursor(40, 80);         //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Connected & Paired to BT");  // erase connecting
+    //M5.Lcd.fillRect(40, 70, 319, 40, background_color);
+    //M5.Lcd.setTextColor(text_color);
+    //M5.Lcd.setTextSize(2);            // to Set the size of text from 0 to 255
+    //M5.Lcd.setCursor(40, 80);         //Set the location of the cursor to the coordinates X and Y
+    //M5.Lcd.drawString("Connected & Paired to BT", 40, 80, 3);  // erase connecting
   } else
       Serial.println("Pair to Radio");
   draw_new_screen();
@@ -857,119 +829,197 @@ void poll_radio(void)
   }
 }
 
-void display_PTT(uint8_t PTT_state, bool force)
+//
+//    formatVFO()
+//
+char *formatVFO(uint64_t vfo) 
 {
-  static uint8_t prev_PTT_state = 1;
-  char PTT_Tx[] = " Tx ";
-  char PTT_Rx[] = " Rx ";
+  static char vfo_str[20] = { "" };
+  //if (ModeOffset < -1 || ModeOffset > 1)
+  //vfo += ModeOffset;  // Account for pitch offset when in CW mode, not others
 
-  if (PTT_state != prev_PTT_state || force)
+  uint32_t MHz = (vfo / 1000000 % 1000000);
+  uint16_t Hz = (vfo % 1000)/10;
+  uint16_t KHz = ((vfo % 1000000) - Hz) / 1000;
+  sprintf(vfo_str, "%lu.%03u.%02u", MHz, KHz, Hz);
+
+  ///sprintf(vfo_str, "%-13s", "012345.123.123");  // 999GHZ max  47G = 47000.000.000
+  ///DPRINT("New VFO: ");DPRINTLN(vfo_str);
+  return vfo_str;
+}
+
+void draw_new_screen(void)
+{
+  int16_t x = 46;  // start position
+  int16_t y = 16;
+  int16_t x1 = 300;  // end of a line
+  int16_t y1 = 10;
+  int16_t h = 20;
+  int16_t color = YELLOW;
+  int16_t f = 4;  // font size
+  //Serial.println("+++++++++draw new screen");
+
+  M5.Lcd.fillScreen(TFT_BLACK);
+  M5.Lcd.setTextColor(TFT_YELLOW, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  M5.Lcd.setTextDatum(MC_DATUM);
+  M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width()/2), y, f);
+  M5.Lcd.drawFastHLine(1,y+13,319,RED);   // separator below title
+  M5.Lcd.setTextDatum(MC_DATUM);
+  M5.Lcd.setTextColor(TFT_DARKCYAN, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  M5.Lcd.drawString(" BT Mode       Search       USB Mode", (int)(M5.Lcd.width()/2), 220, 2);
+  // write the Band and PTT icons
+  display_Freq(frequency, true);
+  display_PTT(PTT, true);
+  display_Band(band, true);  // true means draw the icon regardless of state
+  display_Xvtr(1, true);
+  display_Time(UTC, true);
+}
+
+//  _UTC does nothing now but can be used to change a future clock label
+void display_Time(uint8_t _UTC, bool _force)
+{
+  static uint32_t time_last_disp_UTC = millis();
+
+  if ((millis() >= time_last_disp_UTC + POLL_RADIO_UTC) || _force)
   {
-    Serial.print("*** PTT = ");Serial.println(PTT_state);
+    char temp_t[15] = {};
+    int x = 10;
+    int x1 = 310;
+    int y = 52;
+    int f = 4;
 
-    M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
-    M5.Lcd.setCursor(230, 190); //Set the location of the cursor to the coordinates X and Y
-    if (prev_PTT_state)
+    M5.Lcd.setTextColor(LIGHTGREY, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+
+    M5.Lcd.setTextDatum(ML_DATUM);  // x is left side
+    sprintf(temp_t, "%02d/%02d/%02d", month(), day(), year());
+    M5.Lcd.drawString("" + String(temp_t), x, y, f);
+
+    M5.Lcd.setTextDatum(MR_DATUM);  // x1 is right side 
+    sprintf(temp_t, "%02d:%02d:%02d", hour(), minute(), second());
+    M5.Lcd.drawString("" + String(temp_t), x1, y, f);
+
+    time_last_disp_UTC = millis();
+  }
+}
+
+void display_Xvtr(uint8_t _band, bool _force)
+{
+  static uint8_t _prev_band = 1;
+  String Xvtr = "XV";
+  int x = 260;
+  int y = 150; 
+  int x1 = x-32;  // upper left corner of outline box
+  int y1 = y-18; 
+  int f = 4;   // font size
+  int w = 38;  // box width 
+  int h = 30;  // box height
+  int r = 4;   // box radius corner size
+
+  M5.Lcd.setTextDatum(MR_DATUM);
+  
+  if (_band != _prev_band || _force)
+  {
+    Serial.print("XVTR ON = ");Serial.println(_band);
+
+    if (_band)
     {
-      M5.Lcd.setTextColor(LIGHTGREY, BLACK); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-      M5.Lcd.printf("%s", PTT_Tx);
+      M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_NAVY);
+      M5.Lcd.setTextColor(WHITE); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.drawString(Xvtr, x, y, f);
     }
     else 
     {
-      M5.Lcd.setTextColor(WHITE, RED); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-      M5.Lcd.printf("%s", PTT_Rx);
+      M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
+      M5.Lcd.setTextColor(DARKGREY); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.drawString(Xvtr, x, y, f);
     }
+    M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_NAVY);
 
-    M5.Lcd.setCursor(230, 190); //Set the location of the cursor to the coordinates X and Y
-    if (PTT_state)
+    _prev_band = _band;
+  }
+}
+
+void display_PTT(uint8_t _PTT_state, bool _force)
+{
+  static uint8_t _prev_PTT_state = 1;
+  String PTT_Tx = "TX";
+  //String PTT_Rx = " Rx ";
+  int x = 310;
+  int y = 150; 
+  int x1 = x-34;  // upper left corner of outline box
+  int y1 = y-18; 
+  int f = 4;   // font size
+  int w = 38;  // box width 
+  int h = 30;  // box height
+  int r = 4;   // box radius corner size
+
+  M5.Lcd.setTextDatum(MR_DATUM);
+  
+  if (_PTT_state != _prev_PTT_state || _force)
+  {
+    Serial.print("*********************************************** PTT = ");Serial.println(_PTT_state);
+
+    if (_PTT_state)
     {
-      M5.Lcd.setTextColor(WHITE, RED); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-      M5.Lcd.printf("%s", PTT_Tx);
+      M5.Lcd.fillRoundRect(x1, y1, w, h, r, RED);
+      M5.Lcd.setTextColor(WHITE); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.drawString(PTT_Tx, x, y, f);
     }
     else 
-    {
-      M5.Lcd.setTextColor(LIGHTGREY, BLACK); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-      M5.Lcd.printf("%s", PTT_Rx);
+    { //M5.Lcd.textbgcolor
+      M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
+      M5.Lcd.setTextColor(RED); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.drawString(PTT_Tx, x, y, f);
     }
-    prev_PTT_state = PTT_state;
+    M5.Lcd.drawRoundRect(x1, y1, w, h, r, RED);
+
+    _prev_PTT_state = _PTT_state;
   }
  }
 
-void display_Freq(uint64_t freq, bool force)
+void display_Freq(uint64_t _freq, bool _force)
 {
-  static uint64_t prev_freq;
+  static uint64_t _prev_freq;
+  int16_t x = 1;  // start position
+  int16_t y = 104;
+  int16_t color = TFT_WHITE;
+  int16_t f = 6;  // font size
 
-  if ((freq != prev_freq && frequency != 0) || force)
+  if ((_freq != _prev_freq && _freq != 0) || _force)
   {    
-    Serial.printf("VFOA: %13sMHz - Band: %s\n", formatVFO(freq), bands[band].band_name);
+    Serial.printf("VFOA: %13sMHz - Band: %s\n", formatVFO(_freq), bands[band].band_name);
     //Serial.println(freq);
-    M5.Lcd.setTextSize(4); // to Set the size of text from 0 to 255
-
-    //M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.fillRect(5, 70, 319, 40, background_color);
-    //M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
-    //M5.Lcd.printf( "%13s", formatVFO(prev_freq));
-
-    M5.Lcd.setTextColor(text_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.setCursor(5, 80); //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf( "%13s", formatVFO(freq));
-
-    if (force)
-      prev_freq = 0;
-    else 
-      prev_freq = freq;
+  
+    //M5.Lcd.fillRect(x, y, x1, y1, background_color);
+    M5.Lcd.setTextDatum(MC_DATUM);     
+    M5.Lcd.setTextColor(background_color, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.drawString("" + String(formatVFO(_prev_freq)), (int)(M5.Lcd.width()/2), y, f);
+    M5.Lcd.setTextColor(color, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.drawString("" + String(formatVFO(_freq)), (int)(M5.Lcd.width()/2), y, f);
+    _prev_freq = _freq;
   }
 }
 
-void display_Band(uint8_t _band, bool force)
+void display_Band(uint8_t _band, bool _force)
 {
-  static uint8_t prev_band = 255;
+  static uint8_t _prev_band = 255;
   
-  if (_band != prev_band || force)
+  M5.Lcd.setTextDatum(ML_DATUM);
+
+  if (_band != _prev_band || _force)
   {    
-    
+    int x = 8;
+    int y = 150; 
+    int f = 4;
     //sendBand(band);   // change the IO pins to match band
-    
-    Serial.printf("Band %s\n", bands[band].band_name);
-
-    M5.Lcd.setTextSize(3); // to Set the size of text from 0 to 255
-    M5.Lcd.setTextColor(background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.fillRect(70, 120, 319, 30, background_color);
-    M5.Lcd.setCursor(70, 130); //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Band: %s", bands[prev_band].band_name);
-
-    M5.Lcd.setTextColor(CYAN); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
-    M5.Lcd.setCursor(70, 130); //Set the location of the cursor to the coordinates X and Y
-    M5.Lcd.printf("Band: %s", bands[band].band_name);
-    prev_band = _band;
+    M5.Lcd.setTextDatum(ML_DATUM); 
+    Serial.printf("Band %s\n", bands[_band].band_name);
+    M5.Lcd.setTextColor(background_color, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.drawString("Band: " + String(bands[_prev_band].band_name), x, y, f);
+    M5.Lcd.setTextColor(TFT_DARKCYAN); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.drawString("Band: " + String(bands[_band].band_name), x, y, f);
+    _prev_band = _band;
   }
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//
-//  Called by main USBHost comms loop setup().
-//  Call BT setup stuff when enabled.
-//  Today only 1 of the intefaces is used to talk to the radio.
-//  An optional PC connection is by the normal CPU USB port.
-//
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// called by main comms setup to start either USB or BT
-void app_setup(void) 
-{
-  M5.begin();
-  M5.Power.begin();
-  //M5.Power.setPowerVin(1);
-  Serial.println(M5.Power.getBatteryLevel());
-  M5.Lcd.setBrightness(120);
-  
-  usbh_setup();  // Just talk normal USB serial
-
-  if (BT_enabled)
-    restart_BT();
-  else
-    restart_USBH();
-
-  draw_new_screen();
 }
 
 void restart_BT(void)
@@ -1029,6 +1079,42 @@ uint8_t chk_Buttons(void)
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//
+//  Called by main USBHost comms loop setup().
+//  Call BT setup stuff when enabled.
+//  Today only 1 of the intefaces is used to talk to the radio.
+//  An optional PC connection is by the normal CPU USB port.
+//
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// called by main comms setup to start either USB or BT
+void app_setup(void) 
+{
+  M5.begin(true, false, true, true);
+  M5.Power.begin();
+  //M5.Power.setPowerVin(1);
+  Serial.println(M5.Power.getBatteryLevel());
+  M5.Lcd.setBrightness(120);
+  
+  /*
+  while (!module.begin(&Wire, 21, 22, 0x66)) {  //for core basic
+    //while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR)) {  // for cores3
+        Serial.println("4IN8OUT INIT ERROR");
+        M5.Lcd.println("4IN8OUT INIT ERROR");
+       delay(1000);
+    };
+    Serial.println("4IN8OUT INIT SUCCESS");
+*/
+  usbh_setup();  // Just talk normal USB serial
+
+  if (BT_enabled)
+    restart_BT();
+  else
+    restart_USBH();
+
+  draw_new_screen();
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // called by main USBHost comms loop
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void app_loop(void) 
@@ -1038,9 +1124,11 @@ void app_loop(void)
   //Serial.print(".");
   if (frequency != 0)
   {
+    display_Time(UTC, false);
     display_Freq(frequency, false);
     display_PTT(PTT, false);
     display_Band(band, false);  // true means draw the icon regardless of state
+    display_Xvtr(1, false);
   }
 
   poll_radio();
