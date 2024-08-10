@@ -908,7 +908,7 @@ void display_Xvtr(uint8_t _band, bool _force)
   String Xvtr = "XV";
   int x = 260;
   int y = 150; 
-  int x1 = x-32;  // upper left corner of outline box
+  int x1 = x-33;  // upper left corner of outline box
   int y1 = y-18; 
   int f = 4;   // font size
   int w = 38;  // box width 
@@ -946,7 +946,7 @@ void display_PTT(uint8_t _PTT_state, bool _force)
   //String PTT_Rx = " Rx ";
   int x = 310;
   int y = 150; 
-  int x1 = x-34;  // upper left corner of outline box
+  int x1 = x-33;  // upper left corner of outline box
   int y1 = y-18; 
   int f = 4;   // font size
   int w = 38;  // box width 
