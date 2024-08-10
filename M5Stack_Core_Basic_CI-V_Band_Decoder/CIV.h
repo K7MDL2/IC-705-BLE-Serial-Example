@@ -82,6 +82,25 @@ To run it “./geo lat long”, e.g. “./geo 43.999 -79.495” which yields FN0
 
 /*  Parse the GPS NMEA ASCII GPGGA string for the time, latitude and longitude  */
 
+//---------------------------------------------------------------------------------------------------------
+
+unsigned int hexToDec(String hexString) {
+    hexString.reserve(2);
+    unsigned int decValue = 0;
+    unsigned int nextInt;
+    for (unsigned int i = 0; i < hexString.length(); i++) {
+        nextInt = int(hexString.charAt(i));
+        if (nextInt >= 48 && nextInt <= 57) nextInt = map(nextInt, 48, 57, 0, 9);
+        if (nextInt >= 65 && nextInt <= 70) nextInt = map(nextInt, 65, 70, 10, 15);
+        if (nextInt >= 97 && nextInt <= 102) nextInt = map(nextInt, 97, 102, 10, 15);
+        nextInt = constrain((signed)nextInt, 0, 15);
+        decValue = (decValue * 16) + nextInt;
+    }
+    return decValue;
+}
+//---------------------------------------------------------------------------------------------------------
+
+
 // reverses a string 'str' of length 'len' 
 void reverse(char *str, int len) 
 { 
@@ -452,9 +471,9 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
             //uint8_t RX = CIVresultL.value;
 
             //DPRINTF("check_CIV: CI-V Returned MY POSITION and TIME: "); DPRINTLN(retValStr[CIVresultL.value]);
-            //               pos                  1  2  3  4  5   6  7  8  9  10 11   12 13 14 15   16 17   18 19 20   21 22  23  24  25 26 27  term
-            // FE.FE.E0.AC.  23.00.  datalen 27  47.46.92.50.01.  01.22.01.98.70.00.  00.15.59.00.  01.05.  00.00.07.  20.24. 07. 20. 23.32.45. FD
-            //                                     47.46.925001 lat 122.01.987000 long  155.900m alt  105deg   0.7km/h   2024   07  20  23:32:45 UTC
+            //               pos                  1  2  3  4   5     6  7  8  9  10   11       12 13 14 15   16 17   18 19 20   21 22  23  24  25 26 27  term
+            // FE.FE.E0.AC.  23.00.  datalen 27  47.46.92.50.  01.   01.22.01.98.70.  00.      00.15.59.00.  01.05.  00.00.07.  20.24. 07. 20. 23.32.45. FD
+            //                               lat 4746.9250   01(N)     12201.9870    00(-1) long  155.900m alt  105deg   0.7km/h   2024   07  20  23:32:45 UTC
             // when using datafield, add 1 to prog guide index to account for first byte used as length counter - so 27 is 28 here.
             Serial.print("** Time from Radio is: ");
             
@@ -476,13 +495,60 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
               Serial.printf("UTC Time: %d:%d:%d  %d/%d/20%d\n",_hr,_min,_sec,_month,_day,_yr); 
               setTime(_hr,_min,_sec,_day,_month,_yr);  // display UTC time
             }
-
+            
             // Extract and Process Lat and Long for Maidenhead Grid Square stored in global Grid_Square[]
-            char GPS_Msg[NMEA_MAX_LENGTH] = {"4746.92382,N,12201.98606,W\0"};
-            //strcpy(GPS_Msg, "4746.92382,N,12201.98606,W\0"};
-            ConvertToMinutes(GPS_Msg);
+            //char GPS_Msg[NMEA_MAX_LENGTH] = {}; // {"4746.92382,N,12201.98606,W\0"};
+            uint8_t i = 0;
+            uint8_t k = 0;
+            float lati_deg = 0.0;
+            float longi_deg = 0.0;
+            float lati_min = 0.0;
+            float longi_min = 0.0;
+            float lati = 0.0;
+            float longi = 0.0;
+            char temp_str[14];
+
+            // reformat latitude
+            // 47.46.93.10.  01.  
+            lati_deg  = (float) bcdByte(read_buffer[data_start_idx+k++]);         //  47 deg
+            lati_min  = (float) bcdByte(read_buffer[data_start_idx+k++]);         //  46. min
+            lati_min +=  (float) bcdByte(read_buffer[data_start_idx+k++]) /100;    //    .93
+            lati_min += (float) bcdByte(read_buffer[data_start_idx+k++]) /10000;  //    .0010  last nibble is always 0
+            lati_min /= 60;
+            lati = lati_deg+lati_min;
+            ftoa(lati, temp_str, 6);   // convert to string now, ftoa cannot handle negative numbers
+            // if 1 then North, else south will be negative
+            if (!bcdByte(read_buffer[data_start_idx+k++])) /*  use N/S to set neg or pos */              
+              sniprintf(Latitude, 11, "%c%s", '-', temp_str);       /*  the ftoa function does not handle neg numbers */
+            else
+              sniprintf(Latitude, 11, "%c%s", ' ', temp_str);
+            
+            //Serial.printf("Latitude Converted to dd mm ss format: Deg=%f  min=%f  lat=%f  string=%s\n",lati_deg, lati_min, lati, Latitude);
+
+            // Longitude  01.22.01.98.70.  00.
+            longi_deg  = (float) bcdByte(read_buffer[data_start_idx+k++])*100;     // 100  first nibble is always 0
+            longi_deg += (float) bcdByte(read_buffer[data_start_idx+k++]);         //  22 deg
+            longi_min  = (float) bcdByte(read_buffer[data_start_idx+k++]);         //  01 min
+            longi_min += (float) bcdByte(read_buffer[data_start_idx+k++]) /100;    //    .98
+            longi_min += (float) bcdByte(read_buffer[data_start_idx+k++]) /10000;  //    .0070
+            longi_min /= 60;  // convert minutes to mm.mmm
+            longi = longi_deg+longi_min;  // make 1 number
+            ftoa(longi, temp_str, 9);   // convert to string now, ftoa cannot handle negative numbers
+            
+            // if 1 then E, else W will be negative
+             if (!bcdByte(read_buffer[data_start_idx+k++]))
+              sniprintf(Longitude, 13, "%c%s", '-', temp_str);        /*  the ftoa function does not handle neg numbers */    
+            else
+              sniprintf(Longitude, 13, "%c%s", ' ', temp_str); 
+            
+            //Serial.printf("Longitude Converted to dd mm ss format:  deg=%f   min=%f   long=%f  string=%s  %s\n",longi_deg, longi_min, longi, Latitude, Longitude);
+
+            // if using NMEA string then proved a formnatted string like belw and convert to minutes  
+            //strcpy(GPS_Msg, "4746.92382,N,12201.98606,W\0"};   // test string
+            //ConvertToMinutes(GPS_Msg);       
+            // Here I directly converted to what Convert_to_MH wants
             Convert_to_MH();
-            Serial.printf("CIV.H: Lat = %s  Long = %s  Grid Square is %s\n", Latitude, Longitude, Grid_Square);
+            Serial.printf("GPS Converted: Lat = %s  Long = %s  Grid Square is %s\n", Latitude, Longitude, Grid_Square);
 
             break;
           }  // MY Position

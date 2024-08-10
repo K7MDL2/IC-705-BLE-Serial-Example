@@ -664,11 +664,8 @@ void bt_loop(void)
 
     draw_new_screen();
     Serial.println("BT Loop");
-    //M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    //M5.Lcd.drawString("Connecting ...", 40, 40, 2);
-    //M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
-    //M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
-    //M5.Lcd.drawString("Connecting to BT ...", 40, 80, 3);
+    M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+    M5.Lcd.drawString("Connecting to BT ...", 40, 80, 4);
 
     btConnected = SerialBT.connect(bd_address, role);
     if (btConnected) {
@@ -1034,7 +1031,7 @@ void display_Grid(char _grid[], bool _force)
     int y = 184;
     int f = 4;
     //sendBand(band);   // change the IO pins to match band
-    Serial.println(_grid);
+    //Serial.println(_grid);
     M5.Lcd.setTextDatum(ML_DATUM); 
     Serial.printf("Grid Square = %s\n",_grid);
     M5.Lcd.setTextColor(background_color, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
@@ -1112,21 +1109,22 @@ uint8_t chk_Buttons(void)
 // called by main comms setup to start either USB or BT
 void app_setup(void) 
 {
-  M5.begin(true, false, true, true);
+  M5.begin(true, false, true, true);   // 2nd arg is enable SD card, off now.
   M5.Power.begin();
+  delay(100);
+  Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
-  Serial.println(M5.Power.getBatteryLevel());
   M5.Lcd.setBrightness(120);
-  
-  /*
-  while (!module.begin(&Wire, 21, 22, 0x66)) {  //for core basic
-    //while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR)) {  // for cores3
-        Serial.println("4IN8OUT INIT ERROR");
-        M5.Lcd.println("4IN8OUT INIT ERROR");
-       delay(1000);
-    };
-    Serial.println("4IN8OUT INIT SUCCESS");
-*/
+  M5.Lcd.drawString(title, 5, 5, 4);
+  while (!module.begin(&Wire, 21, 22, 0x45)) {  //for core basic
+  //while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR)) {  // for cores3
+      Serial.println("4IN8OUT INIT ERROR, Check Module is plugged in tight!");
+      M5.Lcd.drawString("4IN8OUT INIT ERROR", 5, 20, 4);
+      M5.Lcd.drawString("Check IO module is plugged in!", 5, 40, 4);
+      delay(1000);
+  };
+  Serial.println("4IN8OUT INIT SUCCESS");
+
   usbh_setup();  // Just talk normal USB serial
 
   if (BT_enabled)
