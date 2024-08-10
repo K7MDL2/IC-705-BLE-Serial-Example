@@ -82,7 +82,7 @@
 #include "usbh_helper.h"
 #include <Arduino.h>
 #include "BluetoothSerial.h"
-#include <M5Stack.h>
+//#include <M5Stack.h>
 
 bool USBH_connected;
 extern bool BT_enabled;

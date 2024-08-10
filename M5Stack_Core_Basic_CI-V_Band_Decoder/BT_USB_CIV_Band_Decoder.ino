@@ -91,8 +91,9 @@
 
       It is important now to set the "bd_address" in the next lines!
 *************************************************************************/
-#include <M5Stack.h>
-//#include <M5Unified.h>
+//#include <M5Stack.h>
+#include <M5Unified.h>
+//#include <M5GFX.h>  // loses M5.Lcd.textDatum() 
 //#include <Arduino.h>
 
 #include <Wire.h>
@@ -106,6 +107,8 @@ bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0,
 #define IC705 0xA4
 #define IC905 0xAC
 uint8_t radio_address = 0;  //Transceiver address.  0 allows auto-detect on first messages form radio
+bool XVTR_enabled = 0;   // set to 1 when a transverter band is active
+uint8_t brightness = 130;  // 0-255
 
 // ######################################################################
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
@@ -863,13 +866,13 @@ void draw_new_screen(void)
   M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width()/2), y, f);
   M5.Lcd.drawFastHLine(1,y+13,319,RED);   // separator below title
   M5.Lcd.setTextDatum(MC_DATUM);
-  M5.Lcd.setTextColor(TFT_DARKCYAN, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  M5.Lcd.setTextColor(TFT_CYAN, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
   M5.Lcd.drawString(" BT Mode       Search       USB Mode", (int)(M5.Lcd.width()/2), 220, 2);
   // write the Band and PTT icons
   display_Freq(frequency, true);
   display_PTT(PTT, true);
   display_Band(band, true);  // true means draw the icon regardless of state
-  display_Xvtr(1, true);
+  display_Xvtr(XVTR_enabled, true);
   display_Time(UTC, true);
   display_Grid(Grid_Square, true);
 }
@@ -901,7 +904,7 @@ void display_Time(uint8_t _UTC, bool _force)
   }
 }
 
-void display_Xvtr(uint8_t _band, bool _force)
+void display_Xvtr(bool _band, bool _force)
 {
   static uint8_t _prev_band = 1;
   String Xvtr = "XV";
@@ -922,17 +925,17 @@ void display_Xvtr(uint8_t _band, bool _force)
 
     if (_band)
     {
-      M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_NAVY);
+      M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_BLUE);
       M5.Lcd.setTextColor(WHITE); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
       M5.Lcd.drawString(Xvtr, x, y, f);
     }
     else 
     {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
-      M5.Lcd.setTextColor(DARKGREY); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+      M5.Lcd.setTextColor(TFT_BLUE); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
       M5.Lcd.drawString(Xvtr, x, y, f);
     }
-    M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_NAVY);
+    M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_BLUE);
 
     _prev_band = _band;
   }
@@ -1015,7 +1018,7 @@ void display_Band(uint8_t _band, bool _force)
     Serial.printf("Band %s\n", bands[_band].band_name);
     M5.Lcd.setTextColor(background_color, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
     M5.Lcd.drawString("Band: " + String(bands[_prev_band].band_name), x, y, f);
-    M5.Lcd.setTextColor(TFT_DARKCYAN); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.setTextColor(TFT_CYAN); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
     M5.Lcd.drawString("Band: " + String(bands[_band].band_name), x, y, f);
     _prev_band = _band;
   }
@@ -1036,7 +1039,7 @@ void display_Grid(char _grid[], bool _force)
     Serial.printf("Grid Square = %s\n",_grid);
     M5.Lcd.setTextColor(background_color, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
     M5.Lcd.drawString("" + String(_grid), x, y, f);
-    M5.Lcd.setTextColor(TFT_DARKGREEN, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
+    M5.Lcd.setTextColor(TFT_GREEN, background_color); //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535        
     M5.Lcd.drawString("" + String(_grid), x, y, f);
     strcpy(_last_grid, _grid);
   }
@@ -1109,12 +1112,13 @@ uint8_t chk_Buttons(void)
 // called by main comms setup to start either USB or BT
 void app_setup(void) 
 {
-  M5.begin(true, false, true, true);   // 2nd arg is enable SD card, off now.
+  M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
+  
   M5.Power.begin();
   delay(100);
   Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
-  M5.Lcd.setBrightness(120);
+  M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   M5.Lcd.drawString(title, 5, 5, 4);
   while (!module.begin(&Wire, 21, 22, 0x45)) {  //for core basic
   //while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR)) {  // for cores3
@@ -1149,7 +1153,7 @@ void app_loop(void)
     display_Freq(frequency, false);
     display_PTT(PTT, false);
     display_Band(band, false);  // true means draw the icon regardless of state
-    display_Xvtr(1, false);
+    display_Xvtr(XVTR_enabled, false);
     display_Grid(Grid_Square, false);
   }
 
