@@ -12,14 +12,20 @@ Demonstrates how to connect to the Icom IC-705 using 1 of 3 methods.  Most BT co
 
 3. USB Host port. Connects directly to a radio on a 2nd USB port configured for Host role. It has the advantage of no connection delays, no undocumented access protocol like in BLE, and works with a wider range of radios. Where RFI in and out of the radio via the USB cable is a concerrn, this might be mitigated by using a 6" cable with ferrites. Then run buffered IO wiring to the relays and gear.  Here I used a M5Stack Core Basic and snapped on a M5Stack USB V1.2 USB module,  Does both roles. I have not got this work on the Core3 yet.
 
-Here is a Core Basic with IO connected to a IC-905 on 10GHz.  Minimal UI work so far.  BT Classic and USB Host, plus the USB to the PC.
-![M5Stack Core Basic Decoder (early)-small](https://github.com/user-attachments/assets/ec74dca4-ff01-4db5-8dfd-60fa3b96e5f7)
+Here is a Core Basic as of Aug 9, 2024.  Now sporting a UI makeover.  BT Classic and USB Host options, plus the USB to the PC.  Note the button labels to switch connection modes.  Search will force a look for a new radio address.  Probably replace with a menu system.  XV icon is lit up when a transverter band is active from a (future) band select window, or input wiring from a radio or switch.  The TX icon emulates the 705/905 TX status icon.  It is polling TX every 27ms or so. A bit better option is to connect the send output (PTT) into one of the decoder 4 inputs where it will get routed to an output based on the band active.  Lat, Long, Time, Date are all in the CAT myPosition message.  Can calculate the grid square.  It is not passed along via CI-V.
+
+![Aug-9-2024_UI_makeover-small](https://github.com/user-attachments/assets/c933bbaa-b04f-4ece-adbf-eba15ba29e78)
+
 
 A Core3-SE connected via BLE to the IC-705
+
 ![Core3 Se connected by BLE to IC-705](https://github.com/user-attachments/assets/ec1bdaf5-9b31-4029-80e0-d135be3527b0)
 
+
 Old and New models posing for a family picture.  The Core3-SE has 4-In/8-Out, HMI, USB V1.2 and a DIN base modules. There are 2 batteries inside.
+
 ![Core Basic and Core3](https://github.com/user-attachments/assets/802f0022-3831-4342-a799-13e0ef6448ba)
+
 
 ### Folders on this repo:
 
