@@ -12,6 +12,8 @@
 #ifndef USBH_HELPER_H
 #define USBH_HELPER_H
 
+//#define ESPS3
+
 #ifdef ARDUINO_ARCH_RP2040
   // pio-usb is required for rp2040 host
   #include "pio_usb.h"
@@ -42,10 +44,15 @@
   #elif defined(ARDUINO_ADAFRUIT_FEATHER_ESP32_V2)
     M5_USBH_Host USBHost(&SPI, 33, 15);
   #else
-    // Default CS and INT are pin 5, 35
-    M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic
-    M5_USBH_Host USBHost1(&SPI, 18, 23, 19, 5, 35);  // Core basic
-    //M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 10);  // Core3 
+    // Default CS and INT are pin 5, 35, these are with G34 INT switch set on USB host board
+    #ifdef ESPS3
+    //M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 10);  // Core3   default INT switch G35 position
+    M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 14);  // Core3 Alt INT  G34 position
+    #else
+    //default pins
+    //M5_USBH_Host USBHost1(&SPI, 18, 23, 19, 5, 35);  // Core basic default, INT G35 position
+    M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 34);  // Core basic  match to your DIP USB module switches
+    #endif
   #endif
 #else
   // Native USB Host such as rp2040

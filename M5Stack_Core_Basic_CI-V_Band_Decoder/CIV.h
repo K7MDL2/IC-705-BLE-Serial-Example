@@ -84,6 +84,42 @@ To run it “./geo lat long”, e.g. “./geo 43.999 -79.495” which yields FN0
 
 //---------------------------------------------------------------------------------------------------------
 
+//#define DEBUG  //set for debug output
+
+#ifdef  DEBUG
+#define DEBUG_ERROR true
+#define DEBUG_ERROR_SERIAL if(DEBUG_ERROR)Serial
+
+#define DEBUG_WARNING true
+#define DEBUG_WARNING_SERIAL if(DEBUG_WARNING)Serial
+
+#define DEBUG_INFORMATION true
+#define DEBUG_INFORMATION_SERIAL if(DEBUG_INFORMATION)Serial
+#define DSERIALBEGIN(...)   Serial.begin(__VA_ARGS__)
+#define DPRINTLN(...)       Serial.println(__VA_ARGS__)
+#define DPRINT(...)         Serial.print(__VA_ARGS__)
+#define DPRINTF(...)        Serial.print(F(__VA_ARGS__))
+#define DPRINTLNF(...)      Serial.println(F(__VA_ARGS__)) //printing text using the F macro
+#define DELAY(...)          delay(__VA_ARGS__)
+#define PINMODE(...)        pinMode(__VA_ARGS__)
+#define TOGGLEd13           PINB = 0x20                    //UNO's pin D13
+#define DEBUG_PRINT(...)    Serial.print(F(#__VA_ARGS__" = ")); Serial.print(__VA_ARGS__); Serial.print(F(" ")) 
+#define DEBUG_PRINTLN(...)  DEBUG_PRINT(__VA_ARGS__); Serial.println()
+#define DEBUG_PRINTF(...)   Serial.printf(__VA_ARGS__)
+#else
+#define DSERIALBEGIN(...)
+#define DPRINTLN(...)
+#define DPRINT(...)
+#define DPRINTF(...)      
+#define DPRINTLNF(...)    
+#define DELAY(...)        
+#define PINMODE(...)      
+#define TOGGLEd13      
+#define DEBUG_PRINT(...)    
+#define DEBUG_PRINTLN(...)
+#define DEBUG_PRINTF(...)
+#endif
+
 unsigned int hexToDec(String hexString) {
     hexString.reserve(2);
     unsigned int decValue = 0;
@@ -99,7 +135,6 @@ unsigned int hexToDec(String hexString) {
     return decValue;
 }
 //---------------------------------------------------------------------------------------------------------
-
 
 // reverses a string 'str' of length 'len' 
 void reverse(char *str, int len) 
@@ -401,7 +436,7 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
 //  3. add the new switch case statement with the new enum index
 //
 
-#define DBG_CIV1
+//#define DBG_CIV1
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t read_buffer[])
 { 
@@ -422,19 +457,19 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           PTT = read_buffer[6];
           if (TX_last != PTT)
           {
-            Serial.printf("TX Status = %d\n", PTT);
+            //Serial.printf("TX Status = %d\n", PTT);
             TX_last = PTT;
           }
           break;
 
     case CIV_C_PREAMP_READ:
-          Serial.printf("Preamp = %d\n", read_buffer[6]);
+          //Serial.printf("Preamp = %d\n", read_buffer[6]);
           break;
 
     case CIV_C_MOD_READ:
     case CIV_C_MOD1_SEND:
     case CIV_C_MOD_SEND:
-          Serial.printf("Mode, Len = %d\n", data_len);
+          //Serial.printf("Mode, Len = %d\n", data_len);
           break;
 
     case CIV_C_UTC_READ_905:
@@ -451,13 +486,13 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
             min_off = bcdByte(read_buffer[data_start_idx+1]); 
             shift_dir = bcdByte(read_buffer[data_start_idx+2]);
             
-            Serial.print("UTC Offset: "); 
+            
             if (shift_dir) 
             {
               hr_off = hr_off * -1;  // invert  - used by UTC set function
               min_off = min_off * -1;  // invert  - used by UTC set function
             }
-            Serial.print(hr_off); Serial.print(":");Serial.println(min_off);
+            //DPRINTF("UTC Offset: "); Serial.print(hr_off); DPRINTF(":");Serial.println(min_off);
 
             //get current time and correct or set time zone offset
             //setTime(_hr,_min,_sec,_day,_month,_yr);
@@ -475,25 +510,25 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
             // FE.FE.E0.AC.  23.00.  datalen 27  47.46.92.50.  01.   01.22.01.98.70.  00.      00.15.59.00.  01.05.  00.00.07.  20.24. 07. 20. 23.32.45. FD
             //                               lat 4746.9250   01(N)     12201.9870    00(-1) long  155.900m alt  105deg   0.7km/h   2024   07  20  23:32:45 UTC
             // when using datafield, add 1 to prog guide index to account for first byte used as length counter - so 27 is 28 here.
-            Serial.print("** Time from Radio is: ");
+            //DPRINTF("** Time from Radio is: ");
             
-            int _hr = bcdByte(read_buffer[data_start_idx+24]); //Serial.print(_hr); Serial.print(":");
-            int _min = bcdByte(read_buffer[data_start_idx+25]); //Serial.print(_min);Serial.print(":");
-            int _sec = bcdByte(read_buffer[data_start_idx+26]); //Serial.print(_sec);Serial.print(" ");
+            int _hr = bcdByte(read_buffer[data_start_idx+24]); //Serial.print(_hr); DPRINTF(":");
+            int _min = bcdByte(read_buffer[data_start_idx+25]); //Serial.print(_min);DPRINTF(":");
+            int _sec = bcdByte(read_buffer[data_start_idx+26]); //Serial.print(_sec);DPRINTF(" ");
             
-            int _month = bcdByte(read_buffer[data_start_idx+22]); //Serial.print(_month);Serial.print(".");
-            int _day = bcdByte(read_buffer[data_start_idx+23]); //Serial.print(_day); Serial.print(".");
+            int _month = bcdByte(read_buffer[data_start_idx+22]); //Serial.print(_month);DPRINTF(".");
+            int _day = bcdByte(read_buffer[data_start_idx+23]); //Serial.print(_day); DPRINTF(".");
             int _yr = bcdByte(read_buffer[data_start_idx+21]); //Serial.print(_yr); // yr can be 4 or 2 digits  2024 or 24                    
             
             if (!UTC) 
             {
               setTime(_hr+hr_off,_min+min_off,_sec,_day,_month,_yr);  // correct to local time                      
-              Serial.printf("Local Time: %d:%d:%d  %d/%d/20%d\n",_hr+hr_off,_min+min_off,_sec,_month,_day,_yr); 
+              //Serial.printf("Local Time: %d:%d:%d  %d/%d/20%d\n",_hr+hr_off,_min+min_off,_sec,_month,_day,_yr); 
             }
             else
             {
-              Serial.printf("UTC Time: %d:%d:%d  %d/%d/20%d\n",_hr,_min,_sec,_month,_day,_yr); 
               setTime(_hr,_min,_sec,_day,_month,_yr);  // display UTC time
+              //Serial.printf("UTC Time: %d:%d:%d  %d/%d/20%d\n",_hr,_min,_sec,_month,_day,_yr); 
             }
             
             // Extract and Process Lat and Long for Maidenhead Grid Square stored in global Grid_Square[]
@@ -548,12 +583,12 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
             //ConvertToMinutes(GPS_Msg);       
             // Here I directly converted to what Convert_to_MH wants
             Convert_to_MH();
-            Serial.printf("GPS Converted: Lat = %s  Long = %s  Grid Square is %s\n", Latitude, Longitude, Grid_Square);
+            //Serial.printf("GPS Converted: Lat = %s  Long = %s  Grid Square is %s\n", Latitude, Longitude, Grid_Square);
 
             break;
           }  // MY Position
 
-    default: Serial.println("*** default action");
+    default: DPRINTLNF("*** default action");
           //knowncommand = false;
   }
 }
