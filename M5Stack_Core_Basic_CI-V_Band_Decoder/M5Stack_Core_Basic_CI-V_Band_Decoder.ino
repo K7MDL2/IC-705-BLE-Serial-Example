@@ -74,14 +74,14 @@
 // nRF52 and ESP32 use freeRTOS, we may need to run USBhost.task() in its own rtos's thread.
 // Since USBHost.task() will put loop() into dormant state and prevent followed code from running
 // until there is USB host event.
-#define USBHOST
+//#define USBHOST
 
 #if defined(ARDUINO_NRF52_ADAFRUIT) || defined(ARDUINO_ARCH_ESP32)
   #define USE_FREERTOS
 #endif
 
-//#include <M5CoreS3.h>
-#include <M5Stack.h>
+#include <M5CoreS3.h>
+//#include <M5Stack.h>
 //#include <M5Unified.h>
 #include "M5_Max3421E_Usb.h"
 #include "SPI.h"
@@ -94,9 +94,10 @@
 
 uint8_t USBHost_ready = 2;  // 0 = not mounted.  1 = mounted, 2 = system not initialized
 volatile bool USBH_connected = false;
-extern bool BT_enabled;
-extern bool btConnected;
+//extern bool BT_enabled;
+//extern bool btConnected;
 extern uint64_t frequency;
+extern volatile bool restart_USBH_flag;
 
 // CDC Host object
 Adafruit_USBH_CDC SerialHost;
@@ -151,6 +152,8 @@ void forward_serial(void) {
 #else
   #define USBH_STACK_SZ 200
 #endif
+
+TaskHandle_t xHandle = NULL;
 
 void usbhost_rtos_task(void *param) {
  (void) param;
@@ -216,32 +219,32 @@ void setup() {
   SerialHost.begin(115200);
   #endif
 
-#ifdef USE_FREERTOS
-  #ifdef USBHOST 
-  // Create a task to run USBHost.task() in background
-  xTaskCreate(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 3, NULL);
-  
-  Serial.printf("USB pre-start status = %d\n", USBHost_ready);
-  Serial.printf("   USBH_connected = %d\n",USBH_connected);
-  int count = 0;
-    while (USBHost_ready == 2 && count < 200)  // 0 of nothing, 1 for device connected. value started at 2 so we know init is done.
-    {
-      delay(10);
-      Serial.print(count);
-      count++;
-    }
-  Serial.printf("USB post-start status = %d\n", USBHost_ready);
-  Serial.printf("   USBH_connected = %d\n", USBH_connected);
+  #ifdef USE_FREERTOS
+    #ifdef USBHOST 
+      // Create a task to run USBHost.task() in background
+      xTaskCreate(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 4, NULL);
+      
+      //Serial.printf("USB pre-start status = %d\n", USBHost_ready);
+      //Serial.printf("   USBH_connected = %d\n",USBH_connected);
+      //int count = 0;
+        //while (USBHost_ready == 2 && count < 200)  // 0 of nothing, 1 for device connected. value started at 2 so we know init is done.
+        //{
+        //  delay(10);
+          //Serial.print(count);
+        //  count++;
+      // }
+      Serial.printf("USB post-start status = %d\n", USBHost_ready);
+      Serial.printf("   USBH_connected = %d\n", USBH_connected);
+      
+      app_setup();  // setup app stuff
+    
+      //xTaskCreate(app_loop_rtos_task, "app", 6000, NULL, 3, &xHandle); 
+      //xTaskCreate(btn_loop_rtos_task, "btn", 3000, NULL, 2, NULL); 
+    #endif
   #endif
 
-  app_setup();  // setup app stuff
-
-  xTaskCreate(app_loop_rtos_task, "app_loop", 6000, NULL, 3, NULL); 
-  xTaskCreate(btn_loop_rtos_task, "app_loop", 3000, NULL, 2, NULL); 
-#endif
-
   #ifndef USBHOST
-  app_setup();  // setup app stuff
+    app_setup();  // setup app stuff
   #endif
 
   Serial.println("TinyUSB Host Serial Setup Done");
@@ -266,8 +269,21 @@ void loop() {
   //Serial.print(".");
   
   #ifndef USBHOST
-  app_loop();   // call to application main loop - moved to FreeRTOS task
+    app_loop();   // call to application main loop - moved to FreeRTOS task
   #endif
+
+  /*
+  if (restart_USBH_flag)
+  {
+    if( xHandle != NULL )
+    {
+      Serial.println("restarting app loop task");
+      vTaskDelete(xHandle);
+      xTaskCreate(app_loop_rtos_task, "app1", 3000, NULL, 2, &xHandle); 
+      restart_USBH_flag = false;
+    }
+  }
+  */
 }
 
 #elif defined(ARDUINO_ARCH_RP2040)
