@@ -102,37 +102,38 @@
 #include "time.h"
 
 // Chose the combination needed.  Note that at least one service must be enabled.
-//#define BTCLASSIC   // can defne BTCLASSIC *** OR ***  BLE, not both.  NONe is OK if USB HOSt is enabled
-//#define BLE
+#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is OK if USB Host is enabled
+                    // BT Classic does not work on Core3.  It might on Core2 (untested)
+//#define BLE    // only works on Core3, maybe on Core2 (untested)
 #define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
 
-//#define PC_PASSTHROUGH   // fwd though BT or USBHOST daa o a PC if connected.  All debug must be off!
+//#define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
 #ifndef PC_PASSTHROUGH   // shut off by default when PASSTHRU MODE is on
   #define PRINT_VFO_TO_SERIAL // uncomment to visually see VFO updates from the radio on Serial
   #define PRINT_PTT_TO_SERIAL // uncomment to visually see PTT updates from the radio on Serial
 #endif 
 
+#define SEE_RAW_RX // see raw hex messages from radio
+#define SEE_RAW_TX // see raw hex messages from radio
 
 #ifdef BTCLASSIC  // can set to BT on or off at startup
   #include "BluetoothSerial.h"
-  bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+  bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #endif
 
 #ifdef BLE   // can set to BT on or off at startup
-  bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+  bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #endif
-
-// if no BT option chosen then set BT_enabled to 0;
-#if (!BTCLASSIC && !BLE)
-bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
-#endif 
-
-MODULE_4IN8OUT module;
 
 #define IC705 0xA4
 #define IC905 0xAC
-uint8_t radio_address = IC705;  //Transceiver address.  0 allows auto-detect on first messages form radio
+uint8_t radio_address = 0;  //Transceiver address.  0 allows auto-detect on first messages form radio
+bool auto_address = true;   // If true, detects new radio address on connection mode changes
+                            // If false, then the last used address, or the preset address is used.  
+                            // If Search for Radio button pushed, then ignores this and looks for new address
+                            //   then follows rules above when switch connections
+
 bool XVTR_enabled = 0;   // set to 1 when a transverter band is active
 uint8_t brightness = 130;  // 0-255
 
@@ -157,9 +158,17 @@ uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_RADIO_PTT    1  // poll the radio for PTT status odd numbers to stagger them ia bit
-#define POLL_RADIO_FREQ  508  // poll the radio for frequency
-#define POLL_RADIO_UTC  1000  // poll radio for time and location
+#define POLL_PTT_DEFAULT   14   // poll the radio for PTT status odd numbers to stagger them a bit
+                                // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
+#define POLL_PTT_USBHOST   17   // Dynamically changes value based on detected radio address.
+                                // By observation, on USB, the radio only responds once every few seconds when the radio
+                                //   has not changed states.  It will immediately reply to a poll if the Tx state changed.
+                                //   Still have to poll fast for controlling external PTT, most requests will not be answered.
+                                //   Unlike other modes.  BT seems to answer every request. USB2 engine is likely the same in
+                                //   all radios, where BT got a capacity upgrade.  The 905 acts the same as the 905 (905 is USB only)
+                                //   Have not compared to a LAN connection.
+#define POLL_RADIO_FREQ   508   // poll the radio for frequency
+#define POLL_RADIO_UTC   1000   // poll radio for time and location
 
 uint8_t UTC = 1;  // 0 local time, 1 UTC time
 extern Adafruit_USBH_CDC SerialHost;
@@ -174,6 +183,13 @@ extern uint8_t USBHost_ready;
 //#ifdef SSP
 bool confirmRequestPending = true;
 //#endif
+
+// if no BT option chosen then set BT_enabled to 0;
+#if !defined (BTCLASSIC)  && !defined (BLE)
+bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+#endif 
+
+MODULE_4IN8OUT module;
 
 #ifdef BTCLASSIC
   #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -190,12 +206,10 @@ bool confirmRequestPending = true;
   esp_spp_role_t role = ESP_SPP_ROLE_MASTER;  // or ESP_SPP_ROLE_MASTER
 #endif
 
-
 // Function prototypes:
 void configRadioBaud(uint16_t);
 uint8_t readLine(void);
 bool searchRadio();
-//void sendCatRequest(uint8_t );
 void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t Data_len);  // first byte in Data is length
 void printFrequency(void);
 void processCatMessages();
@@ -266,6 +280,7 @@ uint64_t prev_frequency = 0;
 bool btConnected = false;
 bool btPaired = false;
 uint32_t temp_passkey;
+uint16_t poll_radio_ptt = POLL_PTT_DEFAULT;   // can be changed with detected radio address.  
 
 #ifdef BTCLASSIC
 void callback(esp_spp_cb_event_t, esp_spp_cb_param_t *);
@@ -410,7 +425,7 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   int8_t msg_len;
   uint8_t req[50] = { START_BYTE, START_BYTE, radio_address, CONTROLLER_ADDRESS };
 
-  //DPRINTF("sendCatRequest: USBH_connected = "); DPRINTLN(USBH_connected);
+  DPRINTF("sendCatRequest: USBH_connected = "); DPRINTLN(USBH_connected);
 
   for (msg_len = 0; msg_len <= cmd_List[cmd_num].cmdData[0]; msg_len++)  // copy in 1 or more command bytes
     req[msg_len + 4] = cmd_List[cmd_num].cmdData[msg_len + 1];
@@ -427,40 +442,44 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 
   req[msg_len] = STOP_BYTE;
 
-//#define SEE_RAWT
-#ifdef SEE_RAWT
-  DPRINTF("Tx Raw Msg: ");
-  
+  //#define SEE_RAW_TX  // an also be set at top of file
+  #ifdef SEE_RAW_TX 
+  Serial.print(F("--- Tx Raw Msg: "));
   for (uint8_t k = 0; k <= msg_len; k++) {
-    Serial.print(req[k], HEX); DPRINTF(",");
+    Serial.print(req[k], HEX); Serial.print(F(","));
   }
-  DPRINTF(" msg_len = "); Serial.print(msg_len); DPRINTLNF(" END");
-#endif
+  Serial.print(F(" msg_len = ")); Serial.print(msg_len); Serial.println(F(" END"));
+  #endif
 
-  if (USBH_connected)
+  //Serial.print(F("Poll rate = ")); Serial.print(poll_radio_ptt);
+  //Serial.print(F("   BT connected = ")); Serial.print(btConnected);
+  //Serial.print(F("   USBH connected = ")); Serial.println(USBH_connected);
+  
+  //#define RAWT  // for a more detailed look
+  if (USBH_connected && !btConnected)
   {
     if (msg_len < sizeof(req) - 1)  // ensure our data is not longer than our buffer
     {
-#ifdef SEE_RAWT
+    #ifdef SEE_RAWT
       DPRINTF("Snd USB Host Msg: ");
-#endif
+    #endif
       for (uint8_t i = 0; i <= msg_len; i++) 
       {
-#ifdef SEE_RAWT
+    #ifdef SEE_RAWT
         Serial.print(req[i], HEX);
-#endif
+    #endif
         #ifndef PC_PASSTHROUGH
           if (!SerialHost.write(req[i]))
             DPRINTLNF("sendCatRequest: USB Host tx: error");
         #endif
 
-#ifdef SEE_RAWT
+        #ifdef SEE_RAWT
         DPRINTF(",");
-#endif
+        #endif
       }
-#ifdef SEE_RAWT
+      #ifdef SEE_RAWT
       DPRINTF(" END TX MSG, msg_len = ");DPRINTLN(msg_len);
-#endif
+      #endif
     } 
     else 
     {
@@ -472,22 +491,22 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   {
     if (msg_len < sizeof(req) - 1)  // ensure our data is not longer than our buffer
     {
-#ifdef SEE_RAWT
+      #ifdef SEE_RAWT
       DPRINTF("Snd BT Msg: ");
-#endif
+      #endif
       for (uint8_t i = 0; i <= msg_len; i++) {
-#ifdef SEE_RAWT
+        #ifdef SEE_RAWT
         Serial.print(req[i], HEX);
-#endif
+        #endif
         if (!SerialBT.write(req[i]))
           DPRINTLNF("sendCatRequest: BT tx: error");
-#ifdef SEE_RAWT
+        #ifdef SEE_RAWT
         DPRINTF(",");
-#endif
+        #endif
       }
-#ifdef SEE_RAWT
+      #ifdef SEE_RAWT
       DPRINTF(" END TX MSG, msg_len = "); DPRINTLN(msg_len);
-#endif
+      #endif
     } 
     else 
     {
@@ -604,16 +623,16 @@ void processCatMessages() {
 
     if ((msg_len = readLine()) > 0) {
 
-      //#define SEE_RAW
-      #ifdef SEE_RAW
-        DPRINTF("Rx Raw Msg: ");
+      //#define SEE_RAW_RX
+      #ifdef SEE_RAW_RX
+        Serial.print(F("+++ Rx Raw Msg: "));
         for (uint8_t k = 0; k < msg_len; k++) {
           Serial.print(read_buffer[k], HEX);
-          DPRINTF(",");
+          Serial.print(F(","));
         }
-        DPRINTF(" msg_len = ");
+        Serial.print(F(" msg_len = "));
         Serial.print(msg_len);
-        DPRINTLNF(" END");
+        Serial.println(F(" END"));
       #endif
 
       if (read_buffer[0] == START_BYTE && read_buffer[1] == START_BYTE) {
@@ -756,7 +775,7 @@ void bt_loop(void)
 
 uint8_t Get_Radio_address(void) {
   uint8_t retry_Count = 0;
-  if (get_new_address_flag && ((BT_enabled && btConnected) || (USBH_connected && !BT_enabled)))  // handle both USB and BT
+  if ((BT_enabled && btConnected) || (USBH_connected && !BT_enabled))  // handle both USB and BT
   {
     get_new_address_flag = false;
     while (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0) 
@@ -778,6 +797,10 @@ uint8_t Get_Radio_address(void) {
         //M5.Lcd.drawString("Radio Found at %X" + String(radio_address), 15, 80, 3);
         Serial.println();
         vTaskDelay(10);
+        if (USBH_connected && !btConnected) 
+          poll_radio_ptt = POLL_PTT_USBHOST;
+        else
+          poll_radio_ptt = POLL_PTT_DEFAULT;
         draw_new_screen();
       }
     }
@@ -875,16 +898,16 @@ void poll_radio(void)
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
     {
       sendCatRequest(CIV_C_F_READ, 0, 0);  // Get TX status
-      vTaskDelay(10);
+      vTaskDelay(2);
       processCatMessages();
       band = getBand(frequency / 1000);
       time_last_freq = millis();
     }
 
-    if (millis() >= time_last_ptt + POLL_RADIO_PTT)  // poll every X ms
+    if (millis() >= time_last_ptt + poll_radio_ptt)  // poll every X ms
     {
       sendCatRequest(CIV_C_TX, 0, 0);  // Get TX status
-      vTaskDelay(10);
+      vTaskDelay(2);
       processCatMessages();
       time_last_ptt = millis();
     }
@@ -895,10 +918,10 @@ void poll_radio(void)
         sendCatRequest(CIV_C_UTC_READ_905, 0, 0);  //CMD_READ_FREQ);
       else if (radio_address == IC705)              // 705
         sendCatRequest(CIV_C_UTC_READ_705, 0, 0);  //CMD_READ_FREQ);
-      vTaskDelay(10);
+      vTaskDelay(2);
       processCatMessages();
       sendCatRequest(CIV_C_MY_POSIT_READ, 0, 0);  //CMD_READ_FREQ);
-      vTaskDelay(10);
+      vTaskDelay(2);
       processCatMessages();
       time_last_UTC = millis();
       
@@ -1143,6 +1166,7 @@ void restart_BT(void)
   BT_enabled = true;
   DPRINTLNF("Btn A pressed -OR- restart called  ******************** BT Selected ******************************");
   frequency = 0;
+  if (auto_address) radio_address = 0;
   BT_Setup();
   vTaskDelay(700);
   SerialBT.flush();
@@ -1160,6 +1184,7 @@ void restart_USBH(void)
   BT_enabled = false;
   DPRINTLNF("Btn C pressed -OR- restart called  -------------------- USB Selected ------------------------------");
   frequency = 0;
+  if (auto_address) radio_address = 0;
   #ifdef BTCLASSIC
     SerialBT.disconnect();
     SerialBT.end();
@@ -1174,7 +1199,8 @@ uint8_t chk_Buttons(void)
   {
     Serial.println("BtnA pressed");
     #ifdef BTCLASSIC
-    restart_BT_flag = true;
+      BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
+      restart_BT_flag = true;
     //restart_BT();
     #endif
     return 1;
@@ -1193,7 +1219,6 @@ uint8_t chk_Buttons(void)
   {
     Serial.println("BtnC pressed");
     restart_USBH_flag = true;
-    restart_USBH();
     return 1;
   }
   return 0;
@@ -1213,7 +1238,7 @@ void app_setup(void)
   Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
-  M5.Lcd.drawString(title, 5, 5, 4);
+  //M5.Lcd.drawString(title, 5, 5, 4);
 
   uint8_t counter = 0;
   #ifdef ESPS3
