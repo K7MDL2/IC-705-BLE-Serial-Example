@@ -169,6 +169,8 @@ void usbhost_rtos_task(void *param) {
   }
 }
 
+extern void app_loop();
+
 void app_loop_rtos_task(void *param) {
  (void) param;
   while (1) {
@@ -182,6 +184,8 @@ void app_loop_rtos_task(void *param) {
       Serial.printf("\n  ^^^^^^^^^^^  app_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
   }
 }
+
+extern uint8_t chk_Buttons();
 
 void btn_loop_rtos_task(void *param) {
  (void) param;
@@ -198,6 +202,7 @@ void btn_loop_rtos_task(void *param) {
 }
 #endif
 
+extern void app_setup();
 //
 //   Main Setup for ESP32
 //
