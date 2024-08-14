@@ -3,15 +3,16 @@
 #ifndef _DECODER_
 #define _DECODER_
 
-#ifdef SKIP
-
 #include "MODULE_4IN8OUT.h"
 #include <Wire.h>
 #include "CIV.h"
 
+//#define ESPS3  // comment out for Basic and Core 2
+
+#define GPIO_PIN_NOT_USED   255  // use for any pin not in use below
+
 // Make IO Pin assignments here. 
 // These are 8 MOSFET outputs on the 4-In/8-Out module
-#define GPIO_PIN_NOT_USED   255
 #define GPIO_MOD_O_PIN_0    0
 #define GPIO_MOD_O_PIN_1    1
 #define GPIO_MOD_O_PIN_2    2
@@ -27,13 +28,19 @@
 #define GPIO_MOD_I_PIN_2    2
 #define GPIO_MOD_I_PIN_3    3
 
+// BAND DECODE INPUT PINS
+// Assign your pins of choice.  Use a number or one of the existing #define number names
+// Make sure they are not monitored by the code as a button or other use like an encoder.
+// If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
+#define BAND_DECODE_INPUT_PIN_0        GPIO_MOD_I_PIN_0      // bit 0
+#define BAND_DECODE_INPUT_PIN_1        GPIO_MOD_I_PIN_1      // bit 1
+#define BAND_DECODE_INPUT_PIN_2        GPIO_MOD_I_PIN_2      // bit 2
+#define BAND_DECODE_INPUT_PIN_3        GPIO_MOD_I_PIN_3      // bit 3
 
 // BAND DECODE OUTPUT PINS
 // Assign your pins of choice.  Use a number or one of the existing #define number names
 // Make sure they are not monitored by the code as a button or other use like an encoder.
 // If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
-#define GPIO_PIN_NOT_USED                255
-
 #define BAND_DECODE_OUTPUT_PIN_0        GPIO_MOD_O_PIN_0      // bit 0
 #define BAND_DECODE_OUTPUT_PIN_1        GPIO_MOD_O_PIN_1      // bit 1
 #define BAND_DECODE_OUTPUT_PIN_2        GPIO_MOD_O_PIN_2      // bit 2
@@ -63,67 +70,70 @@
 //**************************************************************************************************************
 // Band Decode Output patterns.
 // By default using BCD pattern following the Elecraft K3 HF-TRN table.  5 bits are used. Bit 4 =1 is VHF+ group
-#define DECODE_BANDAM       (0x1F)   //160M 
-#define DECODE_BAND160M     (0x01)   //160M 
-#define DECODE_BAND80M      (0x02)    //80M
+#define DECODE_BANDAM       (0x00)   //160M 
+#define DECODE_BAND160M     (0x00)   //160M 
+#define DECODE_BAND80M      (0x00)    //80M
 #define DECODE_BAND60M      (0x00)    //60M
-#define DECODE_BAND40M      (0x03)    //40M
-#define DECODE_BAND30M      (0x04)    //30M
-#define DECODE_BAND20M      (0x05)    //20M
-#define DECODE_BAND17M      (0x06)    //17M      
-#define DECODE_BAND15M      (0x07)    //15M
-#define DECODE_BAND12M      (0x08)    //12M
-#define DECODE_BAND10M      (0x09)    //10M
-#define DECODE_BAND6M       (0x0A)    //6M
-#define DECODE_BANDFM       (0x1F)    //6M
-#define DECODE_BANDAIR      (0x1F)    //6M
-//#define DECODE_BAND70       (0x01)    //70MHz
-#define DECODE_BAND144      (0x12)    //2M
-#define DECODE_BAND222      (0x13)    //222
-#define DECODE_BAND432      (0x14)    //432
-#define DECODE_BAND902      (0x15)    //902
-#define DECODE_BAND1296     (0x16)    //1296
-#define DECODE_BAND2400     (0x17)    //2400
-#define DECODE_BAND3400     (0x18)    //3400
-#define DECODE_BAND5760     (0x19)    //5760M
-#define DECODE_BAND10G      (0x1A)    //10.368.1G
-#define DECODE_BAND24G      (0x1B)    //24.192G
-#define DECODE_BAND47G      (0x1C)    //47.1G
-#define DECODE_BAND76G      (0x1D)    //76.1G
-#define DECODE_BAND122G     (0x1E)    //122G
-#define DECODE_B_GENERAL    (0x1F)     // Non-Ham Band
+#define DECODE_BAND40M      (0x00)    //40M
+#define DECODE_BAND30M      (0x00)    //30M
+#define DECODE_BAND20M      (0x00)    //20M
+#define DECODE_BAND17M      (0x00)    //17M      
+#define DECODE_BAND15M      (0x00)    //15M
+#define DECODE_BAND12M      (0x00)    //12M
+#define DECODE_BAND10M      (0x00)    //10M
+#define DECODE_BAND6M       (0x00)    //6M
+#define DECODE_BANDFM       (0x00)    //6M
+#define DECODE_BANDAIR      (0x00)    //6M
+//#define DECODE_BAND70       (0x00)    //70MHz
+#define DECODE_BAND144      (0x01)    //2M
+#define DECODE_BAND222      (0x00)    //222
+#define DECODE_BAND432      (0x02)    //432
+#define DECODE_BAND902      (0x04)    //902
+#define DECODE_BAND1296     (0x00)    //1296
+#define DECODE_BAND2400     (0x08)    //2400
+#define DECODE_BAND3400     (0x00)    //3400
+#define DECODE_BAND5760     (0x00)    //5760M
+#define DECODE_BAND10G      (0x00)    //10.368.1G
+#define DECODE_BAND24G      (0x00)    //24.192G
+#define DECODE_BAND47G      (0x00)    //47.1G
+#define DECODE_BAND76G      (0x00)    //76.1G
+#define DECODE_BAND122G     (0x00)    //122G
+#define DECODE_B_GENERAL    (0x00)     // Non-Ham Band
 
-// Band Decode Output patterns.
-// By default using BCD pattern following the Elecraft K3 HF-TRN table.  5 bits are used. Bit 4 =1 is VHF+ group
-#define DECODE_BANDAM_PTT       (0x1F)   //160M_PTT 
-#define DECODE_BAND160M_PTT     (0x01)   //160M_PTT 
-#define DECODE_BAND80M_PTT      (0x02)    //80M_PTT
+// Band Decoder Output patterns for PTT routing.
+// BAn example would be the BCD pattern following the Elecraft K3 HF-TRN table.  5 bits are used. Bit 4 =1 is VHF+ group
+// here we have only 1 4-IN/8-Out module installed configured as 4x decode outputs and 4 PTT outputs for PTT routing to 4 amps/xvtrs
+// Here the PTT lines are on the upper half of the group of 8 module outputs so we set values on the upper nibble, the lower will be ignored.
+// if not used enter 0x00 
+#define DECODE_BANDAM_PTT       (0x00)   //160M_PTT 
+#define DECODE_BAND160M_PTT     (0x00)   //160M_PTT 
+#define DECODE_BAND80M_PTT      (0x00)    //80M_PTT
 #define DECODE_BAND60M_PTT      (0x00)    //60M_PTT
-#define DECODE_BAND40M_PTT      (0x03)    //40M_PTT
-#define DECODE_BAND30M_PTT      (0x04)    //30M_PTT
-#define DECODE_BAND20M_PTT      (0x05)    //20M_PTT
-#define DECODE_BAND17M_PTT      (0x06)    //17M_PTT      
-#define DECODE_BAND15M_PTT      (0x07)    //15M_PTT
-#define DECODE_BAND12M_PTT      (0x08)    //12M_PTT
-#define DECODE_BAND10M_PTT      (0x09)    //10M_PTT
-#define DECODE_BAND6M_PTT       (0x0A)    //6M_PTT
-#define DECODE_BANDFM_PTT       (0x1F)    //6M_PTT
-#define DECODE_BANDAIR_PTT      (0x1F)    //6M_PTT
-//#define DECODE_BAND70       (0x01)    //70M_PTTHz
-#define DECODE_BAND144_PTT      (0x12)    //2M_PTT
-#define DECODE_BAND222_PTT      (0x13)    //222_PTT
-#define DECODE_BAND432_PTT      (0x14)    //432_PTT
-#define DECODE_BAND902_PTT      (0x15)    //902_PTT
-#define DECODE_BAND1296_PTT     (0x16)    //1296_PTT
-#define DECODE_BAND2400_PTT     (0x17)    //2400_PTT
-#define DECODE_BAND3400_PTT     (0x18)    //3400_PTT
-#define DECODE_BAND5760_PTT     (0x19)    //5760_PTT
-#define DECODE_BAND10G_PTT      (0x1A)    //10.368.1G_PTT
-#define DECODE_BAND24G_PTT      (0x1B)    //24.192G_PTT
-#define DECODE_BAND47G_PTT      (0x1C)    //47.1G_PTT
-#define DECODE_BAND76G_PTT      (0x1D)    //76.1G_PTT
-#define DECODE_BAND122G_PTT     (0x1E)    //122G_PTT
-#define DECODE_B_GENERAL_PTT    (0x1F)     // Non-Ham Band
+#define DECODE_BAND40M_PTT      (0x00)    //40M_PTT
+#define DECODE_BAND30M_PTT      (0x00)    //30M_PTT
+#define DECODE_BAND20M_PTT      (0x00)    //20M_PTT
+#define DECODE_BAND17M_PTT      (0x00)    //17M_PTT      
+#define DECODE_BAND15M_PTT      (0x00)    //15M_PTT
+#define DECODE_BAND12M_PTT      (0x00)    //12M_PTT
+#define DECODE_BAND10M_PTT      (0x00)    //10M_PTT
+#define DECODE_BAND6M_PTT       (0x00)    //6M_PTT
+#define DECODE_BANDFM_PTT       (0x00)    //6M_PTT
+#define DECODE_BANDAIR_PTT      (0x00)    //6M_PTT
+//#define DECODE_BAND70_PTT    (0x00)    //70M_PTTHz
+#define DECODE_BAND144_PTT      (0x10)    //2M_PTT
+#define DECODE_BAND222_PTT      (0x00)    //222_PTT
+#define DECODE_BAND432_PTT      (0x20)    //432_PTT
+#define DECODE_BAND902_PTT      (0x40)    //902_PTT
+#define DECODE_BAND1296_PTT     (0x00)    //1296_PTT
+#define DECODE_BAND2400_PTT     (0x80)    //2400_PTT
+#define DECODE_BAND3400_PTT     (0x00)    //3400_PTT
+#define DECODE_BAND5760_PTT     (0x00)    //5760_PTT
+#define DECODE_BAND10G_PTT      (0x00)    //10.368.1G_PTT
+#define DECODE_BAND24G_PTT      (0x00)    //24.192G_PTT
+#define DECODE_BAND47G_PTT      (0x00)    //47.1G_PTT
+#define DECODE_BAND76G_PTT      (0x00)    //76.1G_PTT
+#define DECODE_BAND122G_PTT     (0x00)    //122G_PTT
+#define DECODE_B_GENERAL_PTT    (0x00)     // Non-Ham Band
 
 
 // Very basic - outputs a set pattern for each band.  Follows the Elecraft K3 patther for combined HF and VHF used for transverters and antenna switching
@@ -178,16 +188,18 @@ void GPIO_Out(uint8_t pattern)
     DPRINTF("GPIO_Out: pattern:  DEC "); DPRINT(pattern);
     DPRINTF("  HEX "); DPRINT(pattern, HEX);
     DPRINTF("  Binary "); DPRINTLN(pattern, BIN);
+    
+    //pattern = !pattern;
 
     // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_0, pattern & 0x01);  // bit 0
-    if (BAND_DECODE_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_1, pattern & 0x02);  // bit 1
-    if (BAND_DECODE_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_2, pattern & 0x04);  // bit 2
-    if (BAND_DECODE_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_3, pattern & 0x08);  // bit 3
-    if (BAND_DECODE_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_4, pattern & 0x10);  // bit 4
-    if (BAND_DECODE_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_5, pattern & 0x20);  // bit 5
-    if (BAND_DECODE_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_6, pattern & 0x40);  // bit 6
-    if (BAND_DECODE_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_PIN_7, pattern & 0x80);  // bit 7
+    if (BAND_DECODE_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_0, (pattern & 0x01) ? 1 : 0);  // bit 0
+    if (BAND_DECODE_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_1, (pattern & 0x02) ? 1 : 0);  // bit 1
+    if (BAND_DECODE_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_2, (pattern & 0x04) ? 1 : 0);  // bit 2
+    if (BAND_DECODE_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_3, (pattern & 0x08) ? 1 : 0);  // bit 3
+    if (BAND_DECODE_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_4, (pattern & 0x10) ? 1 : 0);  // bit 4
+    if (BAND_DECODE_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_5, (pattern & 0x20) ? 1 : 0);  // bit 5
+    if (BAND_DECODE_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_6, (pattern & 0x40) ? 1 : 0);  // bit 6
+    if (BAND_DECODE_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_7, (pattern & 0x80) ? 1 : 0);  // bit 7
 }
 
 void PTT_Output(uint8_t band, uint8_t PTT_state)
@@ -234,19 +246,27 @@ void PTT_Output(uint8_t band, uint8_t PTT_state)
 void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state)
 {
     DPRINTF("  PTT state "); DPRINT(PTT_state, BIN);
-    DPRINTF("  PTT Output Binary "); DPRINTLN(pattern & PTT_state, BIN);
-
+    DPRINTF("  PTT Output Binary "); DPRINTLN(pattern, BIN);
+  
+    //PTT_state = !PTT_state;  // Invert  PTT 1 = TX, IO needs 0 to gnd for TX.
+    
+    if (PTT_state) 
+      PTT_state = 0xFF;  
+      
+    //Serial.println((pattern & 0x10 & PTT_state) ? 0 : 1);
+    
     // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_PTT_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_0, pattern & 0x01 & PTT_state);  // bit 0
-    if (BAND_DECODE_PTT_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_1, pattern & 0x02 & PTT_state);  // bit 1
-    if (BAND_DECODE_PTT_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_2, pattern & 0x04 & PTT_state);  // bit 2
-    if (BAND_DECODE_PTT_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_3, pattern & 0x08 & PTT_state);  // bit 3
-    if (BAND_DECODE_PTT_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_4, pattern & 0x10 & PTT_state);  // bit 4
-    if (BAND_DECODE_PTT_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_5, pattern & 0x20 & PTT_state);  // bit 5
-    if (BAND_DECODE_PTT_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_6, pattern & 0x40 & PTT_state);  // bit 6
-    if (BAND_DECODE_PTT_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_PTT_OUTPUT_PIN_7, pattern & 0x80 & PTT_state);  // bit 7
+    if (BAND_DECODE_PTT_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
+    if (BAND_DECODE_PTT_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_1, (pattern & 0x02 & PTT_state) ? 1 : 0);}  // bit 1
+    if (BAND_DECODE_PTT_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_2, (pattern & 0x04 & PTT_state) ? 1 : 0);}  // bit 2
+    if (BAND_DECODE_PTT_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_3, (pattern & 0x08 & PTT_state) ? 1 : 0);}  // bit 3
+    if (BAND_DECODE_PTT_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_4, (pattern & 0x10 & PTT_state) ? 1 : 0);}  // bit 4
+    if (BAND_DECODE_PTT_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_5, (pattern & 0x20 & PTT_state) ? 1 : 0);}  // bit 5
+    if (BAND_DECODE_PTT_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
+    if (BAND_DECODE_PTT_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
 }
 
+/*  Not used for the 4-In/8-Out module, all are fixed direction
 void Decoder_GPIO_Pin_Setup(void)
 {
     // using 8 bits since the ouput pattern is 1 byte.  Can use thenm any way you want. 
@@ -276,64 +296,69 @@ void Decoder_GPIO_Pin_Setup(void)
      
     DPRINTLNF("Decoder_GPIO_Pin_Setup: Pin Mode Setup complete");
 }
+*/
 
-//MODULE_4IN8OUT module;  // done in main ino
-
-void  Module_4in_8out_setup() {
-
-  return;
-     //while (!module.begin(&Wire, 21, 22, MODULE_4IN8OUT_ADDR)) {  for core basic
-    while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR)) {  // fopr cores3
-        DPRINTLNF("4IN8OUT INIT ERROR");
-        M5.Lcd.println("4IN8OUT INIT ERROR");
-       delay(1000);
-    };
-    DPRINTLNF("4IN8OUT INIT SUCCESS");
+//MODULE_4IN8OUT module;  // done in main ino.   Be sure toi run Wire(21,22); before this in setup(0)
+void  Module_4in_8out_setup()
+{
+  #define IO_MODULE
+  #ifdef IO_MODULE
+    uint8_t counter = 0;
+    #ifdef ESPS3    
+      while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR) && counter < 4) {  // for cores3
+    #else
+      while (!module.begin(&Wire, 21, 22, MODULE_4IN8OUT_ADDR) && counter < 4) {  //for core basic
+    #endif
+      Serial.println("4IN8OUT INIT ERROR, Check Module is plugged in tight!");
+        //M5.Lcd.drawString("4IN8OUT INIT ERROR", 5, 20, 4);
+        //M5.Lcd.drawString("Check IO module is plugged in!", 5, 40, 4);
+        delay(10);
+        counter++;
+      }
+  if (counter < 4)
+      Serial.println("4IN8OUT INIT Success");
+  #endif
 }
 
 long interval = 0;
 bool level    = false;
 
-void Module_4in_8out_loop() 
+
+//.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_0, pattern & 0x01 & PTT_state);
+uint8_t Module_4in_8out_Input_scan(void) 
 {
-
-  return;
-
-    for (uint8_t i = 0; i < 4; i++) 
-    {
-        if (module.getInput(i) == 1) 
-        {
-        if(i){
-                //M5.Lcd.fillRect(60 + 60 * i, 0, 25, 25, TFT_BLACK);
-                //M5.Lcd.fillRect(60 + 60 * i, 0, 25, 25, TFT_BLUE);
-            } else {
-                //M5.Lcd.fillRect(60 + 60 * i, 0, 25, 25, TFT_BLACK);
-                //M5.Lcd.drawRect(60 + 60 * i, 0, 25, 25, TFT_BLUE);
-            }
-            //M5.Lcd.drawString("IN" + String(i), 40 + 60 * i, 5);
-        }
-        //M5.Lcd.drawString("4IN8OUT MODULE", 60, 80, 4);
-        //M5.Lcd.drawString("FW VERSION:" + String(module.getVersion()), 70, 120, 4);
-        if (millis() - interval > 1000) 
-        {
-            interval = millis();
-            level    = !level;
-            for (uint8_t i = 0; i < 8; i++) {
-              module.setOutput(i, level);
-                if (level) {
-                    //M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_BLACK);
-                    //M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_GREEN);
-                } else {
-                    //M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_BLACK);
-                    //M5.Lcd.drawRect(20 + 35 * i, 200, 25, 25, TFT_GREEN);
-                }
-                //M5.Lcd.drawString("OUT" + String(i), 18 + 35 * i, 180);
-                //delay(50);
-            }
-        }
-    } 
-    M5.update();
+  uint8_t pattern = 0;
+  pattern |= module.getInput(0) ; 
+  pattern |= module.getInput(1) << 1;
+  pattern |= module.getInput(2) << 2;
+  pattern |= module.getInput(3) << 3;
+  return pattern;
 }
 
-#endif
+void Module_4in_8out_Output_test()
+{
+    M5.Lcd.clearDisplay((TFT_BLACK));
+    M5.Lcd.drawString("4IN8OUT MODULE", 60, 80, 4);
+    M5.Lcd.drawString("FW VERSION:" + String(module.getVersion()), 70, 120, 4);
+    if (millis() - interval > 1000) 
+    {
+      interval = millis();
+      level    = !level;
+      for (uint8_t i = 0; i < 8; i++) 
+      {
+        module.setOutput(i, level);
+        if (level) {
+            M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_BLACK);
+            M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_GREEN);
+        } else {
+            M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_BLACK);
+            M5.Lcd.drawRect(20 + 35 * i, 200, 25, 25, TFT_GREEN);
+        }
+        M5.Lcd.drawString("OUT" + String(i), 18 + 35 * i, 180);
+        delay(50);
+      }
+    } 
+  M5.update();
+}
+
 #endif  // DECODER FILE

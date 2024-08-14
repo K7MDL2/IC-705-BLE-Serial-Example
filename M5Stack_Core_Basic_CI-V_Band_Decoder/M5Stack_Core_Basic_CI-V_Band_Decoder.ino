@@ -160,7 +160,7 @@ void usbhost_rtos_task(void *param) {
   while (1) {
     //Serial.print("+");
     USBHost.task();
-    vTaskDelay(6);
+    vTaskDelay(7);
      // test for stack size
     uint32_t stack_sz;
     stack_sz = uxTaskGetStackHighWaterMark( NULL );
@@ -192,7 +192,7 @@ void btn_loop_rtos_task(void *param) {
   while (1) {
     chk_Buttons();
     //Serial.print("\nB");
-    vTaskDelay(4);
+    vTaskDelay(10);
     // test for stack size
     uint32_t stack_sz;
     stack_sz = uxTaskGetStackHighWaterMark( NULL );
@@ -211,8 +211,10 @@ void setup() {
     auto cfg = M5.config();
     M5.begin(cfg);
     M5.Power.begin();
+    Wire.begin(12,11);
   #else
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
+    Wire.begin(21,22);
   #endif
   Serial.begin(115200);
   while ( !Serial ) delay(10);   // wait for native usb
@@ -243,8 +245,8 @@ void setup() {
       
       app_setup();  // setup app stuff
     
-      //xTaskCreate(app_loop_rtos_task, "app", 6000, NULL, 3, &xHandle); 
-      //xTaskCreate(btn_loop_rtos_task, "btn", 3000, NULL, 2, NULL); 
+      xTaskCreate(app_loop_rtos_task, "app", 6000, NULL, 3, &xHandle); 
+      xTaskCreate(btn_loop_rtos_task, "btn", 3000, NULL, 2, NULL); 
     #endif
   #endif
 

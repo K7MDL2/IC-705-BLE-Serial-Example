@@ -5,7 +5,7 @@
 
 // CIV related stuff
 extern uint8_t UTC;    // 0 local time, 1 UTC time
-extern void printFrequency(void);
+extern void read_Frequency(void);
 extern uint8_t PTT;
 static uint8_t TX_last = 0;
 int hr_off;  // time offsets to apply to UTC time
@@ -84,7 +84,7 @@ To run it “./geo lat long”, e.g. “./geo 43.999 -79.495” which yields FN0
 
 //---------------------------------------------------------------------------------------------------------
 
-//#define DEBUG  //set for debug output
+#define DEBUG  //set for debug output
 
 #ifdef  DEBUG
 #define DEBUG_ERROR true
@@ -450,7 +450,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     case CIV_C_F_READ:
     case CIV_C_F_SEND:
     case CIV_C_F1_SEND:
-          printFrequency(data_len);
+          read_Frequency(data_len);
           break;
 
     case CIV_C_TX:  // Used to request RX TX status from radio

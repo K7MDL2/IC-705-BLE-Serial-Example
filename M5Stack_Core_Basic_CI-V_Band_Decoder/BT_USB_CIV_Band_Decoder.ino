@@ -91,7 +91,7 @@
 
       If you are using BT Classic SPP then it is important to set the "bd_address" in the next lines below!
 *************************************************************************/
-#include <M5CoreS3.h>
+//#include <M5CoreS3.h>
 //#include <M5Stack.h>
 //#include <M5Unified.h>
 #include "M5_Max3421E_Usb.h"
@@ -144,7 +144,7 @@ bool XVTR         = 1;
 bool XVTR_enabled = 0;   // set to 1 when a transverter feature is active
 // Edit the bands table farther down the page to enter the fixed LO offset (in Hz) to add to radio dial
 // frequency for the transverter band of interest. Only 1 band supported at this point
-uint8_t XVTR_Band = BAND_13cm;   // Xvtr band to display - temp until a band select menu is built
+uint8_t XVTR_Band = 0;   // Xvtr band to display - temp until a band select menu is built
 
 uint8_t brightness = 130;  // 0-255
 
@@ -180,6 +180,8 @@ uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };
                                 //   Have not compared to a LAN connection.
 #define POLL_RADIO_FREQ   308   // poll the radio for frequency
 #define POLL_RADIO_UTC   1000   // poll radio for time and location
+#define POLL_BAND_INPUT_LINES  1000  // read the IO module input lines.  Maybe band and /or PTT.  
+                                   // If band only usage then can be set slower.
 
 uint8_t UTC = 1;  // 0 local time, 1 UTC time
 extern Adafruit_USBH_CDC SerialHost;
@@ -260,7 +262,7 @@ const struct Bands bands[NUM_OF_BANDS] = {
   { "70cm",    430000000,    450000000,           0},   // 430/440
   { "33cm",    902000000,    928000000,   758000000},   // 902
   { "23cm",   1240000000,   1300000000,  1152000000},   // 1296Mhz
-  { "13cm",   2304000000,   2450000000,  1874000000},   // 2.3 and 2.4GHz
+  { "13cm",   2304000000,   2450000000,  1870000000},   // 2.3 and 2.4GHz
   {  "9cm",   3300000000,   3500000000,           0},   // 3.3GHz
   {  "6cm",   5650000000,   5925000000,           0},   // 5.7GHz
   {  "3cm",  10000000000,  10500000000,           0},   // 10GHz
@@ -437,7 +439,7 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   int8_t msg_len;
   uint8_t req[50] = { START_BYTE, START_BYTE, radio_address, CONTROLLER_ADDRESS };
 
-  DPRINTF("sendCatRequest: USBH_connected = "); DPRINTLN(USBH_connected);
+  //DPRINTF("sendCatRequest: USBH_connected = "); DPRINTLN(USBH_connected);
 
   for (msg_len = 0; msg_len <= cmd_List[cmd_num].cmdData[0]; msg_len++)  // copy in 1 or more command bytes
     req[msg_len + 4] = cmd_List[cmd_num].cmdData[msg_len + 1];
@@ -533,7 +535,7 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 // ----------------------------------------
 //      Print the received frequency
 // ----------------------------------------
-void printFrequency(uint8_t data_len) 
+void read_Frequency(uint8_t data_len) 
 {
     frequency = 0;
     //FE FE E0 42 03 <00 00 58 45 01> FD ic-820  IC-705  5bytes, 10bcd digits
@@ -553,7 +555,7 @@ void printFrequency(uint8_t data_len)
       frequency += bands[XVTR_Band].Xvtr_offset;
   
     band = getBand(frequency);
-    
+
     //Serial.printf("Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, radio_address);
 }
 
@@ -776,7 +778,7 @@ void bt_loop(void)
     draw_new_screen();
     DPRINTLNF("BT Loop");
     M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("Connecting to BT ...", 40, 80, 4);
+    M5.Lcd.drawString("Connecting to BT ...", 80, 100, 4);
 
     btConnected = SerialBT.connect(bd_address, role);
     if (btConnected) {
@@ -1165,7 +1167,9 @@ void display_Band(uint8_t _band, bool _force)
     int x = 8;
     int y = 150; 
     int font_sz = 4;
-    
+
+    // Update our outputs
+    Band_Decode_Output(band);    
     //sendBand(band);   // change the IO pins to match band
     
     //Serial.printf("Band %s\n", bands[_band].band_name);
@@ -1236,6 +1240,8 @@ void restart_USBH(void)
 
 uint8_t chk_Buttons(void)
 { 
+  static uint8_t xvtr_band_select = 0;  // rotate through a few transverter bands.  Temp until we get a select window
+
   M5.update();
   
   if (M5.BtnA.wasReleased())    //  M5.BtnA.pressedFor(1000, 200)) 
@@ -1259,18 +1265,28 @@ uint8_t chk_Buttons(void)
     return 1;
   }
 
-  if (M5.BtnC.wasReleased())    //M5.BtnC.pressedFor(1000, 200)) 
+  if (M5.BtnC.wasClicked() || M5.BtnC.wasReleased())    //M5.BtnC.pressedFor(1000, 200)) 
   {   // Since the first version won't have USB Host (unrelaible so far) reuse the button for a single Xvtr band for now
     #ifdef USBHOST
       Serial.println("BtnC pressed - Switch to USB Host mode");
       restart_USBH_flag = true;
     #else
       if (XVTR)  // Btn used for USB or Xvtr for now
-      {
-        Serial.println("BtnC pressed - Toggle Xvtr mode OFF or OFF");
-        XVTR_enabled = !XVTR_enabled;  // toggle Xvtr mode
+      { 
+        switch (xvtr_band_select)  // index our way through a curated list.
+        { 
+          case 0: XVTR_Band = BAND_1_25M; xvtr_band_select++; XVTR_enabled = true;  break;
+          case 1: XVTR_Band = BAND_33cm;  xvtr_band_select++; XVTR_enabled = true;  break;
+          case 2: XVTR_Band = BAND_23cm;  xvtr_band_select++; XVTR_enabled = true;  break;
+          case 3: XVTR_Band = BAND_13cm;  xvtr_band_select++; XVTR_enabled = true;  break;
+          default: XVTR_enabled = false; 
+                    xvtr_band_select = 0; // rotate back to the bottom
+        }        
+        //sendCatRequest(CIV_C_F1_SEND, 0, 0);
+        Serial.printf("BtnC pressed - Select a Xvtr band - index = %d   Xvtr_Band = %s   Xvtr_enabled %d\n", xvtr_band_select-1, bands[XVTR_Band].band_name, XVTR_enabled);
+        //XVTR_enabled = !XVTR_enabled;  // toggle Xvtr mode
         //XVTR_Band = BAND_13cm;
-        // call decoder here to change outputs accordingly
+        // call decoder here to change outputs accordinglyideally the normal band change shoudl pick it up though.
       }
     #endif
 
@@ -1295,23 +1311,7 @@ void app_setup(void)
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
 
-  #define IO_MODULE
-  #ifdef IO_MODULE
-  uint8_t counter = 0;
-  #ifdef ESPS3
-    while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR)) {  // for cores3
-  #else
-    while (!module.begin(&Wire, 21, 22, 0x45) && counter < 4) {  //for core basic
-  #endif
-    Serial.println("4IN8OUT INIT ERROR, Check Module is plugged in tight!");
-      //M5.Lcd.drawString("4IN8OUT INIT ERROR", 5, 20, 4);
-      //M5.Lcd.drawString("Check IO module is plugged in!", 5, 40, 4);
-      delay(10);
-      counter++;
-  }
-  if (counter < 4)
-    Serial.println("4IN8OUT INIT Success");
-  #endif
+  Module_4in_8out_setup();   //Set up our IO modules comms on I2C
 
   #ifdef USBHOST
   int count_usb = 0;
@@ -1324,7 +1324,9 @@ void app_setup(void)
   }
   DPRINTF("USB mount status = "); DPRINTLN(USBHost_ready);
   #endif
-   
+
+  Module_4in_8out_Output_test(); 
+  
   draw_new_screen();
 
   usbh_setup();  // Just talk normal USB serial
@@ -1335,7 +1337,7 @@ void app_setup(void)
   else
   #endif
     restart_USBH();
-
+  
   M5.update();
 }
 
@@ -1348,6 +1350,11 @@ void app_loop(void)
   static int32_t loop_max_time = 0;
   int32_t loop_time_threshold = 20;
   static int32_t prev_loop_time = 0;
+  uint8_t Band_temp;
+  uint8_t PTT_temp;
+  uint8_t decode_in;
+  static uint32_t last_input_poll = 0;
+  static uint8_t PTT_temp_last = 0;
 
   loop_time = millis();  // waternmark
   
@@ -1392,6 +1399,37 @@ void app_loop(void)
   Get_Radio_address();  // can autodiscover CI-V address if not predefined.
 
   processCatMessages();  // look for delayed or unsolicited messages from radio
+  
+  if (millis() > last_input_poll + POLL_BAND_INPUT_LINES)
+  {
+    decode_in = Module_4in_8out_Input_scan();
+    
+    Band_temp = ~decode_in & 0x07;  // extract the lower 3 of 4 pins for band select.
+    
+    PTT_temp  = (~decode_in & 0x08) >> 3;  // extract the 4rh input to pass on PTT through slected bands IO pin.
+    // update outputs on change of PTT state
+    if (PTT_temp != PTT_temp_last)  // only call when the state changes
+    {
+      PTT_Output(band, PTT_temp);   // should add debounce but cpu in the IO module seems to be doing that already well enough
+      PTT_temp_last = PTT_temp;
+    }
+
+    last_input_poll = millis();
+    Serial.print(">>>> PTT = ");Serial.print(PTT_temp);Serial.print("   >>>> Band In = ");Serial.println(Band_temp, HEX);
+  }
+  // Inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
+  if (0)  //(Band_temp != band)   // only do something if it is different
+  {
+    // translate input band pattern to band index then send to band Decode output
+    switch (Band_temp)  // this could be BCD, parallel. For now assume 3 lines in paralle for 3 Xvtrs. Only have 4 inputs on module
+    {
+      case 1: band = BAND_1_25M; XVTR_enabled = true; break;
+      case 2: band = BAND_33cm; XVTR_enabled = true; break;
+      case 4: band = BAND_13cm; XVTR_enabled = true; break;
+      default:  XVTR_enabled = false; break;
+      Serial.printf("Decoder Band Input pattern = %d, Xvtr enabled = %d,  Band input = %d,  PTT Input = %d\n",decode_in, XVTR_enabled, Band_temp, PTT_temp);
+    }
+  }
 
   //if (frequency != 0)
   //{
