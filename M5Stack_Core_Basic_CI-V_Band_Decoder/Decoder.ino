@@ -85,12 +85,12 @@
 #define DECODE_BANDFM       (0x00)    //6M
 #define DECODE_BANDAIR      (0x00)    //6M
 //#define DECODE_BAND70       (0x00)    //70MHz
-#define DECODE_BAND144      (0x01)    //2M
+#define DECODE_BAND144      (0x00)    //2M
 #define DECODE_BAND222      (0x00)    //222
-#define DECODE_BAND432      (0x02)    //432
-#define DECODE_BAND902      (0x04)    //902
-#define DECODE_BAND1296     (0x00)    //1296
-#define DECODE_BAND2400     (0x08)    //2400
+#define DECODE_BAND432      (0x00)    //432
+#define DECODE_BAND902      (0x01)    //902
+#define DECODE_BAND1296     (0x02)    //1296
+#define DECODE_BAND2400     (0x04)    //2400
 #define DECODE_BAND3400     (0x00)    //3400
 #define DECODE_BAND5760     (0x00)    //5760M
 #define DECODE_BAND10G      (0x00)    //10.368.1G
@@ -120,12 +120,12 @@
 #define DECODE_BANDFM_PTT       (0x00)    //6M_PTT
 #define DECODE_BANDAIR_PTT      (0x00)    //6M_PTT
 //#define DECODE_BAND70_PTT    (0x00)    //70M_PTTHz
-#define DECODE_BAND144_PTT      (0x10)    //2M_PTT
+#define DECODE_BAND144_PTT      (0x00)    //2M_PTT
 #define DECODE_BAND222_PTT      (0x00)    //222_PTT
-#define DECODE_BAND432_PTT      (0x20)    //432_PTT
-#define DECODE_BAND902_PTT      (0x40)    //902_PTT
-#define DECODE_BAND1296_PTT     (0x00)    //1296_PTT
-#define DECODE_BAND2400_PTT     (0x80)    //2400_PTT
+#define DECODE_BAND432_PTT      (0x00)    //432_PTT
+#define DECODE_BAND902_PTT      (0x10)    //902_PTT
+#define DECODE_BAND1296_PTT     (0x20)    //1296_PTT
+#define DECODE_BAND2400_PTT     (0x40)    //2400_PTT
 #define DECODE_BAND3400_PTT     (0x00)    //3400_PTT
 #define DECODE_BAND5760_PTT     (0x00)    //5760_PTT
 #define DECODE_BAND10G_PTT      (0x00)    //10.368.1G_PTT
@@ -192,14 +192,14 @@ void GPIO_Out(uint8_t pattern)
     //pattern = !pattern;
 
     // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_0, (pattern & 0x01) ? 1 : 0);  // bit 0
-    if (BAND_DECODE_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_1, (pattern & 0x02) ? 1 : 0);  // bit 1
-    if (BAND_DECODE_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_2, (pattern & 0x04) ? 1 : 0);  // bit 2
-    if (BAND_DECODE_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_3, (pattern & 0x08) ? 1 : 0);  // bit 3
-    if (BAND_DECODE_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_4, (pattern & 0x10) ? 1 : 0);  // bit 4
-    if (BAND_DECODE_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_5, (pattern & 0x20) ? 1 : 0);  // bit 5
-    if (BAND_DECODE_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_6, (pattern & 0x40) ? 1 : 0);  // bit 6
-    if (BAND_DECODE_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+    if (BAND_DECODE_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_0, (pattern & 0x01) ? 0 : 1);  // bit 0
+    if (BAND_DECODE_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_1, (pattern & 0x02) ? 0 : 1);  // bit 1
+    if (BAND_DECODE_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_2, (pattern & 0x04) ? 0 : 1);  // bit 2
+    if (BAND_DECODE_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_3, (pattern & 0x08) ? 0 : 1);  // bit 3
+    if (BAND_DECODE_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_4, (pattern & 0x10) ? 0 : 1);  // bit 4
+    if (BAND_DECODE_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_5, (pattern & 0x20) ? 0 : 1);  // bit 5
+    if (BAND_DECODE_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_6, (pattern & 0x40) ? 0 : 1);  // bit 6
+    if (BAND_DECODE_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_7, (pattern & 0x80) ? 0 : 1);  // bit 7
 }
 
 void PTT_Output(uint8_t band, uint8_t PTT_state)
@@ -256,14 +256,14 @@ void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state)
     //Serial.println((pattern & 0x10 & PTT_state) ? 0 : 1);
     
     // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_PTT_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
-    if (BAND_DECODE_PTT_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_1, (pattern & 0x02 & PTT_state) ? 1 : 0);}  // bit 1
-    if (BAND_DECODE_PTT_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_2, (pattern & 0x04 & PTT_state) ? 1 : 0);}  // bit 2
-    if (BAND_DECODE_PTT_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_3, (pattern & 0x08 & PTT_state) ? 1 : 0);}  // bit 3
-    if (BAND_DECODE_PTT_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_4, (pattern & 0x10 & PTT_state) ? 1 : 0);}  // bit 4
-    if (BAND_DECODE_PTT_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_5, (pattern & 0x20 & PTT_state) ? 1 : 0);}  // bit 5
-    if (BAND_DECODE_PTT_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
-    if (BAND_DECODE_PTT_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
+    if (BAND_DECODE_PTT_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_0, (pattern & 0x01 & PTT_state) ? 0 : 1);}  // bit 0
+    if (BAND_DECODE_PTT_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_1, (pattern & 0x02 & PTT_state) ? 0 : 1);}  // bit 1
+    if (BAND_DECODE_PTT_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_2, (pattern & 0x04 & PTT_state) ? 0 : 1);}  // bit 2
+    if (BAND_DECODE_PTT_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_3, (pattern & 0x08 & PTT_state) ? 0 : 1);}  // bit 3
+    if (BAND_DECODE_PTT_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_4, (pattern & 0x10 & PTT_state) ? 0 : 1);}  // bit 4
+    if (BAND_DECODE_PTT_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_5, (pattern & 0x20 & PTT_state) ? 0 : 1);}  // bit 5
+    if (BAND_DECODE_PTT_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_6, (pattern & 0x40 & PTT_state) ? 0 : 1);}  // bit 6
+    if (BAND_DECODE_PTT_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_7, (pattern & 0x80 & PTT_state) ? 0 : 1);}  // bit 7
 }
 
 /*  Not used for the 4-In/8-Out module, all are fixed direction
