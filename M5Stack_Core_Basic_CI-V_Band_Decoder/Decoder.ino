@@ -304,7 +304,7 @@ void  Module_4in_8out_setup()
   #define IO_MODULE
   #ifdef IO_MODULE
     uint8_t counter = 0;
-    #ifdef ESPS3    
+    #ifdef CONFIG_IDF_TARGET_ESP32S3
       while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR) && counter < 4) {  // for cores3
     #else
       while (!module.begin(&Wire, 21, 22, MODULE_4IN8OUT_ADDR) && counter < 4) {  //for core basic

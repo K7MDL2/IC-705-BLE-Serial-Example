@@ -12,9 +12,6 @@
 #ifndef USBH_HELPER_H
 #define USBH_HELPER_H
 
-//#define ESPS3
-//#define ESPCore2
-
 #ifdef ARDUINO_ARCH_RP2040
   // pio-usb is required for rp2040 host
   #include "pio_usb.h"
@@ -46,10 +43,10 @@
     M5_USBH_Host USBHost(&SPI, 33, 15);
   #else
     // Default CS and INT are pin 5, 35, these are with G34 INT switch set on USB host board
-    #ifdef ESPS3
+    #ifdef CONFIG_IDF_TARGET_ESP32S3
       M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 10);  // Core3   default INT switch G35 position
     //M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 14);  // Core3 Alt INT  G34 position
-    #elif defined ESPCore2
+    #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
       M5_USBH_Host USBHost(&SPI, 18, 23, 38, 33, 35);  // Core2 default, INT G35 position
     //M5_USBH_Host USBHost(&SPI, 18, 23, 38, 33, 34);  // Corealt , INT G34 position
     #else
