@@ -13,6 +13,8 @@ int min_off;
 int shift_dir;  // + or -
 tmElements_t tm;
 time_t prevDisplay = 0; // When the digital clock was displayed
+extern bool use_wired_PTT;
+extern uint8_t band;
 
 //inline uint8_t bcdByte(const uint8_t x) const { return  (((x & 0xf0) >> 4) * 10) + (x & 0x0f); }
 inline uint8_t bcdByte(const uint8_t x) { return  (((x & 0xf0) >> 4) * 10) + (x & 0x0f); }
@@ -65,6 +67,7 @@ static char Latitude[14];    /* size to hold longest values supplied by GPS, ass
 static char Longitude[14];
 extern char Grid_Square[];
 extern struct position p[];
+
 /*
 * The algorithm is fairly straightforward. The scaling array provides divisors to divide up the space into the required number of sections,
 * which is 18 for for the field, 10 for the square, 24 for the subsquare, 10 for the extended square, then 24, then 10. 
@@ -457,10 +460,12 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           PTT = read_buffer[6];
           if (TX_last != PTT)
           {
+            if (!use_wired_PTT)        // normally the wired input will pass thru the PTT from radio hardware PTT. 
+            PTT_Output(band, PTT);   //  If that is not available, then use the radio polled TX state .
             //Serial.printf("TX Status = %d\n", PTT);
             TX_last = PTT;
-          }
-          break;
+          }         
+          break;                     // Call PTT output here rather than in teh main loop to avoid any loop delay time.
 
     case CIV_C_PREAMP_READ:
           //Serial.printf("Preamp = %d\n", read_buffer[6]);
