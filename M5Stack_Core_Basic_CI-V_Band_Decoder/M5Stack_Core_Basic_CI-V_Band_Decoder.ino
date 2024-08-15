@@ -90,7 +90,18 @@
 #include "usbh_helper.h"
 #include "BluetoothSerial.h"
 
-//#define PC_PASSTHROUGH   // moved to main program
+// Chose the combination needed.  Note that at least one service must be enabled.
+#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is OK if USB Host is enabled
+                    // BT Classic does not work on Core3.  It might on Core2 (untested)
+//#define BLE    // only works on Core3, maybe on Core2 (untested)
+//#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
+
+//#define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
+
+#ifndef PC_PASSTHROUGH   // shut off by default when PASSTHRU MODE is on
+  #define PRINT_VFO_TO_SERIAL // uncomment to visually see VFO updates from the radio on Serial
+  #define PRINT_PTT_TO_SERIAL // uncomment to visually see PTT updates from the radio on Serial
+#endif 
 
 uint8_t USBHost_ready = 2;  // 0 = not mounted.  1 = mounted, 2 = system not initialized
 volatile bool USBH_connected = false;
@@ -148,7 +159,7 @@ void forward_serial(void) {
 #ifdef USE_FREERTOS
 
 #ifdef ARDUINO_ARCH_ESP32
-  #define USBH_STACK_SZ 4000
+  #define USBH_STACK_SZ 6000
 #else
   #define USBH_STACK_SZ 200
 #endif
@@ -160,12 +171,12 @@ void usbhost_rtos_task(void *param) {
   while (1) {
     //Serial.print("+");
     USBHost.task();
-    vTaskDelay(7);
+    //vTaskDelay(10);
      // test for stack size
     uint32_t stack_sz;
     stack_sz = uxTaskGetStackHighWaterMark( NULL );
-    if (stack_sz < 1000)
-      Serial.printf("\n  #######   USB Host Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+    //if (stack_sz < 1000)
+    //  Serial.printf("\n  #######   USB Host Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
   }
 }
 
@@ -176,7 +187,7 @@ void app_loop_rtos_task(void *param) {
   while (1) {
     app_loop();
     //Serial.print("\nA");
-    vTaskDelay(10);
+    //vTaskDelay(12);
     // test for stack size
     uint32_t stack_sz;
     stack_sz = uxTaskGetStackHighWaterMark( NULL );
@@ -192,7 +203,7 @@ void btn_loop_rtos_task(void *param) {
   while (1) {
     chk_Buttons();
     //Serial.print("\nB");
-    vTaskDelay(10);
+    vTaskDelay(100);
     // test for stack size
     uint32_t stack_sz;
     stack_sz = uxTaskGetStackHighWaterMark( NULL );
@@ -207,17 +218,28 @@ extern void app_setup();
 //   Main Setup for ESP32
 //
 void setup() {
-  #ifdef ESPS3
+
+  Serial.begin(115200);
+  while ( !Serial ) delay(10);   // wait for native usb
+
+  #ifdef CONFIG_IDF_TARGET_ESP32S3
     auto cfg = M5.config();
     M5.begin(cfg);
     M5.Power.begin();
     Wire.begin(12,11);
+    Serial.println("CoreS3 and CoreS3SE defined");
+  #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
+    Serial.println("Core2 defined");
+    M5.begin();
+    //auto cfg = M5.config();
+    //M5.begin(cfg);
+    //M5.Power.begin();
+    Wire.begin(21,22);
   #else
+    Serial.println("Core Basic defined");
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
     Wire.begin(21,22);
   #endif
-  Serial.begin(115200);
-  while ( !Serial ) delay(10);   // wait for native usb
     
   #ifdef USBHOST  
   // init host stack on controller (rhport) 1
@@ -253,7 +275,7 @@ void setup() {
   #ifndef USBHOST
     app_setup();  // setup app stuff
   #endif
-
+  
   Serial.println("TinyUSB Host Serial Setup Done");
 }
 
@@ -265,7 +287,7 @@ void setup() {
 void loop() {
 
   #ifndef USE_FREERTOS
-    //USBHost.task();
+    USBHost.task();
   #endif
 
   #ifdef _PC_PASSTHRU   // Unused code, save for reference or test
@@ -278,6 +300,7 @@ void loop() {
   #ifndef USBHOST
     app_loop();   // call to application main loop - moved to FreeRTOS task
   #endif
+  M5.update();
 
   /*
   if (restart_USBH_flag)
