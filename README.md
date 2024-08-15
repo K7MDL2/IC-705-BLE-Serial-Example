@@ -1,6 +1,9 @@
 # IC-705-BLE, BT Classic, and USB Host Serial Examples
 
-Disclaimer: this is a work in progress!
+Disclaimer: this is a work in progress!  
+
+Latest summary: As of Aug 14, on a M5Stack Core Basic, BT Classic connection to the 705 runs reliably, and the 4-In/8-Out module works.  That is not the case yet for USBHost (works sometimes, then it does not for seemingly unrelated reasons, or no reason at all. Also running the IO module on the Core2 and CoreS3 is not working.  The first fully working version has been given to a field tester along with the radio I borrowed from him.
+_________________________________________________________________________________
 
 Demonstrates how to connect to the Icom IC-705 using 1 of 3 methods.  Most BT connections to the IC-705 to date (Aug 2024) have been made using BT classic SPP. With the newer MStack Core3, which uses an ESP32-S3, it does not support BT classic SPP, only has WiFi and BT5 compatible BLE.
 
