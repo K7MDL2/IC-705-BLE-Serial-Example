@@ -98,7 +98,7 @@
 #include "CIV.h"
 #include "time.h"
 
-#define SEE_RAW_RX // see raw hex messages from radio
+//#define SEE_RAW_RX // see raw hex messages from radio
 //#define SEE_RAW_TX // see raw hex messages from radio
 
 #define IC705 0xA4
@@ -567,7 +567,7 @@ void read_Frequency(uint8_t data_len) {
   
   band = getBand(frequency);
 
-  Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, radio_address);
+  //Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, radio_address);
 }
 
 #ifdef BTCLASSIC
