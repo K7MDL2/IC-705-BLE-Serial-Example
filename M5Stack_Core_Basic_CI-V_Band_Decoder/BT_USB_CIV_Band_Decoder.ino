@@ -4,7 +4,7 @@
 
       BT Classic Serial or USB connection for IC-705
       USB for other models 
-      Runs on M5Stack Core Basic, possible Core2. Core3 has issues with USB Host compatibility as of Aug 2024.
+      Runs on M5Stack Core Basic, Core2. All have issues with USB Host compatibility as of Aug 2024.
 
       This is very basic and very small self-contained CI-V band decoder that can display transverter frequency with suitable offsets, 
         change bands with touch or external input and output (switch, radio decoder outputs), 2, 4, 8, or more I/O outputs.  
@@ -189,23 +189,18 @@ enum band_idx { BAND_AM,
 uint8_t UTC = 1;  // 0 local time, 1 UTC time
 extern Adafruit_USBH_CDC SerialHost;
 
-volatile bool get_new_address_flag = false;
-volatile bool restart_USBH_flag = false;
-volatile bool restart_BT_flag = false;
-extern volatile bool USBH_connected;
-extern uint8_t USBHost_ready;
+static bool get_new_address_flag = false;
 bool XVTR_enabled = false;  // true when a transverter feature is active
 
 //#define SSP                           // use BT SSP - pair with a passkey
-//#ifdef SSP
+#ifdef SSP
 bool confirmRequestPending = true;
-//#endif
+#endif
 
 // if no BT option chosen then set BT_enabled to 0;
 #if !defined(BTCLASSIC) && !defined(BLE)
 bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #endif
-
 
 #ifdef BTCLASSIC  // can set to BT on or off at startup
 #include "BluetoothSerial.h"
@@ -294,7 +289,7 @@ String title = "CIV Band Decoder";  // make exactly 16 chards if used as the BT 
 uint16_t baud_rate;                 //Current baud speed
 uint32_t readtimeout = 10;          //Serial port read timeout
 static uint8_t read_buffer[2048];   //Read buffer
-uint64_t frequency;                 //Current frequency in Hz
+//extern uint64_t frequency;                 //Current frequency in Hz
 uint8_t band = B_GENERAL;
 uint32_t timer;
 uint16_t background_color = BLACK;
@@ -800,7 +795,6 @@ void bt_loop(void) {
 
 uint8_t Get_Radio_address(void) {
   uint8_t retry_Count = 0;
-
   // if you do not see this print after a possible USB lockup
   //   then the app loop task, or USBHost task is stalled.  Btn often still runs.
   //   app wont do anything untial and event comes in.
@@ -925,13 +919,9 @@ void poll_radio(void) {
   if (!USBH_connected && !btConnected) {
     //DPRINTLNF("poll_radio: No ports open, nothing to do");
     //DPRINTF("-");
-    return;  // nothing to send to
+    //return;  // nothing to send to
   }
-  uint32_t stack_sz;
-  stack_sz = uxTaskGetStackHighWaterMark(NULL);
-  if (stack_sz < 500)
-    Serial.printf("\n  $$$$$$$$$$$$$$$  App Loop: Stack Size Low Space Warning < 500 words left free:  %lu\n", stack_sz);
-
+ 
   if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0) {
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
     {
@@ -1261,33 +1251,42 @@ uint8_t chk_Buttons(void) {
 
   M5.update();
 
+  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) ||  defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
   if (M5.BtnA.wasClicked())  //  M5.BtnA.pressedFor(1000, 200))
+  #else
+  if (M5.BtnA.wasPressed())  //  M5.BtnA.pressedFor(1000, 200))
+  #endif
   {
     Serial.println("BtnA pressed - Switch to BT mode");
-#ifdef BTCLASSIC
+  #ifdef BTCLASSIC
     BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
     restart_BT_flag = true;
-
-    // restart_BT();
-#endif
+  #endif
     return 1;
   }
 
-  if (M5.BtnB.wasClicked())  //  M5.BtnB.pressedFor(1000, 200))
+  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) ||  defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
+  if (M5.BtnB.wasClicked())  //  M5.BtnA.pressedFor(1000, 200))
+  #else
+  if (M5.BtnB.wasPressed())  //  M5.BtnA.pressedFor(1000, 200))
+  #endif
   {
     radio_address = 0;
     Serial.println("BtnB pressed: Scan for new radio address");
     get_new_address_flag = true;
-    //Get_Radio_address();
     return 1;
   }
 
-  if (M5.BtnC.wasClicked())  //M5.BtnC.pressedFor(1000, 200))
+  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) ||  defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
+  if (M5.BtnC.wasClickedwasPressed())  //  M5.BtnA.pressedFor(1000, 200))
+  #else
+  if (M5.BtnC.wasPressed())  //  M5.BtnA.pressedFor(1000, 200))
+  #endif
   {                          // Since the first version won't have USB Host (unrelaible so far) reuse the button for a single Xvtr band for now
-#ifdef USBHOST
+  #ifdef USBHOST
     Serial.println(F("BtnC pressed - Switch to USB Host mode"));
     restart_USBH_flag = true;
-#else
+  #else
     if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
     {
       xvtr_band_select++;
@@ -1302,8 +1301,7 @@ uint8_t chk_Buttons(void) {
         default: xvtr_band_select = 0; break;
       }
     }
-#endif
-
+  #endif
     return 1;
   }
   return 0;
@@ -1353,6 +1351,16 @@ void SetFreq(uint64_t Freq) {
   sendCatRequest(CIV_C_F1_SEND, vfo_dec, len);
 }
 
+void refesh_display(void)
+{
+  display_Time(UTC, false);
+  display_Freq(frequency, false);
+  display_PTT(PTT, false);
+  display_Band(band, false);  // true means draw the icon regardless of state
+  display_Xvtr(XVTR_enabled, false);
+  display_Grid(Grid_Square, false);
+}
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //
 //  Called by main USBHost comms loop setup().
@@ -1363,12 +1371,13 @@ void SetFreq(uint64_t Freq) {
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // called by main comms setup to start either USB or BT
 void app_setup(void) {
-  Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
+
+  //Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
+
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
 
-  vTaskDelay(500);
   Module_4in_8out_setup();  //Set up our IO modules comms on I2C
 
 #ifdef USBHOST
@@ -1398,7 +1407,7 @@ void app_setup(void) {
     restart_BT();
   else
 #endif
-    restart_USBH();
+   // restart_USBH();
 
   M5.update();
 }
@@ -1417,9 +1426,18 @@ void app_loop(void) {
   uint8_t decode_Band_temp;
   static uint8_t decode_Band_temp_last = 0;
   uint8_t decode_in;
-  ;
 
   loop_time = millis();  // waternmark
+  
+  refesh_display();
+
+  #ifdef USBHOST
+  chk_Buttons();
+  #endif
+
+  processCatMessages();  // look for delayed or unsolicited messages from radio
+
+  Get_Radio_address();  // can autodiscover CI-V address if not predefined.  
 
 #ifdef PC_PASSTHROUGH
   uint8_t buf[64];
@@ -1453,15 +1471,6 @@ void app_loop(void) {
   }
 #endif
 
-#ifndef USBHOST
-  chk_Buttons();
-#endif
-
-  Get_Radio_address();  // can autodiscover CI-V address if not predefined.
-
-  processCatMessages();  // look for delayed or unsolicited messages from radio
-
-
   if (millis() > last_input_poll + POLL_PTT_DEFAULT) {
     // Process the band input and PTT input pins
     decode_in = Module_4in_8out_Input_scan();
@@ -1476,7 +1485,6 @@ void app_loop(void) {
       decode_PTT_temp_last = decode_PTT_temp;
     }
 
-
     if (decode_Band_temp != decode_Band_temp_last)  // skip if nothing changed on the wired inputs
     {
       band_Selector(decode_Band_temp);  // converts input patern to band (real or virtual Xvtr band)
@@ -1485,15 +1493,6 @@ void app_loop(void) {
 
     last_input_poll = millis();
   }
-  //if (frequency != 0)
-  //{
-  display_Time(UTC, false);
-  display_Freq(frequency, false);
-  display_PTT(PTT, false);
-  display_Band(band, false);  // true means draw the icon regardless of state
-  display_Xvtr(XVTR_enabled, false);
-  display_Grid(Grid_Square, false);
-  //}
 
   M5.update();
 

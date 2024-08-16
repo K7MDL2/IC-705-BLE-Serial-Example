@@ -7,8 +7,6 @@
 #include <Wire.h>
 #include "CIV.h"
 
-//#define ESPS3  // comment out for Basic and Core 2
-
 #define GPIO_PIN_NOT_USED   255  // use for any pin not in use below
 
 // Make IO Pin assignments here. 

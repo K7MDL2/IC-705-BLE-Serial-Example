@@ -80,9 +80,12 @@
   #define USE_FREERTOS
 #endif
 
+#if defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) || defined ( CONFIG_IDF_TARGET_ESP32S3 )
 #include <M5CoreS3.h>
-//#include <M5Stack.h>
+#else
+#include <M5Stack.h>
 //#include <M5Unified.h>
+#endif
 #include "M5_Max3421E_Usb.h"
 #include "SPI.h"
 #include "Wire.h"
@@ -103,12 +106,11 @@
   #define PRINT_PTT_TO_SERIAL // uncomment to visually see PTT updates from the radio on Serial
 #endif 
 
-uint8_t USBHost_ready = 2;  // 0 = not mounted.  1 = mounted, 2 = system not initialized
-volatile bool USBH_connected = false;
-//extern bool BT_enabled;
-//extern bool btConnected;
-extern uint64_t frequency;
-extern volatile bool restart_USBH_flag;
+static uint8_t USBHost_ready = 2;  // 0 = not mounted.  1 = mounted, 2 = system not initialized
+static bool USBH_connected = false;
+static uint64_t frequency = 0;
+static bool restart_USBH_flag = false;
+static bool restart_BT_flag = false;
 
 // CDC Host object
 Adafruit_USBH_CDC SerialHost;
@@ -175,8 +177,8 @@ void usbhost_rtos_task(void *param) {
      // test for stack size
     uint32_t stack_sz;
     stack_sz = uxTaskGetStackHighWaterMark( NULL );
-    //if (stack_sz < 1000)
-    //  Serial.printf("\n  #######   USB Host Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+    if (stack_sz < 1000)
+      Serial.printf("\n  #######   USB Host Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
   }
 }
 
@@ -203,7 +205,7 @@ void btn_loop_rtos_task(void *param) {
   while (1) {
     chk_Buttons();
     //Serial.print("\nB");
-    vTaskDelay(100);
+    vTaskDelay(40);
     // test for stack size
     uint32_t stack_sz;
     stack_sz = uxTaskGetStackHighWaterMark( NULL );
@@ -300,20 +302,6 @@ void loop() {
   #ifndef USBHOST
     app_loop();   // call to application main loop - moved to FreeRTOS task
   #endif
-  M5.update();
-
-  /*
-  if (restart_USBH_flag)
-  {
-    if( xHandle != NULL )
-    {
-      Serial.println("restarting app loop task");
-      vTaskDelete(xHandle);
-      xTaskCreate(app_loop_rtos_task, "app1", 3000, NULL, 2, &xHandle); 
-      restart_USBH_flag = false;
-    }
-  }
-  */
 }
 
 #elif defined(ARDUINO_ARCH_RP2040)
