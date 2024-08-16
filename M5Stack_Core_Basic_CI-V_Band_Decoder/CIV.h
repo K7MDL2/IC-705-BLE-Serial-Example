@@ -370,8 +370,8 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_F26,        		  {1,0x26}},                 // read selected VFO m data, filt
     {CIV_C_F26A,        	  {2,0x26,0x00}},                 // read selected VFO m data, filt
     {CIV_C_F26B,       		  {2,0x26,0x01}},                 // read un- selected VFO m data, filt
-    {CIV_C_F25A_SEND,       {8,0x25,0x00}},                 // set selected VFO frequency
-    {CIV_C_F25B_SEND,       {8,0x25,0x01}},                 // set un-selected VFO frequency
+    {CIV_C_F25A_SEND,       {2,0x25,0x00}},                 // set selected VFO frequency
+    {CIV_C_F25B_SEND,       {2,0x25,0x01}},                 // set un-selected VFO frequency
     {CIV_C_MOD_READ,        {1,0x04}},               	    // read Modulation Mode in use
     {CIV_C_MOD_SET,         {3,0x00,0x00,0x00}},  		    // cmd 26 datafield template; selected VFO; mode, data on/off(0-1), filter (1-3);
     {CIV_C_MOD_SEND ,       {1,0x01}},                      // send Modulation Mode to all
