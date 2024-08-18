@@ -74,20 +74,21 @@
 // nRF52 and ESP32 use freeRTOS, we may need to run USBhost.task() in its own rtos's thread.
 // Since USBHost.task() will put loop() into dormant state and prevent followed code from running
 // until there is USB host event.
-//#define USBHOST
 
 #if defined(ARDUINO_NRF52_ADAFRUIT) || defined(ARDUINO_ARCH_ESP32)
   #define USE_FREERTOS
 #endif
 
-#if defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) || defined ( CONFIG_IDF_TARGET_ESP32S3 )
+#if defined ( CONFIG_IDF_TARGET_ESP32S3 )
 #include <M5CoreS3.h>
+static M5::touch_state_t prev_state;
+#elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
+#include <M5Core2.h>
 #else
 #include <M5Stack.h>
-//#include <M5Unified.h>
 #endif
+
 #include "M5_Max3421E_Usb.h"
-#include "SPI.h"
 #include "Wire.h"
 // USBHost is defined in usbh_helper.h
 #include "usbh_helper.h"
@@ -96,8 +97,9 @@
 // Chose the combination needed.  Note that at least one service must be enabled.
 #define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is OK if USB Host is enabled
                     // BT Classic does not work on Core3.  It might on Core2 (untested)
-//#define BLE    // only works on Core3, maybe on Core2 (untested)
+//#define BLE    // future use - no code here, would only work on Core3, maybe on Core2 (untested
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
+#define IO_MODULE // enable the 4-In/8-Out module
 
 //#define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
@@ -111,6 +113,14 @@ static bool USBH_connected = false;
 static uint64_t frequency = 0;
 static bool restart_USBH_flag = false;
 static bool restart_BT_flag = false;
+static bool BtnA_pressed = false;
+static bool BtnB_pressed = false;
+static bool BtnC_pressed = false;
+static int32_t loop_time = 0;
+static int32_t loop_max_time = 0;
+int32_t loop_time_threshold = 25;
+static int32_t prev_loop_time = 0;
+extern uint16_t background_color;
 
 // CDC Host object
 Adafruit_USBH_CDC SerialHost;
@@ -180,6 +190,7 @@ void usbhost_rtos_task(void *param) {
     if (stack_sz < 1000)
       Serial.printf("\n  #######   USB Host Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
   }
+  vTaskDelete(NULL);
 }
 
 extern void app_loop();
@@ -196,22 +207,7 @@ void app_loop_rtos_task(void *param) {
     if (stack_sz < 1000)
       Serial.printf("\n  ^^^^^^^^^^^  app_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
   }
-}
-
-extern uint8_t chk_Buttons();
-
-void btn_loop_rtos_task(void *param) {
- (void) param;
-  while (1) {
-    chk_Buttons();
-    //Serial.print("\nB");
-    vTaskDelay(40);
-    // test for stack size
-    uint32_t stack_sz;
-    stack_sz = uxTaskGetStackHighWaterMark( NULL );
-    if (stack_sz < 1000)
-      Serial.printf("\n  @@@@@@@@@@@  btn_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
-  }
+  vTaskDelete(NULL);
 }
 #endif
 
@@ -233,10 +229,15 @@ void setup() {
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
     Serial.println("Core2 defined");
     M5.begin();
+    Serial.print("Power Status 0=external, 1=internal 2=max  "); Serial.println(M5.Axp.isACIN()) ? kPOWER_EXTERNAL : kPOWER_INTERNAL);
     //auto cfg = M5.config();
     //M5.begin(cfg);
     //M5.Power.begin();
     Wire.begin(21,22);
+    //auto ms = m5gfx::millis();
+    //if (M5.Touch.isEnabled()) {
+    //  M5.Touch.update(ms);
+    //}
   #else
     Serial.println("Core Basic defined");
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
@@ -251,26 +252,25 @@ void setup() {
   #endif
 
   #ifdef USE_FREERTOS
-    #ifdef USBHOST 
+    #ifdef USBHOST
       // Create a task to run USBHost.task() in background
       xTaskCreate(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 4, NULL);
       
-      //Serial.printf("USB pre-start status = %d\n", USBHost_ready);
-      //Serial.printf("   USBH_connected = %d\n",USBH_connected);
-      //int count = 0;
-        //while (USBHost_ready == 2 && count < 200)  // 0 of nothing, 1 for device connected. value started at 2 so we know init is done.
-        //{
-        //  delay(10);
-          //Serial.print(count);
-        //  count++;
-      // }
+      Serial.printf("USB pre-start status = %d\n", USBHost_ready);
+      Serial.printf("   USBH_connected = %d\n",USBH_connected);
+      int count = 0;
+        while (USBHost_ready == 2 && count < 200)  // 0 of nothing, 1 for device connected. value started at 2 so we know init is done.
+        {
+          delay(10);
+          Serial.print(count);
+          count++;
+        }
       Serial.printf("USB post-start status = %d\n", USBHost_ready);
       Serial.printf("   USBH_connected = %d\n", USBH_connected);
       
       app_setup();  // setup app stuff
-    
-      xTaskCreate(app_loop_rtos_task, "app", 6000, NULL, 3, &xHandle); 
-      xTaskCreate(btn_loop_rtos_task, "btn", 3000, NULL, 2, NULL); 
+      //xTaskCreatePinnedToCore(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle, 1);
+      //xTaskCreate(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle); 
     #endif
   #endif
 
@@ -286,22 +286,121 @@ void setup() {
 // Main Loop.  Call app_setup() to run main application
 //
 //*****************************************************************************
+
+
 void loop() {
+  
+  loop_time = millis();  // watermark
+  
+  M5.update();
 
   #ifndef USE_FREERTOS
     USBHost.task();
   #endif
 
+  #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
+    auto touchPoint = M5.Touch.getDetail(); 
+    if (prev_state != touchPoint.state) {
+        prev_state = touchPoint.state;
+    }
+    if ((M5.Display.height() > touchPoint.y &&
+         touchPoint.y > M5.Display.height() - 40) &&
+        touchPoint.state == m5::touch_state_t::touch_begin) {
+        M5.Display.fillRect(0, 40, M5.Display.width(), 70, BLACK);
+        if (M5.Display.width() / 3 > touchPoint.x && touchPoint.x > 0)
+            BtnA_pressed = true;
+        if ((M5.Display.width() / 3) * 2 > touchPoint.x &&
+            touchPoint.x > M5.Display.width() / 3)
+            BtnB_pressed = true;
+        if (M5.Display.width() > touchPoint.x &&
+            touchPoint.x > (M5.Display.width() / 3) * 2)
+            BtnC_pressed = true;
+    }   
+
+  #elif defined ( ARDUINO_M5STACK_CORE2xxx ) || defined ( ARDUINO_M5STACK_Core2xxx )
+    int state = M5.BtnA.wasHold() ? 1
+            : M5.BtnA.wasClicked() ? 2
+            : M5.BtnA.wasPressed() ? 3
+            : M5.BtnA.wasReleased() ? 4
+            : M5.BtnA.wasDecideClickCount() ? 5
+            : 0;
+    if (state) {
+      BtnA_pressed = true;
+    }
+
+    state = M5.BtnB.wasHold() ? 1
+          : M5.BtnB.wasClicked() ? 2
+          : M5.BtnB.wasPressed() ? 3
+          : M5.BtnB.wasReleased() ? 4
+          : M5.BtnB.wasDecideClickCount() ? 5
+          : 0;
+    if (state) {
+      BtnB_pressed = true;
+    }
+
+    state = M5.BtnC.wasHold() ? 1
+          : M5.BtnC.wasClicked() ? 2
+          : M5.BtnC.wasPressed() ? 3
+          : M5.BtnC.wasReleased() ? 4
+          : M5.BtnC.wasDecideClickCount() ? 5
+          : 0;
+    if (state) {
+      BtnC_pressed = true;
+    }
+   
+  #else
+    if (//M5.BtnA.wasReleased() ||
+     M5.BtnA.pressedFor(100, 3000)) {
+        Serial.println('A');
+        BtnA_pressed = true;
+    } else if (//M5.BtnB.wasReleased() || 
+    M5.BtnB.pressedFor(100, 3000)) {
+        Serial.println('B');
+        BtnB_pressed = true;
+    } else if (//M5.BtnC.wasReleased() || 
+    M5.BtnC.pressedFor(100, 3000)) {
+        Serial.println('C');
+        BtnC_pressed = true;
+    }
+  #endif
+  
   #ifdef _PC_PASSTHRU   // Unused code, save for reference or test
   // allow a PC to talk o teh radio and opposite.  Need debug shuto    ff typically
     forward_serial();
   #endif
   
-  //Serial.print(".");
+  //Serial.print(".");   causes crashes on PC due to too high data rate
   
-  #ifndef USBHOST
+  //#ifdef USBHOST
     app_loop();   // call to application main loop - moved to FreeRTOS task
-  #endif
+ // #endif
+
+    // Measure our current and max loop times
+  int32_t temp_time = millis() - loop_time;  // current loop duration
+
+  if ((temp_time > loop_max_time) || temp_time > loop_time_threshold) {
+    if (temp_time > loop_max_time)
+      loop_max_time = temp_time;
+    //Serial.print("!");   // Turn on to see RTOS scheduling time allocated visually
+    if (loop_max_time > loop_time_threshold) {
+      Serial.printf("! loop time > %d  current time = %d  max time seen %d\n", loop_time_threshold, temp_time, loop_max_time);
+      //Serial.println(" App loop time > 500!");
+      M5.Lcd.setTextDatum(ML_DATUM);
+      M5.Lcd.setTextColor(WHITE, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString("!", 0, 0, 2);
+      //if (loop_max_time > 3000 && SerialBT.isClosed() && SerialBT.isReady())
+      //  restart_BT(); // try this as a USBHost lockup failover short of having the btn task
+    }  //    delete and restart the app task, or even the USBHost task
+    else {
+      M5.Lcd.setTextDatum(ML_DATUM);                            // erase the marker
+      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString("!", 0, 0, 2);
+    }
+  }
+  uint32_t stack_sz;
+  stack_sz = uxTaskGetStackHighWaterMark( NULL );
+  if (stack_sz < 1000)
+    Serial.printf("\n  #######   App Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
 }
 
 #elif defined(ARDUINO_ARCH_RP2040)

@@ -66,7 +66,6 @@ struct position p[1] = {};
 static char Latitude[14];    /* size to hold longest values supplied by GPS, assuming 10 plus null for now   */
 static char Longitude[14];
 extern char Grid_Square[];
-extern struct position p[];
 
 /*
 * The algorithm is fairly straightforward. The scaling array provides divisors to divide up the space into the required number of sections,

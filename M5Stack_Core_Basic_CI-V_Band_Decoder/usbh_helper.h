@@ -46,13 +46,13 @@
     #ifdef CONFIG_IDF_TARGET_ESP32S3
       M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 10);  // Core3   default INT switch G35 position
     //M5_USBH_Host USBHost(&SPI, 36, 37, 35, 1, 14);  // Core3 Alt INT  G34 position
-    #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-      M5_USBH_Host USBHost(&SPI, 18, 23, 38, 33, 35);  // Core2 default, INT G35 position
+    #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )  // maybe library confusing CS pins with display in places.
+      M5_USBH_Host USBHost(&SPI, 18, 23, 38, 33, 35);  // Core2 default, INT G35 position  SD card uses INT=4, display INT=5 TOUCh=39 
     //M5_USBH_Host USBHost(&SPI, 18, 23, 38, 33, 34);  // Corealt , INT G34 position
     #else
     //default pins
        M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic default, INT G35 position
-     //M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 34);  // Core basic  match to your DIP USB module switches
+     //M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 34);  // Core basic  match to your DIP USB module switches  34 is used for Mic data
     #endif
   #endif
 #else

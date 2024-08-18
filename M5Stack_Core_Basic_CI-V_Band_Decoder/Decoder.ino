@@ -3,9 +3,8 @@
 #ifndef _DECODER_
 #define _DECODER_
 
-#include "MODULE_4IN8OUT.h"
-#include <Wire.h>
-#include "CIV.h"
+//#include "MODULE_4IN8OUT.h"
+//#include <Wire.h>
 
 #define GPIO_PIN_NOT_USED   255  // use for any pin not in use below
 
@@ -187,6 +186,9 @@ void GPIO_Out(uint8_t pattern)
     DPRINTF("  HEX "); DPRINT(pattern, HEX);
     DPRINTF("  Binary "); DPRINTLN(pattern, BIN);
     
+    #ifndef IO_MODULE
+      return;
+    #endif
     //pattern = !pattern;
 
     // mask each bit and apply the 1 or 0 to the assigned pin
@@ -246,6 +248,10 @@ void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state)
     DPRINTF("  PTT state "); DPRINT(PTT_state, BIN);
     DPRINTF("  PTT Output Binary "); DPRINTLN(pattern, BIN);
   
+    #ifndef IO_MODULE
+      return;
+    #endif
+    
     //PTT_state = !PTT_state;  // Invert  PTT 1 = TX, IO needs 0 to gnd for TX.
     
     if (PTT_state) 
@@ -299,8 +305,6 @@ void Decoder_GPIO_Pin_Setup(void)
 //MODULE_4IN8OUT module;  // done in main ino.   Be sure toi run Wire(21,22); before this in setup(0)
 void  Module_4in_8out_setup()
 {
-  #define IO_MODULE
-  #ifdef IO_MODULE
     uint8_t counter = 0;
     #ifdef CONFIG_IDF_TARGET_ESP32S3
       while (!module.begin(&Wire, 12, 11, MODULE_4IN8OUT_ADDR) && counter < 4) {  // for cores3
@@ -315,7 +319,6 @@ void  Module_4in_8out_setup()
       }
   if (counter < 4)
       Serial.println("4IN8OUT INIT Success");
-  #endif
 }
 
 long interval = 0;

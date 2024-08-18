@@ -91,9 +91,6 @@
 
       If you are using BT Classic SPP then it is important to set the "bd_address" in the next lines below!
 *************************************************************************/
-#include "M5_Max3421E_Usb.h"
-#include "SPI.h"
-#include "Wire.h"
 #include "MODULE_4IN8OUT.h"
 #include "CIV.h"
 #include "time.h"
@@ -108,7 +105,7 @@ bool auto_address = false;      // If true, detects new radio address on connect
                                 // If false, then the last used address, or the preset address is used.
                                 // If Search for Radio button pushed, then ignores this and looks for new address
                                 //   then follows rules above when switch connections
-bool use_wired_PTT = false;     // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
+bool use_wired_PTT = true;     // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
 bool XVTR = true;               // Enables Xvtr support
 // Edit the bands table farther down the page to enter the fixed LO offset (in Hz) to add to radio dial
 // frequency for the transverter band of interest. Only 1 band supported at this point
@@ -121,8 +118,8 @@ uint8_t brightness = 130;  // 0-255
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
 // settings in section 'Bluetooth Device Information'
 
-//uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };  // Test 705
-uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9 };  // my705
+uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };  // Rick's 705
+//uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9 };  // Mike's 705
 // ######################################################################
 
 // These pins are used byte the USB Host sheild M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic
@@ -1246,67 +1243,6 @@ void band_Selector(uint8_t _band_input_pattern) {
   }
 }
 
-uint8_t chk_Buttons(void) {
-  static uint8_t xvtr_band_select = 0;  // rotate through a few transverter bands.  Temp until we get a select window
-
-  M5.update();
-
-  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) ||  defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-  if (M5.BtnA.wasClicked())  //  M5.BtnA.pressedFor(1000, 200))
-  #else
-  if (M5.BtnA.wasPressed())  //  M5.BtnA.pressedFor(1000, 200))
-  #endif
-  {
-    Serial.println("BtnA pressed - Switch to BT mode");
-  #ifdef BTCLASSIC
-    BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
-    restart_BT_flag = true;
-  #endif
-    return 1;
-  }
-
-  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) ||  defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-  if (M5.BtnB.wasClicked())  //  M5.BtnA.pressedFor(1000, 200))
-  #else
-  if (M5.BtnB.wasPressed())  //  M5.BtnA.pressedFor(1000, 200))
-  #endif
-  {
-    radio_address = 0;
-    Serial.println("BtnB pressed: Scan for new radio address");
-    get_new_address_flag = true;
-    return 1;
-  }
-
-  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) ||  defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-  if (M5.BtnC.wasClickedwasPressed())  //  M5.BtnA.pressedFor(1000, 200))
-  #else
-  if (M5.BtnC.wasPressed())  //  M5.BtnA.pressedFor(1000, 200))
-  #endif
-  {                          // Since the first version won't have USB Host (unrelaible so far) reuse the button for a single Xvtr band for now
-  #ifdef USBHOST
-    Serial.println(F("BtnC pressed - Switch to USB Host mode"));
-    restart_USBH_flag = true;
-  #else
-    if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
-    {
-      xvtr_band_select++;
-      Serial.print(F("BtnC pressed - Select a Xvtr band - index = "));
-      Serial.println(xvtr_band_select);
-      switch (xvtr_band_select)  // index our way through a curated list.
-      {
-        case 1: band_Selector(1); break;
-        case 2: band_Selector(2); break;
-        case 3: band_Selector(4); break;
-        case 4: band_Selector(0);  // fall thru to reset counter
-        default: xvtr_band_select = 0; break;
-      }
-    }
-  #endif
-    return 1;
-  }
-  return 0;
-}
-
 extern unsigned int hexToDec(String hexString);
 
 // Length is 5 or 6 depending if < 10GHz band  folowded by 5 or 6 BCD encoded frequency bytes
@@ -1343,11 +1279,11 @@ void SetFreq(uint64_t Freq) {
   if (XVTR_enabled)
   {
     Freq -= bands[XVTR_Band].Xvtr_offset;
-    Serial.printf("SetFreq: Xvtr Offset applied - IF freq %llu  band %s  offset %llu\n", Freq, bands[XVTR_Band].band_name, bands[XVTR_Band].Xvtr_offset);
+    //Serial.printf("SetFreq: Xvtr Offset applied - IF freq %llu  band %s  offset %llu\n", Freq, bands[XVTR_Band].band_name, bands[XVTR_Band].Xvtr_offset);
   }
 
   uint8_t len = formatFreq(Freq, vfo_dec);  // Convert to BCD string
-  Serial.printf("SetFreq: Radio Freq = %llu  To radio (5 or 6 bytes) in BCD: %02X %02X %02X %02X %02X (%02X)\n", Freq, vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
+  //Serial.printf("SetFreq: Radio Freq = %llu  To radio (5 or 6 bytes) in BCD: %02X %02X %02X %02X %02X (%02X)\n", Freq, vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
   sendCatRequest(CIV_C_F1_SEND, vfo_dec, len);
 }
 
@@ -1378,9 +1314,11 @@ void app_setup(void) {
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
 
+  #ifdef IO_MODULE
   Module_4in_8out_setup();  //Set up our IO modules comms on I2C
+  #endif
 
-#ifdef USBHOST
+  #ifdef USBHOST
   int count_usb = 0;
   while (count_usb < 60 && USBHost_ready == 2)  // 0 = not mounted.  1 = mounted, 2 = system not initialized
   {
@@ -1393,53 +1331,88 @@ void app_setup(void) {
   }
   DPRINTF("USB mount status = ");
   DPRINTLN(USBHost_ready);
-#endif
+  #endif
 
-  Module_4in_8out_Output_test();
+  //Module_4in_8out_Output_test();
   vTaskDelay(500);
 
   draw_new_screen();
 
   usbh_setup();  // Just talk normal USB serial
 
-#ifdef BTCLASSIC
+  #ifdef BTCLASSIC
   if (BT_enabled)
     restart_BT();
-  else
-#endif
+  //else
+  #endif
    // restart_USBH();
-
-  M5.update();
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // called by main USBHost comms loop
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void app_loop(void) {
-  static int32_t loop_time = 0;
-  static int32_t loop_max_time = 0;
-  int32_t loop_time_threshold = 20;
-  static int32_t prev_loop_time = 0;
   uint8_t decode_PTT_temp;
   static uint8_t decode_PTT_temp_last = 0;
   static uint32_t last_input_poll = 0;
   uint8_t decode_Band_temp;
   static uint8_t decode_Band_temp_last = 0;
   uint8_t decode_in;
+  static uint8_t xvtr_band_select = 0;  // rotate through a few transverter bands.  Temp until we get a select window
 
-  loop_time = millis();  // waternmark
+  M5.update();
   
   refesh_display();
+  
+  if (BtnA_pressed)        
+  {
+    BtnA_pressed = false;
+    Serial.println(F("BtnA pressed - Switch to BT mode"));
+    #ifdef BTCLASSIC
+    Serial.println(F("Switch to BT mode"));
+    BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
+    restart_BT_flag = true;
+    #endif
+  }
 
-  #ifdef USBHOST
-  chk_Buttons();
-  #endif
+  if (BtnB_pressed)
+  {
+    BtnB_pressed = false;
+    radio_address = 0;
+    Serial.print(F("BtnB pressed: Scan for new radio address"));
+    get_new_address_flag = true;
+  }
+
+  if (BtnC_pressed) {
+    BtnC_pressed = false;
+
+    // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
+    #ifdef USBHOST
+    Serial.print(F("BtnC pressed - Switch to USB Host mode"));
+    restart_USBH_flag = true;
+    #else 
+    if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
+    {
+      xvtr_band_select++;
+      Serial.print(F("BtnC pressed - Select a Xvtr band - index = ")); Serial.println(xvtr_band_select);
+      switch (xvtr_band_select)  // index our way through a curated list.
+      {
+        case 1: band_Selector(1); break;
+        case 2: band_Selector(2); break;
+        case 3: band_Selector(4); break;
+        case 4: band_Selector(0);  // fall thru to reset counter
+        default: xvtr_band_select = 0; break;
+      }
+    }
+    #endif
+  }  // end Btn C
+
 
   processCatMessages();  // look for delayed or unsolicited messages from radio
 
   Get_Radio_address();  // can autodiscover CI-V address if not predefined.  
 
-#ifdef PC_PASSTHROUGH
+  #ifdef PC_PASSTHROUGH
   uint8_t buf[64];
   // Serial -> SerialHost
   if (Serial.available()) {
@@ -1448,29 +1421,27 @@ void app_loop(void) {
       SerialHost.write(buf, count);
       SerialHost.flush();
     }
-  }
-#else
+  } 
+  #else
   poll_radio();  // do nto sed stuff to radio when a PC app is doing the same
-#endif
+  #endif
 
-#ifdef BTCLASSIC
-  bt_loop();  // handle all BT serial messaging in place of the USB host serial
-#endif
-
-#ifdef USBHOST
+  #ifdef USBHOST
   if (restart_USBH_flag) {
     restart_USBH();
     restart_USBH_flag = false;
   }
-#endif
+  #endif
 
-#ifdef BTCLASSIC
+  #ifdef BTCLASSIC
+  bt_loop();  // handle all BT serial messaging in place of the USB host serial
   if (restart_BT_flag) {
     restart_BT();
     restart_BT_flag = false;
   }
-#endif
+  #endif
 
+  #ifdef IO_MODULE
   if (millis() > last_input_poll + POLL_PTT_DEFAULT) {
     // Process the band input and PTT input pins
     decode_in = Module_4in_8out_Input_scan();
@@ -1493,28 +1464,5 @@ void app_loop(void) {
 
     last_input_poll = millis();
   }
-
-  M5.update();
-
-  // Measure our current and max loop times
-  int32_t temp_time = millis() - loop_time;  // current loop duration
-
-  if ((temp_time > loop_max_time) || temp_time > loop_time_threshold) {
-    if (temp_time > loop_max_time)
-      loop_max_time = temp_time;
-    //Serial.print("!");   // Turn on to see RTOS scheduling time allocated visually
-    if (loop_max_time > loop_time_threshold) {
-      Serial.printf("! loop time > %d  current time = %d  max time seen %d\n", loop_time_threshold, temp_time, loop_max_time);
-      //Serial.println(" App loop time > 500!");
-      M5.Lcd.setTextDatum(ML_DATUM);
-      M5.Lcd.setTextColor(WHITE, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString("!", 0, 0, 2);
-      //if (loop_max_time > 3000 && SerialBT.isClosed() && SerialBT.isReady())
-      //  restart_BT(); // try this as a USBHost lockup failover short of having the btn task
-    }  //    delete and restart the app task, or even the USBHost task
-  } else {
-    M5.Lcd.setTextDatum(ML_DATUM);                            // erase the marker
-    M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("!", 0, 0, 2);
-  }
+  #endif
 }
