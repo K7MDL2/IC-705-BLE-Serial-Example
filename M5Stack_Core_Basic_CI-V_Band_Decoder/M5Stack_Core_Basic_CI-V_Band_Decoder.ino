@@ -79,11 +79,17 @@
   #define USE_FREERTOS
 #endif
 
+#define CORE2LIB
+
 #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
 #include <M5CoreS3.h>
 static M5::touch_state_t prev_state;
 #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-#include <M5Core2.h>
+  #ifdef CORE2LIB
+  #include <M5Core2.h>    // USB Host sort to works
+  #else
+  #include <M5Unified.h>  // kills off USB Host
+  #endif
 #else
 #include <M5Stack.h>
 #endif
@@ -100,6 +106,7 @@ static M5::touch_state_t prev_state;
 //#define BLE    // future use - no code here, would only work on Core3, maybe on Core2 (untested
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
 #define IO_MODULE // enable the 4-In/8-Out module
+#define SDCARD
 
 //#define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
@@ -226,18 +233,31 @@ void setup() {
     M5.Power.begin();
     Wire.begin(12,11);
     Serial.println("CoreS3 and CoreS3SE defined");
+  
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
     Serial.println("Core2 defined");
-    M5.begin();
-    Serial.print("Power Status 0=external, 1=internal 2=max  "); Serial.println(M5.Axp.isACIN()) ? kPOWER_EXTERNAL : kPOWER_INTERNAL);
-    //auto cfg = M5.config();
-    //M5.begin(cfg);
-    //M5.Power.begin();
     Wire.begin(21,22);
-    //auto ms = m5gfx::millis();
+
+    #ifdef CORE2LIB
+    // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
+    M5.begin();
+    M5.Axp.begin();
+    Serial.print("Power Status 0=external, 1=internal 2=max  "); Serial.println(M5.Axp.isACIN() ? 0 : 1);
+    M5.Touch.begin();
     //if (M5.Touch.isEnabled()) {
-    //  M5.Touch.update(ms);
+    M5.Touch.update();
     //}
+    #else
+    //// M5Unified.h stuff =  kills USB Host though, makes the touch buttons work.
+    auto cfg = M5.config();
+    M5.begin(cfg);
+    M5.Power.begin();
+    auto ms = millis();
+    if (M5.Touch.isEnabled()) {
+    M5.Touch.update(ms);
+    }
+    #endif
+   
   #else
     Serial.println("Core Basic defined");
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
@@ -294,8 +314,8 @@ void loop() {
   
   M5.update();
 
-  #ifndef USE_FREERTOS
-    USBHost.task();
+  #ifdef USE_FREERTOS
+   // USBHost.task();
   #endif
 
   #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
@@ -307,35 +327,44 @@ void loop() {
          touchPoint.y > M5.Display.height() - 40) &&
         touchPoint.state == m5::touch_state_t::touch_begin) {
         M5.Display.fillRect(0, 40, M5.Display.width(), 70, BLACK);
-        if (M5.Display.width() / 3 > touchPoint.x && touchPoint.x > 0)
+        if (M5.Display.width() / 3 > touchPoint.x && touchPoint.x > 0){
             BtnA_pressed = true;
+            Serial.println("A");
+        }
         if ((M5.Display.width() / 3) * 2 > touchPoint.x &&
-            touchPoint.x > M5.Display.width() / 3)
+            touchPoint.x > M5.Display.width() / 3) {
             BtnB_pressed = true;
+            Serial.println("B");
+        }
         if (M5.Display.width() > touchPoint.x &&
-            touchPoint.x > (M5.Display.width() / 3) * 2)
+            touchPoint.x > (M5.Display.width() / 3) * 2) {
             BtnC_pressed = true;
+            Serial.println("C");
+        }
     }   
 
-  #elif defined ( ARDUINO_M5STACK_CORE2xxx ) || defined ( ARDUINO_M5STACK_Core2xxx )
+  #elif !defined ( CORE2LIB ) && ( defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) )
+
     int state = M5.BtnA.wasHold() ? 1
             : M5.BtnA.wasClicked() ? 2
             : M5.BtnA.wasPressed() ? 3
             : M5.BtnA.wasReleased() ? 4
             : M5.BtnA.wasDecideClickCount() ? 5
             : 0;
-    if (state) {
+    if (state == 3 && !BtnA_pressed) {  // Only process once the main loop is done
       BtnA_pressed = true;
+      Serial.print("A, state = "); Serial.println(state);
     }
-
+    
     state = M5.BtnB.wasHold() ? 1
           : M5.BtnB.wasClicked() ? 2
           : M5.BtnB.wasPressed() ? 3
           : M5.BtnB.wasReleased() ? 4
           : M5.BtnB.wasDecideClickCount() ? 5
           : 0;
-    if (state) {
+    if (state == 3 && !BtnB_pressed) {
       BtnB_pressed = true;
+      Serial.print("B, state = "); Serial.println(state);
     }
 
     state = M5.BtnC.wasHold() ? 1
@@ -344,8 +373,9 @@ void loop() {
           : M5.BtnC.wasReleased() ? 4
           : M5.BtnC.wasDecideClickCount() ? 5
           : 0;
-    if (state) {
+    if (state == 3 & !BtnC_pressed) {
       BtnC_pressed = true;
+      Serial.print("C, state = "); Serial.println(state);
     }
    
   #else
@@ -353,14 +383,17 @@ void loop() {
      M5.BtnA.pressedFor(100, 3000)) {
         Serial.println('A');
         BtnA_pressed = true;
+        Serial.println("A");
     } else if (//M5.BtnB.wasReleased() || 
     M5.BtnB.pressedFor(100, 3000)) {
         Serial.println('B');
         BtnB_pressed = true;
+        Serial.println("B");
     } else if (//M5.BtnC.wasReleased() || 
     M5.BtnC.pressedFor(100, 3000)) {
         Serial.println('C');
         BtnC_pressed = true;
+        Serial.println("C");
     }
   #endif
   

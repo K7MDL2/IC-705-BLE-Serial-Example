@@ -94,6 +94,7 @@
 #include "MODULE_4IN8OUT.h"
 #include "CIV.h"
 #include "time.h"
+#include <Update.h>
 
 //#define SEE_RAW_RX // see raw hex messages from radio
 //#define SEE_RAW_TX // see raw hex messages from radio
@@ -118,11 +119,11 @@ uint8_t brightness = 130;  // 0-255
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
 // settings in section 'Bluetooth Device Information'
 
-uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };  // Rick's 705
-//uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9 };  // Mike's 705
+//uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };  // Rick's 705
+uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9 };  // Mike's 705
 // ######################################################################
 
-// These pins are used byte the USB Host sheild M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic
+// These pins are used byte the USB Host shield M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic
 //#define DATA_PIN 5  // GPIO18 input/output
 //#define TUNE_PIN 2  // GPIO26 (output)
 
@@ -134,10 +135,10 @@ uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };  // Rick's 705
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_PTT_DEFAULT 15  // poll the radio for PTT status odd numbers to stagger them a bit \
+#define POLL_PTT_DEFAULT 27  // poll the radio for PTT status odd numbers to stagger them a bit \
                              // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705. \
                              // Also polls teh wired inputs
-#define POLL_PTT_USBHOST 27  // Dynamically changes value based on detected radio address. \
+#define POLL_PTT_USBHOST 217  // Dynamically changes value based on detected radio address. \
                              // By observation, on USB, the radio only responds once every few seconds when the radio \
                              //   has not changed states.  It will immediately reply to a poll if the Tx state changed. \
                              //   Still have to poll fast for controlling external PTT, most requests will not be answered. \
@@ -289,8 +290,8 @@ static uint8_t read_buffer[2048];   //Read buffer
 //extern uint64_t frequency;                 //Current frequency in Hz
 uint8_t band = B_GENERAL;
 uint32_t timer;
-uint16_t background_color = BLACK;
-uint16_t text_color = WHITE;
+uint16_t background_color = TFT_BLACK;
+uint16_t text_color = TFT_WHITE;
 uint8_t PTT = 0;
 uint8_t prev_PTT = 1;
 extern char Grid_Square[];
@@ -958,6 +959,121 @@ void poll_radio(void) {
   }
 }
 
+#ifdef SDCARD
+
+void read_SD_Card(void)
+{
+    File myFile = SD.open("/config.txt",
+                     FILE_READ);  // Open the file "/hello.txt" in read mode.
+    if (myFile) {
+        Serial.println("/config.txt Content:");
+        // Read the data from the file and print it until the reading is complete.
+        while (myFile.available()) {
+            Serial.write(myFile.read());
+        }
+        myFile.close();
+    } else {
+        Serial.println("error opening /hello.txt");  // If the file is not open.                                           
+    }
+}
+
+void performUpdate(Stream &updateSource, size_t updateSize) {
+   if (Update.begin(updateSize)) {      
+      size_t written = Update.writeStream(updateSource);
+      if (written == updateSize) {
+         M5.Lcd.println("Written : " + String(written) + " successfully");
+      }
+      else {
+         M5.Lcd.println("Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
+      }
+      if (Update.end()) {
+         M5.Lcd.println("OTA done!");
+         if (Update.isFinished()) {
+            M5.Lcd.println("Update successfully completed. Rebooting.");
+         }
+         else {
+            M5.Lcd.println("Update not finished? Something went wrong!");
+         }
+      }
+      else {
+         M5.Lcd.println("Error Occurred. Error #: " + String(Update.getError()));
+      }
+   }
+   else
+   {
+      M5.Lcd.println("Not enough space to begin OTA");
+   }
+}
+
+void updateFromFS(fs::FS &fs) 
+{
+  File updateBin = fs.open("/update.bin");
+  Serial.println("Update file has size " + String(updateBin.size()));
+  delay(1000);
+
+  if (updateBin) {
+      if(updateBin.isDirectory()){
+        M5.Lcd.println("Error, update.bin is not a file");
+        updateBin.close();
+        return;
+      }
+
+      size_t updateSize = updateBin.size();
+
+      if (updateSize > 0) {
+        M5.Lcd.println("Try to start update");
+        performUpdate(updateBin, updateSize);
+      }
+      else {
+        M5.Lcd.println("Error, file is empty");
+      }
+
+      updateBin.close();
+    
+      // whe finished remove the binary from sd card to indicate end of the process
+      fs.remove("/update.bin");      
+  }
+  else {
+      M5.Lcd.println("Could not load update.bin from sd root");
+  }
+}
+
+void Update_from_SD()
+{
+    if (!SD.begin())
+    {
+        Serial.println("No SD Card");
+    } else {
+        Serial.println("SD Card found, try update");
+        updateFromFS(SD);
+    }
+    Serial.println("Yay, SD Update worked!");
+}
+
+void printDirectory(File dir, int numTabs) {
+  while (true) {
+    File entry =  dir.openNextFile();
+    if (! entry) {
+      // no more files
+      break;
+    }
+    for (uint8_t i = 0; i < numTabs; i++) {
+      Serial.print('\t');
+    }
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println("/");
+      printDirectory(entry, numTabs + 1);
+    } else {
+      // files have sizes, directories do not
+      Serial.print("\t\t");
+      Serial.println(entry.size(), DEC);
+    }
+    entry.close();
+  }
+}
+#endif
+
 //
 //    formatVFO()
 //
@@ -982,7 +1098,7 @@ void draw_new_screen(void) {
   int16_t x1 = 300;  // end of a line
   int16_t y1 = 10;
   int16_t h = 20;
-  int16_t color = YELLOW;
+  int16_t color = TFT_YELLOW;
   int16_t font_sz = 4;  // font size
   DPRINTLNF("+++++++++draw new screen");
 
@@ -990,7 +1106,7 @@ void draw_new_screen(void) {
   M5.Lcd.setTextColor(TFT_YELLOW, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
   M5.Lcd.setTextDatum(MC_DATUM);
   M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width() / 2), y, font_sz);
-  M5.Lcd.drawFastHLine(1, y + 13, 319, RED);  // separator below title
+  M5.Lcd.drawFastHLine(1, y + 13, 319, TFT_RED);  // separator below title
   M5.Lcd.setTextDatum(MC_DATUM);
   M5.Lcd.setTextColor(TFT_CYAN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
 #if (defined(BT_CLASSIC) || defined(BLE)) && defined(USBHOST)
@@ -1025,7 +1141,7 @@ void display_Time(uint8_t _UTC, bool _force) {
     int y = 52;
     int font_sz = 4;
 
-    M5.Lcd.setTextColor(LIGHTGREY, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+    M5.Lcd.setTextColor(TFT_LIGHTGREY, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
 
     M5.Lcd.setTextDatum(ML_DATUM);  // x is left side
     sprintf(temp_t, "%02d/%02d/%02d", month(), day(), year());
@@ -1058,7 +1174,7 @@ void display_Xvtr(bool _band, bool _force) {
 
     if (_band) {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_BLUE);
-      M5.Lcd.setTextColor(WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
       M5.Lcd.drawString(Xvtr, x, y, font_sz);
     } else {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
@@ -1093,15 +1209,15 @@ void display_PTT(uint8_t _PTT_state, bool _force) {
 #endif
 
     if (_PTT_state) {
-      M5.Lcd.fillRoundRect(x1, y1, w, h, r, RED);
-      M5.Lcd.setTextColor(WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_RED);
+      M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
       M5.Lcd.drawString(PTT_Tx, x, y, font_sz);
     } else {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
-      M5.Lcd.setTextColor(RED);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.setTextColor(TFT_RED);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
       M5.Lcd.drawString(PTT_Tx, x, y, font_sz);
     }
-    M5.Lcd.drawRoundRect(x1, y1, w, h, r, RED);
+    M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_RED);
 
     _prev_PTT_state = _PTT_state;
   }
@@ -1316,6 +1432,15 @@ void app_setup(void) {
 
   #ifdef IO_MODULE
   Module_4in_8out_setup();  //Set up our IO modules comms on I2C
+  #endif
+
+  #ifdef SDCARD
+        Serial.println("SD Card found, try update");
+        File root = SD.open("/");
+        printDirectory(root, 0);
+        root.close();
+        read_SD_Card();
+        updateFromFS(SD);
   #endif
 
   #ifdef USBHOST
