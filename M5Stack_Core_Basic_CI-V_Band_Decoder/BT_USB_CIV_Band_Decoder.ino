@@ -95,6 +95,8 @@
 #include "CIV.h"
 #include "time.h"
 #include <Update.h>
+#include "FS.h"
+
 
 //#define SEE_RAW_RX // see raw hex messages from radio
 //#define SEE_RAW_TX // see raw hex messages from radio
@@ -119,8 +121,8 @@ uint8_t brightness = 130;  // 0-255
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
 // settings in section 'Bluetooth Device Information'
 
-//uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f };  // Rick's 705
-uint8_t bd_address[6] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9 };  // Mike's 705
+uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f, 0x00 };  // Rick's 705
+//uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9, 0x00 };  // Mike's 705
 // ######################################################################
 
 // These pins are used byte the USB Host shield M5_USBH_Host USBHost(&SPI, 18, 23, 19, 5, 35);  // Core basic
@@ -958,23 +960,151 @@ void poll_radio(void) {
     }
   }
 }
-
+#define SDCARD
 #ifdef SDCARD
 
-void read_SD_Card(void)
+char line_buffer[80] = { 0 };
+
+void printLineN( uint16_t lineNumber)
 {
-    File myFile = SD.open("/config.txt",
-                     FILE_READ);  // Open the file "/hello.txt" in read mode.
-    if (myFile) {
-        Serial.println("/config.txt Content:");
-        // Read the data from the file and print it until the reading is complete.
-        while (myFile.available()) {
-            Serial.write(myFile.read());
-        }
-        myFile.close();
-    } else {
-        Serial.println("error opening /hello.txt");  // If the file is not open.                                           
+  File myFile = SD.open("/config.ini", FILE_READ);  // Open the file "/hello.txt" in read mode.
+  myFile.seek(0);
+  char cr;
+
+  for (uint16_t i = 0; i < (lineNumber -1);) {
+    cr = myFile.read();
+    if (cr == '\n') {
+      i++;
     }
+  }
+
+  Serial.print("printLineN: "); 
+  //Now we are at the right line
+  while(true){
+    cr = myFile.read();
+    Serial.write(cr);
+    if(cr == '\n'){
+      break;
+    }
+  }
+  //a for loop with a read limit might be a good idea
+}
+
+// returns the value part of a string found with "desired_name"
+// Returns NULL if nothing valid found
+char *read_string(char *line_buffer, char const *desired_name) { 
+    static char name[64];
+    static char val[64];
+    char seperator[2];
+
+    Serial.print(F("read_string: Line Buffer: ")); Serial.print(line_buffer);
+    uint8_t i = 0;
+    
+    while (sscanf(line_buffer, "%s %s %127[^\n]*%*s", name, seperator, val) != 0) {
+      if (0 == strcmp(name, desired_name)) {
+        Serial.print(F("read_string2: Name:")); Serial.print(name); 
+        Serial.print(F("   seperator:")); Serial.print(seperator);
+        Serial.print(F("   val:")); Serial.println(val);
+
+        return strdup(val);
+      }
+    }
+    return NULL;
+}
+
+uint16_t read_SD_Card(void)
+{
+    char cr;
+    uint16_t cnt = 0;
+    uint8_t i = 0;
+    char *line_buffer_temp;
+    char line_buffer[80] = { 0 };
+    char* token;
+    char* rest = line_buffer;
+    char address_temp[22] = { 0 };
+    uint8_t bd_address_temp[7] = { 0 };
+    uint8_t j = 0;
+    uint8_t k;
+
+    File myFile = SD.open("/config.ini", FILE_READ);  // Open the file in read mode.
+    if (myFile) {
+      Serial.println(F("config.ini Content:"));
+      // Read the data from the file and print it until the reading is complete.
+      while (myFile.available()) {
+        
+        //Serial.write(myFile.read());
+        cr = myFile.read();
+        line_buffer[i++] = cr;
+        
+        if (cr == '\n')  // Got a full line
+        {
+          cnt++;  // count the total lines in the file
+          line_buffer[i] = '\0';
+          //Serial.print(line_buffer);   // Got 1 whole line. print it out for a look-see
+          
+          if (line_buffer[0] != ';' && isAlphaNumeric(line_buffer[0])) {   // skip comment and non-content lines
+            //Serial.print(F("Before match function: line Number: ")); Serial.print(cnt); Serial.print(F("  line buffer is ")); Serial.print(line_buffer);             
+            
+            line_buffer_temp = read_string(line_buffer, "bd_address");
+            
+            if (line_buffer_temp != NULL) {
+              Serial.print(F("Found address line:")); Serial.println(line_buffer_temp);
+              strcpy(address_temp, line_buffer_temp);
+              
+              // replace : with \0
+              for (uint8_t k = 0; k < 18;) {
+                //Serial.print("  addr_temp zero cnt:"); Serial.print(k); Serial.print("  val:"); Serial.println(address_temp[k]);
+                if (address_temp[k] == ':') {
+                  address_temp[k] = '\0';
+                  //Serial.print("  addr_temp zero cnt sub:"); Serial.println(k);
+                }
+                address_temp[17] = '\0';
+                k++;
+              }
+
+              //Serial.print("\n address_temp ascii byte: ");  Serial.println(address_temp); 
+              
+              // convert each pair of the 6 acsii hex numbers to a number.
+              for (k = 0; k < 16; k+=3) {  
+                uint8_t addr = (uint8_t) hexToDec((String) &address_temp[k]);
+                bd_address_temp[j++] = addr;
+                //Serial.print("   hex addr byte:0x");  Serial.print(addr, HEX); 
+                //Serial.print("   hex addr array byte:0x");  Serial.println(bd_address_temp[j-1], HEX);
+              }  
+              bd_address_temp[6] = '\0';    
+
+              Serial.print(F(" Default bd_address:"));   // print default bd_address
+              for (int z = 0; z < 6; z++)
+                  Serial.print(bd_address[z], HEX);
+               Serial.println("");
+              
+              int y = (memcmp(bd_address, bd_address_temp, 6));  //  look to see if they are the same or not
+              if (y != 0) {   // 0 is the same
+                memcpy(bd_address, bd_address_temp, 6);  // valid address uee it.
+                Serial.println("Updated bd_address from config.ini");
+              } else {
+                Serial.println("bd_address is the same as default");
+              }
+              //Serial.print(F("\nbd_address index:"));  Serial.println(j,DEC);
+              break;
+            } else {
+              Serial.print(F("No Match Found line:")); Serial.println(cnt);
+            }
+          } else {
+            Serial.print(F("Commented or invalid line:"));  Serial.println(cnt);
+          }     
+          i = 0;
+        }
+      }
+      myFile.close();
+      
+      Serial.printf("number of lines in config.ini file %d\n",cnt);
+      return cnt;
+    } else {
+        Serial.println("error opening config.ini");  // If the file is not open. 
+        return 0;                                     
+    }
+    return cnt;
 }
 
 void performUpdate(Stream &updateSource, size_t updateSize) {
@@ -1013,7 +1143,7 @@ void updateFromFS(fs::FS &fs)
 
   if (updateBin) {
       if(updateBin.isDirectory()){
-        M5.Lcd.println("Error, update.bin is not a file");
+        M5.Lcd.drawString("Error, update.bin is not a file", 1, 1, 2);
         updateBin.close();
         return;
       }
@@ -1021,11 +1151,11 @@ void updateFromFS(fs::FS &fs)
       size_t updateSize = updateBin.size();
 
       if (updateSize > 0) {
-        M5.Lcd.println("Try to start update");
+        M5.Lcd.drawString("Try to start update", 1, 20, 2);
         performUpdate(updateBin, updateSize);
       }
       else {
-        M5.Lcd.println("Error, file is empty");
+         M5.Lcd.drawString("Error, file is empty", 1, 20, 2);
       }
 
       updateBin.close();
@@ -1034,7 +1164,7 @@ void updateFromFS(fs::FS &fs)
       fs.remove("/update.bin");      
   }
   else {
-      M5.Lcd.println("Could not load update.bin from sd root");
+      M5.Lcd.drawString("Could not load update.bin from sd root", 1, 40, 2);
   }
 }
 
@@ -1429,18 +1559,24 @@ void app_setup(void) {
 
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
-
-  #ifdef IO_MODULE
-  Module_4in_8out_setup();  //Set up our IO modules comms on I2C
-  #endif
-
+  
   #ifdef SDCARD
         Serial.println("SD Card found, try update");
         File root = SD.open("/");
-        printDirectory(root, 0);
+        printDirectory(root, 0);   // look what is on the SD card
         root.close();
-        read_SD_Card();
-        updateFromFS(SD);
+        updateFromFS(SD);    // if there is an update, do it.  Otherwise read config file.
+        uint16_t lines = read_SD_Card();  // get line count
+        Serial.printf("Setup: config.ini line count is %d\n", lines);
+        Serial.print(F("Updated bd_address:"));
+        for (int z = 0; z < 6; z++)
+          Serial.print(bd_address[z], HEX);
+        Serial.println("");
+        //printLineN(lines);
+  #endif
+
+  #ifdef IO_MODULE
+  Module_4in_8out_setup();  //Set up our IO modules comms on I2C
   #endif
 
   #ifdef USBHOST
