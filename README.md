@@ -2,7 +2,12 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 18 - Can now open and read a chosen file, inprep for reading config items.  If an update.bin file (new firmware image binary) is found, it will upload it, then delete the file from the SD card. To try this, first upload the latest here which has this capability, then find the .bin file in your temp sketch folder (path visible in the output section).  Rename it to update.bin, copy it to the root of a SD card.  Insert, reset the CPU.  Update status is on screen, goes fast.  Next up is to read in a config file with things like BT address.
+Latest summary: As of Aug 20 - Can now open config.ini on the SD card and update the BT address to match you rig. Also, if an update.bin file (new firmware image binary) is found, it will upload it, replacing the old program, then delete the update file from the SD card. To try this, first upload the latest here which has this capability, then find the .bin file in your temp sketch folder (path visible in the output section).  Rename it to update.bin, copy it to the root of a SD card.  Insert, reset the CPU.  Update status is on screen, goes fast.  Next up is to read in a config file with things like BT address.  For the config file: Create an empty config.ini file in the root folder on a FAT formatted SD card.  Create 1 line with 
+
+      bd_address = 30:31:7d:BA:44:F9
+
+You may have other lines starting with a ';' to ignore them.
+
 
 As of Aug 17, 2024, on a M5Stack Core Basic and Core2, BT Classic connection to the 705 runs reliably, and the 4-In/8-Out module works.  That is not the case yet for USBHost (works sometimes, then it does not for seemingly unrelated reasons, or no reason at all.  The first fully working version has been given to a field tester along with the radio I borrowed from him.  It is simply routing PTT between 2 transverters.  Can use the radio's Polled TX state or the wired PTT input as the PTT source so there is the option of no wired connection to the radio.  
 CoreS3 furher off, cannot talk to the IO module yet. An early version of this program works on USB Host before the graphics and IO module added.  IO module uses I2C and nails the the USB Host (SPI) and hangs everything. M5Unified Lib also breaks USB Host. Using M5stack on Core Basic and M5Core2.h on Core2 for best USB results.   
