@@ -4,7 +4,7 @@ Disclaimer: this is a work in progress!
 
 Latest summary: As of Aug 20 - Can now open config.ini on the SD card and update the BT address to match your rig. Also, if an update.bin file (new firmware image binary) is found, it will upload it, replacing the old program, then delete the update file from the SD card. To try this, first upload the latest here which has this capability, then find the .bin file in your temp sketch folder (path visible in the output section).  Rename it to update.bin, copy it to the root of a SD card.  Insert, reset the CPU.  Update status is on screen, goes fast.  
 
-For the config file: Create an empty config.ini file in the root folder on a FAT formatted SD card.  Create 1 line with with your address folling the sample below:
+For the config file: Create an empty config.ini file in the root folder on a FAT formatted SD card.  Create 1 line with with your address following the sample below:
 
       bd_address = 30:31:7d:BA:44:F9
 
