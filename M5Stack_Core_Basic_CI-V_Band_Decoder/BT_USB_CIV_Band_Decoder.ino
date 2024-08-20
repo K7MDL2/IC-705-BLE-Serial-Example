@@ -997,7 +997,7 @@ char *read_string(char *line_buffer, char const *desired_name) {
     static char val[64];
     char seperator[2];
 
-    Serial.print(F("read_string: Line Buffer: ")); Serial.print(line_buffer);
+    Serial.print(F("\nread_string: Line Buffer: ")); Serial.print(line_buffer);
     uint8_t i = 0;
     
     while (sscanf(line_buffer, "%s %s %127[^\n]*%*s", name, seperator, val) != 0) {
@@ -1039,13 +1039,20 @@ uint16_t read_SD_Card(void)
         if (cr == '\n')  // Got a full line
         {
           cnt++;  // count the total lines in the file
-          line_buffer[i] = '\0';
-          //Serial.print(line_buffer);   // Got 1 whole line. print it out for a look-see
+          line_buffer[i-1] = '\0';
+          Serial.print(line_buffer);   // Got 1 whole line. print it out for a look-see
           
           if (line_buffer[0] != ';' && isAlphaNumeric(line_buffer[0])) {   // skip comment and non-content lines
             //Serial.print(F("Before match function: line Number: ")); Serial.print(cnt); Serial.print(F("  line buffer is ")); Serial.print(line_buffer);             
-            
+          
             line_buffer_temp = read_string(line_buffer, "bd_address");
+            
+            int l = strlen(line_buffer_temp);
+            Serial.print("Number digits read in for bd_address - len:"); Serial.println(l);
+            if (l != 18) {
+              Serial.print("Wrong number of digits for bd_address - len:"); Serial.println(l);
+              break;
+            }            
             
             if (line_buffer_temp != NULL) {
               Serial.print(F("Found address line:")); Serial.println(line_buffer_temp);
