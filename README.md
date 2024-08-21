@@ -2,7 +2,13 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 20 - Can now open config.ini on the SD card and update the BT address to match your rig. Also, if an update.bin file (new firmware image binary) is found, it will upload it, replacing the old program, then delete the update file from the SD card. To try this, first upload the latest here which has this capability, then find the .bin file in your temp sketch folder (path visible in the output section).  Rename it to update.bin, copy it to the root of a SD card.  Insert, reset the CPU.  Update status is on screen, goes fast.  
+Latest summary: As of Aug 21 - For the 4IN8OUT module to work on i2c on the CoreS3, it requires &Wire1, vs. &Wire used for the older models.  The SDA and SCL pins (12 & 11) seem to be ignored, can swap them no impact.  This was spotted in their CoreS3 example motor encoder driver.  Below is how it looks for Core3 now. 
+
+      while (!module.begin(&Wire1, 12, 11, MODULE_4IN8OUT_ADDR)) ...
+
+This is good news, it means I can now proceeed to add BLE to the code now that IO works which I consider a necessity. USB Host is still a problem.  I updated the BLE_Decoder_Simple.ino.
+
+Can now open config.ini on the SD card and update the BT address to match your rig. Also, if an update.bin file (new firmware image binary) is found, it will upload it, replacing the old program, then delete the update file from the SD card. To try this, first upload the latest here which has this capability, then find the .bin file in your temp sketch folder (path visible in the output section).  Rename it to update.bin, copy it to the root of a SD card.  Insert, reset the CPU.  Update status is on screen, goes fast.  
 
 For the config file: Create an empty config.ini file in the root folder on a FAT formatted SD card.  Create 1 line with with your address folling the sample below:
 
@@ -51,7 +57,7 @@ Old and New models posing for a family picture.  The Core3-SE has 4-In/8-Out, HM
 
 1. IC705_ESP32_BLE_client_uart:  This is the simplest demo if pairing and reconnecting to an IC-705 using BLE.  With the radio in pairing mode, turn on your device and it will silently pair. Once paired, it will reconnect upon any disconnect. It is a one shot deal and won't auto-recover from disconnects, you must reset the device each time to connect.  It reads frequency and PTT status, nothing else.
 
-2. IC-705_BLE_Decoder_Simple: This an extended version of the simple program above.  Nothing fancy but it will auto-reconnect a soon as it can find the server again.  I may add a few features but it is largely done, serving its purpose for now.  This and the UART example above were tested on a M5Stack Core3-SE. The CPU model is new and the IO libraries are still catching up. I have not yet got the HMI encoder and 4In/8Out module working. Or the USB Host moduleyet, just have not tested that yet.
+2. IC-705_BLE_Decoder_Simple: This an extended version of the simple program above.  Nothing fancy but it will auto-reconnect a soon as it can find the server again.  I may add a few features but it is largely done, serving its purpose for now.  This and the UART example above were tested on a M5Stack Core3-SE. The CPU model is new and the IO libraries are still catching up. I have not yet got the HMI encoder and 4In/8Out module working. Or the USB Host moduleyet, just have not tested that yet.  Be sure you do not have the ESP32_BLE_Arduino library loaded, use the built in BLE lib.
 
 3. M5Stack_Core_Basic_CI-V_Band_Decoder. This is BT Classic SPP and USB Host.  The USB Host code example I built on supports several CPU types and I left that code in place for the case I want to later try this on Pico or some other model.  I need to get a working package done soon so went with the old Core Basic module which has no BLE.  I use USB Host Serial and 4In/8out modules plus a DIN or PLC base so I can mount it. The HMI Encoder/Switch module also works when I am ready for it. UI has Frequency, band, PTT, Xvtr, Time, dater, grid square and menu buttons. This one is a work in progress, the 2 above are mostly done as examples. 
 

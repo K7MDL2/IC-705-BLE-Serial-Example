@@ -368,13 +368,13 @@ bool connectToServer(BLEAddress pAddress) {
   // Device name must be 16 bytes exactly, msg total 21 bytes.
   pRXCharacteristic->writeValue(CIV_ID1, sizeof(CIV_ID1));
   pRXCharacteristic->canNotify();
-  delay(20);  // a small delay was required or this message would be missed (collision likely).
+  M5.delay(20);  // a small delay was required or this message would be missed (collision likely).
 
   // Send Token - A fixed value 9 bytes long total.
   uint8_t CIV_ID2[] = {0xFE, 0xF1, 0x00, 0x63, 0xEE, 0x39, 0x09, 0x10, 0xFD}; // Send Token
   pRXCharacteristic->writeValue(CIV_ID2, 9);
   pRXCharacteristic->canNotify();
-  delay(20);
+  M5.delay(20);
 
 // if pairing,  get reply with       0xFE, 0xF1, 0x00, 0x62, 0xFD        // no reply when reconnecting
 // if pairing,  get reply with       0xFE, 0xF1, 0x00, 0x63, 0x01, 0xFD  // pair confirmed
@@ -595,10 +595,11 @@ void Mod_4in8out(void)
   //M5.Lcd.drawString("FW VERSION:" + String(module.getVersion()), 70, 120, 4);
   //M5.Lcd.drawString("Click BtnB Update Addr to 0x66", 60, 160, 2);
   if (M5.BtnB.wasPressed()) {
-      if (module.setDeviceAddr(0x66)) {
-          Serial.println("Update Addr: 0x66");
+      //if (module.setDeviceAddr(0x66)) {
+        //  Serial.println("Update Addr: 0x66");
+          Serial.println("BtnB pressed");
          // M5.Lcd.drawString("Update Addr: 0x66 success", 60, 200, 2);
-        }
+        //}
   }
 }
 
@@ -608,7 +609,7 @@ void setup()
   Serial.begin(115200);
   
   #ifdef MOD_4IN_8OUT
-    while (!module.begin(&Wire, 21, 22, MODULE_4IN8OUT_ADDR)) 
+    while (!module.begin(&Wire1, 12, 11, MODULE_4IN8OUT_ADDR)) 
     {
         Serial.println("4IN8OUT INIT ERROR");
         M5.Lcd.setTextSize(1); // to Set the size of text from 0 to 255
