@@ -234,7 +234,8 @@ void setup() {
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
     Serial.println("Core2 defined");
     Wire.begin(21,22);
-
+    SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+    
     #ifdef CORE2LIB
     // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
     M5.begin();

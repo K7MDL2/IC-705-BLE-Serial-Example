@@ -111,6 +111,9 @@
   #else
     #include <M5Unified.h>  // kills off USB Host
   #endif
+  #define SD_SPI_SCK_PIN  18
+  #define SD_SPI_MISO_PIN 38
+  #define SD_SPI_MOSI_PIN 23
   #define SD_SPI_CS_PIN   4
   #define CORE2
 #else
@@ -119,16 +122,12 @@
 #endif
 
 #include <stdint.h>
-#include "DebugPrint.h"
-
-#include "Wire.h"
-#include "CIV.h"
-#include "time.h"
 #include <Update.h>
+#include "Wire.h"
+#include "time.h"
 #include "FS.h"
 #include <SPI.h>
 #include <SD.h>
-#include "Decoder.h"
 
 #define IC705 0xA4
 #define IC905 0xAC
@@ -147,7 +146,7 @@
 #define POLL_PTT_DEFAULT 47  // poll the radio for PTT status odd numbers to stagger them a bit \
                              // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705. \
                              // Also polls the wired inputs
-#define POLL_PTT_USBHOST 67  // Dynamically changes value based on detected radio address. \
+#define POLL_PTT_USBHOST 167  // Dynamically changes value based on detected radio address. \
                              // By observation, on USB, the radio only responds once every few seconds when the radio \
                              //   has not changed states.  It will immediately reply to a poll if the Tx state changed. \
                              //   Still have to poll fast for controlling external PTT, most requests will not be answered. \
@@ -158,7 +157,7 @@
 #define POLL_RADIO_UTC 1000  // poll radio for time and location
 
 // Chose the combination needed.  Note that at least one service must be enabled.
-#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is OK if USB Host is enabled
+//#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
                     // BT Classic does not work on Core3.  It might on Core2 (untested)
 #define BLE         // Core 3.  Maybe works on Core 2, TBD
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
@@ -193,6 +192,10 @@
 #endif
 
 //#define SSP                           // use BT SSP - pair with a passkey
+
+// After #defines
+#include "DebugPrint.h"
+#include "CIV.h"
 
 // Function prototypes:
 void configRadioBaud(uint16_t);

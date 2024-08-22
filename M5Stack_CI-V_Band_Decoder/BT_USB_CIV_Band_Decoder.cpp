@@ -494,14 +494,8 @@ void processCatMessages() {
   uint8_t data_start_idx = 0;
   uint8_t data_len = 0;
   uint8_t data[20] = {};
-
-#ifdef BTCLASSIC
-  while (btConnected && SerialBT.available())  // &&  USBH_connected))
-#elif USBHOST
-  while (!BT_enabled && SerialHost.available())  // &&  USBH_connected))
-#else
-  if (BLE_connected)   // use for BLE when ready
-#endif
+  
+  if (1)
   {
     bool knowncommand = true;
     int i;
@@ -1445,13 +1439,9 @@ void app_setup(void) {
   vTaskDelay(500);
 
 #ifdef SDCARD
-  #if defined ( CORE3 )
+  #if defined ( CORE3 ) || defined ( CORE2 )
   if (!SD.begin(SD_SPI_CS_PIN, SPI, 25000000)) {
     // Print a message if the SD card initialization fails or if the SD card does not exist.
-    Serial.println("Card failed, or not present");
-  } else {
-  #elif defined ( CORE2 )
-  if (!SD.begin(SD_SPI_CS_PIN, SPI)) {
     Serial.println("Card failed, or not present");
   } else {
   #else
@@ -1549,7 +1539,7 @@ void app_loop(void) {
 
   refesh_display();
 
-  Get_Radio_address();  // can autodiscover CI-V address if not predefined.
+  //Get_Radio_address();  // can autodiscover CI-V address if not predefined.
 
 #if defined ( PC_PASSTHROUGH  )
   uint8_t buf[64];
@@ -1593,7 +1583,7 @@ void app_loop(void) {
 
     // 4th pin is wired PTT from radio.
     // extract the 4rh input to pass on PTT through slected bands IO pin.
-    if (decode_PTT_temp != decode_PTT_temp_last && use_wired_PTT)  // only call when the state changes
+    if ((decode_PTT_temp != decode_PTT_temp_last) && use_wired_PTT)  // only call when the state changes
     {
       PTT_Output(band, decode_PTT_temp);  // should add debounce but cpu in the IO module seems to be doing that already well enough
       decode_PTT_temp_last = decode_PTT_temp;
