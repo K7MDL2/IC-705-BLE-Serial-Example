@@ -3,21 +3,6 @@
 #ifndef _DECODER_
 #define _DECODER_
 
-#if CORE3
-  #include <M5CoreS3.h>
-
-#elif CORE2
-  #ifdef CORE2LIB
-    #include <M5Core2.h>    // USB Host sort to works
-  #else
-    #include <M5Unified.h>  // kills off USB Host
-  #endif
-
-#elif CORE
-  #include <M5Stack.h>
-
-#endif
-
 #include "Decoder.h"
 #include "MODULE_4IN8OUT.h"
 #include <Wire.h>
@@ -78,9 +63,11 @@ void GPIO_Out(uint8_t pattern)
     DPRINTF("  HEX "); DPRINT(pattern, HEX);
     DPRINTF("  Binary "); DPRINTLN(pattern, BIN);
     
-    #ifndef IO_MODULE
-      return;
-    #endif
+    //#ifndef IO_MODULE
+    //  DPRINTLNF("GPIO_Out: IO_MODULE **NOT** enabled");
+      //return;
+    //#endif
+
     //pattern = !pattern;
 
     // mask each bit and apply the 1 or 0 to the assigned pin
@@ -136,14 +123,15 @@ void PTT_Output(uint8_t band, uint8_t PTT_state)
 }
 
 void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state)
-{
+{   
     DPRINTF("  PTT state "); DPRINT(PTT_state, BIN);
     DPRINTF("  PTT Output Binary "); DPRINTLN(pattern, BIN);
-  
-    #ifndef IO_MODULE
-      return;
-    #endif
-    
+
+    //#ifndef IO_MODULE
+    //  DPRINTLNF("  GPIO_PTT_Out: IO_MODULE **NOT** Enabled");
+      //return;
+    //#endif
+
     //PTT_state = !PTT_state;  // Invert  PTT 1 = TX, IO needs 0 to gnd for TX.
     
     if (PTT_state) 
@@ -153,7 +141,7 @@ void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state)
     
     // mask each bit and apply the 1 or 0 to the assigned pin
     if (BAND_DECODE_PTT_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
-    if (BAND_DECODE_PTT_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_1, (pattern & 0x02 & PTT_state) ? 1 : 0);}  // bit 1
+    if (BAND_DECODE_PTT_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_1, (pattern & 0x02 & PTT_state) ? 1 : 1);}  // bit 1
     if (BAND_DECODE_PTT_OUTPUT_PIN_2 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_2, (pattern & 0x04 & PTT_state) ? 1 : 0);}  // bit 2
     if (BAND_DECODE_PTT_OUTPUT_PIN_3 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_3, (pattern & 0x08 & PTT_state) ? 1 : 0);}  // bit 3
     if (BAND_DECODE_PTT_OUTPUT_PIN_4 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_4, (pattern & 0x10 & PTT_state) ? 1 : 0);}  // bit 4
@@ -200,7 +188,7 @@ void  Module_4in_8out_setup()
     uint8_t counter = 0;
     #ifdef CONFIG_IDF_TARGET_ESP32S3
       Serial.println("Decoder: CoreS3 i2c pins used");
-      while (!module.begin(&Wire1, 11, 12, MODULE_4IN8OUT_ADDR) && counter < 4) {  // for cores3
+      while (!module.begin(&Wire1, 12, 11, MODULE_4IN8OUT_ADDR) && counter < 4) {  // for cores3
     #else
       while (!module.begin(&Wire, 21, 22, MODULE_4IN8OUT_ADDR) && counter < 4) {  //for core basic
     #endif
@@ -228,33 +216,5 @@ uint8_t Module_4in_8out_Input_scan(void)
   pattern |= module.getInput(3) << 3;
   return pattern;
 }
-
-#ifdef MODTEST
-void Module_4in_8out_Output_test()
-{
-    M5.Lcd.clearDisplay((TFT_BLACK));
-    M5.Lcd.drawString("4IN8OUT MODULE", 60, 80, 4);
-    M5.Lcd.drawString("FW VERSION:" + String(module.getVersion()), 70, 120, 4);
-    if (millis() - interval > 1000) 
-    {
-      interval = millis();
-      level    = !level;
-      for (uint8_t i = 0; i < 8; i++) 
-      {
-        module.setOutput(i, level);
-        if (level) {
-            M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_BLACK);
-            M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_GREEN);
-        } else {
-            M5.Lcd.fillRect(20 + 35 * i, 200, 25, 25, TFT_BLACK);
-            M5.Lcd.drawRect(20 + 35 * i, 200, 25, 25, TFT_GREEN);
-        }
-        M5.Lcd.drawString("OUT" + String(i), 18 + 35 * i, 180);
-        delay(50);
-      }
-    } 
-  M5.update();
-}
-#endif
 
 #endif  // DECODER FILE
