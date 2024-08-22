@@ -75,62 +75,22 @@
 // Since USBHost.task() will put loop() into dormant state and prevent followed code from running
 // until there is USB host event.
 
+#include "M5Stack_CI-V_Band_Decoder.h"
+#include "Decoder.h"
+#include "DebugPrint.h"
+#include "M5_Max3421E_Usb.h"
+
 #if defined(ARDUINO_NRF52_ADAFRUIT) || defined(ARDUINO_ARCH_ESP32)
   #define USE_FREERTOS
 #endif
 
-#define CORE2LIB
-
-#if defined ( CONFIG_IDF_TARGET_ESP32S3 )
-#include <M5CoreS3.h>
-static M5::touch_state_t prev_state;
-#elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-  #ifdef CORE2LIB
-  #include <M5Core2.h>    // USB Host sort to works
-  #else
-  #include <M5Unified.h>  // kills off USB Host
-  #endif
-#else
-#include <M5Stack.h>
-#endif
-
-#include "M5_Max3421E_Usb.h"
-#include "Wire.h"
 // USBHost is defined in usbh_helper.h
 #include "usbh_helper.h"
-#include "BluetoothSerial.h"
 
-// Chose the combination needed.  Note that at least one service must be enabled.
-#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is OK if USB Host is enabled
-                    // BT Classic does not work on Core3.  It might on Core2 (untested)
-//#define BLE    // future use - no code here, would only work on Core3, maybe on Core2 (untested
-//#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
-#define IO_MODULE // enable the 4-In/8-Out module
-#define SDCARD
-
-//#define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
-
-#ifndef PC_PASSTHROUGH   // shut off by default when PASSTHRU MODE is on
-  #define PRINT_VFO_TO_SERIAL // uncomment to visually see VFO updates from the radio on Serial
-  #define PRINT_PTT_TO_SERIAL // uncomment to visually see PTT updates from the radio on Serial
-#endif 
-
-static uint8_t USBHost_ready = 2;  // 0 = not mounted.  1 = mounted, 2 = system not initialized
-static bool USBH_connected = false;
-static uint64_t frequency = 0;
-static bool restart_USBH_flag = false;
-static bool restart_BT_flag = false;
-static bool BtnA_pressed = false;
-static bool BtnB_pressed = false;
-static bool BtnC_pressed = false;
-static int32_t loop_time = 0;
-static int32_t loop_max_time = 0;
-int32_t loop_time_threshold = 25;
-static int32_t prev_loop_time = 0;
-extern uint16_t background_color;
-
+#ifdef USBHOST
 // CDC Host object
 Adafruit_USBH_CDC SerialHost;
+#endif
 
 // Language ID: English
 #define LANGUAGE_ID 0x0409
@@ -216,13 +176,44 @@ void app_loop_rtos_task(void *param) {
   }
   vTaskDelete(NULL);
 }
-#endif
 
-extern void app_setup();
+#ifdef BLE
+extern void BLE_loop();
+
+void BLE_loop_rtos_task(void *param) {
+ (void) param;
+  while (1) {
+    BLE_loop();
+    //Serial.print("\nT");
+    //vTaskDelay(12);
+    // test for stack size
+    uint32_t stack_sz;
+    stack_sz = uxTaskGetStackHighWaterMark( NULL );
+    if (stack_sz < 1000)
+      Serial.printf("\n  ^^^^^^^^^^^  BLE_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+  }
+  vTaskDelete(NULL);
+}
+#endif // BLE
+#endif  // FREERTOS
+
+extern void   BLE_Setup();
+extern void   Scan_BLE_Servers();
+extern void   app_setup();
+uint8_t USBHost_ready = 2;  // 0 = not mounted.  1 = mounted, 2 = system not initialized
+bool USBH_connected = false;
+bool restart_USBH_flag = false;
+bool restart_BT_flag = false;
+bool BtnA_pressed = false;
+bool BtnB_pressed = false;
+bool BtnC_pressed = false;
+uint64_t frequency = 0;
 //
 //   Main Setup for ESP32
 //
 void setup() {
+
+
 
   Serial.begin(115200);
   while ( !Serial ) delay(10);   // wait for native usb
@@ -232,8 +223,14 @@ void setup() {
     M5.begin(cfg);
     M5.Power.begin();
     Wire.begin(12,11);
+    //M5.Touch.begin();
+    auto ms = millis();
+    if (M5.Touch.isEnabled())
+      M5.Touch.update(ms);
+    //M5.Power.setExtOutput(true);  // .powerModeSet(POWER_MODE_USB_IN_BUS_OUT);
     Serial.println("CoreS3 and CoreS3SE defined");
-  
+    SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
     Serial.println("Core2 defined");
     Wire.begin(21,22);
@@ -244,9 +241,8 @@ void setup() {
     M5.Axp.begin();
     Serial.print("Power Status 0=external, 1=internal 2=max  "); Serial.println(M5.Axp.isACIN() ? 0 : 1);
     M5.Touch.begin();
-    //if (M5.Touch.isEnabled()) {
+    //if (M5.Touch.isEnabled())
     M5.Touch.update();
-    //}
     #else
     //// M5Unified.h stuff =  kills USB Host though, makes the touch buttons work.
     auto cfg = M5.config();
@@ -291,6 +287,7 @@ void setup() {
       app_setup();  // setup app stuff
       //xTaskCreatePinnedToCore(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle, 1);
       //xTaskCreate(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle); 
+      //xTaskCreate(BLE_loop_rtos_task, "BLE", 8000, NULL, 2, &xHandle);   // callback on server ID not working inside a task
     #endif
   #endif
 
@@ -298,6 +295,11 @@ void setup() {
     app_setup();  // setup app stuff
   #endif
   
+  #ifdef BLE
+    BLE_Setup();
+    Scan_BLE_Servers();
+  #endif
+
   Serial.println("TinyUSB Host Serial Setup Done");
 }
 
@@ -307,15 +309,19 @@ void setup() {
 //
 //*****************************************************************************
 
-
 void loop() {
   
+  static int32_t loop_time = 0;
+  static int32_t loop_max_time = 0;
+  int32_t loop_time_threshold = 30;
+  static int32_t prev_loop_time = 0;
+
   loop_time = millis();  // watermark
   
   M5.update();
 
   #ifdef USE_FREERTOS
-   // USBHost.task();
+    //USBHost.task();
   #endif
 
   #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
@@ -326,25 +332,23 @@ void loop() {
     if ((M5.Display.height() > touchPoint.y &&
          touchPoint.y > M5.Display.height() - 40) &&
         touchPoint.state == m5::touch_state_t::touch_begin) {
-        M5.Display.fillRect(0, 40, M5.Display.width(), 70, BLACK);
         if (M5.Display.width() / 3 > touchPoint.x && touchPoint.x > 0){
             BtnA_pressed = true;
-            Serial.println("A");
+            Serial.println("3A");
         }
         if ((M5.Display.width() / 3) * 2 > touchPoint.x &&
             touchPoint.x > M5.Display.width() / 3) {
             BtnB_pressed = true;
-            Serial.println("B");
+            Serial.println("3B");
         }
         if (M5.Display.width() > touchPoint.x &&
             touchPoint.x > (M5.Display.width() / 3) * 2) {
             BtnC_pressed = true;
-            Serial.println("C");
+            Serial.println("3C");
         }
     }   
 
   #elif !defined ( CORE2LIB ) && ( defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) )
-
     int state = M5.BtnA.wasHold() ? 1
             : M5.BtnA.wasClicked() ? 2
             : M5.BtnA.wasPressed() ? 3
@@ -353,7 +357,7 @@ void loop() {
             : 0;
     if (state == 3 && !BtnA_pressed) {  // Only process once the main loop is done
       BtnA_pressed = true;
-      Serial.print("A, state = "); Serial.println(state);
+      Serial.print("2A, state = "); Serial.println(state);
     }
     
     state = M5.BtnB.wasHold() ? 1
@@ -364,7 +368,7 @@ void loop() {
           : 0;
     if (state == 3 && !BtnB_pressed) {
       BtnB_pressed = true;
-      Serial.print("B, state = "); Serial.println(state);
+      Serial.print("2B, state = "); Serial.println(state);
     }
 
     state = M5.BtnC.wasHold() ? 1
@@ -375,23 +379,20 @@ void loop() {
           : 0;
     if (state == 3 & !BtnC_pressed) {
       BtnC_pressed = true;
-      Serial.print("C, state = "); Serial.println(state);
+      Serial.print("2C, state = "); Serial.println(state);
     }
    
   #else
     if (//M5.BtnA.wasReleased() ||
      M5.BtnA.pressedFor(100, 3000)) {
-        Serial.println('A');
         BtnA_pressed = true;
         Serial.println("A");
     } else if (//M5.BtnB.wasReleased() || 
     M5.BtnB.pressedFor(100, 3000)) {
-        Serial.println('B');
         BtnB_pressed = true;
         Serial.println("B");
     } else if (//M5.BtnC.wasReleased() || 
     M5.BtnC.pressedFor(100, 3000)) {
-        Serial.println('C');
         BtnC_pressed = true;
         Serial.println("C");
     }
@@ -404,10 +405,14 @@ void loop() {
   
   //Serial.print(".");   causes crashes on PC due to too high data rate
   
+  #ifdef BLE
+    BLE_loop();
+  #endif
+
   //#ifdef USBHOST
     app_loop();   // call to application main loop - moved to FreeRTOS task
- // #endif
-
+  // #endif
+  
     // Measure our current and max loop times
   int32_t temp_time = millis() - loop_time;  // current loop duration
 
@@ -485,8 +490,10 @@ void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx,
 // Invoked when a device with CDC interface is mounted
 // idx is index of cdc interface in the internal pool.
 void tuh_cdc_mount_cb(uint8_t idx) {
-  // bind SerialHost object to this interface index
+  // bind SerialHost object to this interface 
+  #ifdef USBHOST
   SerialHost.mount(idx);
+  #endif
   Serial.println("\n****** SerialHost is connected to a new CDC device");
   USBH_connected = true;
   frequency = 0;
@@ -497,7 +504,9 @@ void tuh_cdc_mount_cb(uint8_t idx) {
 
 // Invoked when a device with CDC interface is unmounted
 void tuh_cdc_umount_cb(uint8_t idx) {
+  #ifdef USBHOST
   SerialHost.umount(idx);
+  #endif
   Serial.println("\n****** SerialHost is disconnected");
   USBH_connected = false;
   frequency = 0;  // force the screen to update if reconnecting to same frequency
