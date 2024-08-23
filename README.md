@@ -2,15 +2,15 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 23 - Band and frequency oin use before Xvtr mode is turnined on is now restored when XVTr is turned off.  Need to save mode and filter for this and each Xvtr band.  This is a major convenience feature when operating with both Xvtrs and direct.
+Latest summary: As of Aug 23 - Band and frequency in use before Xvtr mode is turned on is now restored when Xvtr is turned off.  Need to save mode and filter for this and each Xvtr band.  This is a major convenience feature when operating with both Xvtrs and direct bands.
 
-Core3 now works with IO and BLE. Core2 does both BLE and BT Classic, IO works also.  Core Basic is BT Classic.  So all generations are operational now.  For BLE I still have to cut over the TX side to use the main polling functions but PTT and Freq are working now with hard coded CIV writes.  SD card config is only used for BT Classic BT address today.  BLE is now using a tool generated UUID.
+Core3 now works with IO and BLE. Core2 does both BLE and BT Classic, IO works also.  Core Basic is BT Classic.  So all generations are operational now. SD card config is only used for BT Classic BT address today.  BLE is now using a tool generated UUID.
 
-For the 4IN8OUT module to work on i2c on the CoreS3, it requires &Wire1, vs. &Wire used for the older models.  The SDA and SCL pins (12 & 11) seem to be ignored, can swap them no impact.  This was spotted in their CoreS3 example motor encoder driver.  Below is how it looks for Core3 now. 
+For the 4IN8OUT module to work on i2c on the CoreS3, it required &Wire1, vs. &Wire used for the older models.  The SDA and SCL pins (12 & 11) seem to be ignored, can swap them no impact.  This was spotted in their CoreS3 example motor encoder driver.  Below is how it looks for Core3 now. 
 
       while (!module.begin(&Wire1, 12, 11, MODULE_4IN8OUT_ADDR)) ...
 
-This is good news, it means I can now proceeed to add BLE to the code now that IO works which I consider a necessity. USB Host is still a problem.  I updated the BLE_Decoder_Simple.ino.
+This was good news, it means I could proceeed to add BLE to the code, now that IO works, which I consider a necessity. USB Host is still a problem.  I updated the BLE_Decoder_Simple.ino.
 
 Can now open config.ini on the SD card and update the BT address to match your rig. Also, if an update.bin file (new firmware image binary) is found, it will upload it, replacing the old program, then delete the update file from the SD card. To try this, first upload the latest here which has this capability, then find the .bin file in your temp sketch folder (path visible in the output section).  Rename it to update.bin, copy it to the root of a SD card.  Insert, reset the CPU.  Update status is on screen, goes fast.  
 
