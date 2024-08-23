@@ -1525,7 +1525,7 @@ void app_loop(void) {
 
   refesh_display();
 
-  //Get_Radio_address();  // can autodiscover CI-V address if not predefined.
+  Get_Radio_address();  // can autodiscover CI-V address if not predefined.
 
 #if defined ( PC_PASSTHROUGH  )
   uint8_t buf[64];
@@ -1538,7 +1538,7 @@ void app_loop(void) {
     }
   }
 #else
-  poll_radio();  // do nto sed stuff to radio when a PC app is doing the same
+  poll_radio();  // do not send stuff to radio when a PC app is doing the same
 #endif
 
 #ifdef USBHOST
@@ -1549,7 +1549,7 @@ void app_loop(void) {
 #endif
 
 #ifdef BLE
-  //BLE_loop();
+  //BLE_loop();  // calling from the main loop for now.
 #endif
 
 #ifdef BTCLASSIC
