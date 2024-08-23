@@ -2,7 +2,9 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 22 - Core3 now works with IO and BLE. Core2 does both BLE and BT Classic, IO works also.  Core Basic is BT Classic.  So all generations are operational now.  For BLE I still have to cut over the TX side to use the main polling functions but PTT and Freq are working now with hard coded CIV writes.  SD card config is only used for BT Classic BT address today.  BLE is now using a tool generated UUID.
+Latest summary: As of Aug 23 - Band and frequency oin use before Xvtr mode is turnined on is now restored when XVTr is turned off.  Need to save mode and filter for this and each Xvtr band.  This is a major convenience feature when operating with both Xvtrs and direct.
+
+Core3 now works with IO and BLE. Core2 does both BLE and BT Classic, IO works also.  Core Basic is BT Classic.  So all generations are operational now.  For BLE I still have to cut over the TX side to use the main polling functions but PTT and Freq are working now with hard coded CIV writes.  SD card config is only used for BT Classic BT address today.  BLE is now using a tool generated UUID.
 
 For the 4IN8OUT module to work on i2c on the CoreS3, it requires &Wire1, vs. &Wire used for the older models.  The SDA and SCL pins (12 & 11) seem to be ignored, can swap them no impact.  This was spotted in their CoreS3 example motor encoder driver.  Below is how it looks for Core3 now. 
 
