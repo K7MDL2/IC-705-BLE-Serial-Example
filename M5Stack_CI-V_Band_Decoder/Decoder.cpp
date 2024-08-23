@@ -81,7 +81,7 @@ void GPIO_Out(uint8_t pattern)
     if (BAND_DECODE_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_7, (pattern & 0x80) ? 1 : 0);  // bit 7
 }
 
-void PTT_Output(uint8_t band, uint8_t PTT_state)
+void PTT_Output(uint8_t band, bool PTT_state)
 {
     // Set your desired PTT pattern per band in RadioConfig.h
     // ToDo: Eventually create a local UI screen to edit and monitor pin states
@@ -122,9 +122,11 @@ void PTT_Output(uint8_t band, uint8_t PTT_state)
         }
 }
 
-void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state)
+void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
 {   
-    DPRINTF("  PTT state "); DPRINT(PTT_state, BIN);
+    uint8_t PTT_state = _PTT_state ? 0xFF : 0;
+
+    DPRINTF("  PTT state "); DPRINT(_PTT_state, BIN);
     DPRINTF("  PTT Output Binary "); DPRINTLN(pattern, BIN);
 
     //#ifndef IO_MODULE
@@ -134,9 +136,6 @@ void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state)
 
     //PTT_state = !PTT_state;  // Invert  PTT 1 = TX, IO needs 0 to gnd for TX.
     
-    if (PTT_state) 
-      PTT_state = 0xFF;  
-      
     //Serial.println((pattern & 0x10 & PTT_state) ? 0 : 1);
     
     // mask each bit and apply the 1 or 0 to the assigned pin

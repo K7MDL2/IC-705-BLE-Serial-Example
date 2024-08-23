@@ -9,8 +9,8 @@
 char Grid_Square[GRIDSQUARE_LEN];   /* 10 char grid square max to be used - store d here as last known good Grid Flash icon if no valid GPS input*/
 extern uint8_t UTC;    // 0 local time, 1 UTC time
 extern void read_Frequency(uint8_t data_len);
-extern uint8_t PTT;
-static uint8_t TX_last = 0;
+extern bool PTT;
+static bool TX_last = 0;
 int hr_off;  // time offsets to apply to UTC time
 int min_off;
 int shift_dir;  // + or -
@@ -18,7 +18,7 @@ tmElements_t tm;
 time_t prevDisplay = 0; // When the digital clock was displayed
 extern bool use_wired_PTT;
 extern uint8_t band;
-extern void PTT_Output(uint8_t band, uint8_t PTT_state);
+extern void PTT_Output(uint8_t band, bool PTT_state);
 struct position p[1] = {};
 
 struct cmdList cmd_List[End_of_Cmd_List] = {
@@ -309,7 +309,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           break;
 
     case CIV_C_TX:  // Used to request RX TX status from radio
-          PTT = rd_buffer[data_start_idx];
+          PTT = rd_buffer[data_start_idx] ? true : false;
           if (TX_last != PTT)
           {
             if (!use_wired_PTT)        // normally the wired input will pass thru the PTT from radio hardware PTT. 

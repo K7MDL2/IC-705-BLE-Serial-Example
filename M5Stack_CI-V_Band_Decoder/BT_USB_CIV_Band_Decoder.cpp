@@ -65,8 +65,8 @@ uint8_t band = B_GENERAL;
 uint32_t timer;
 uint16_t background_color = TFT_BLACK;
 uint16_t text_color = TFT_WHITE;
-uint8_t PTT = 0;
-uint8_t prev_PTT = 1;
+bool PTT = false;
+bool prev_PTT = true;
 extern char Grid_Square[];
 bool BLE_buff_flag = false;
 
@@ -346,8 +346,6 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
       #endif
       
       #if defined ( BLE )
-        //std::string s( reinterpret_cast< char const* >(req) );
-        //SendMessageBLE(s);
         SendMessageBLE(req, msg_len+1);
       #else
         for (uint8_t i = 0; i <= msg_len; i++) {
@@ -382,14 +380,32 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 
 // ----------------------------------------
 //      Print the received frequency
+//
+//  This function is only called when the radio's reports a new frequency so is always the radio's real
+//    frequency, which when in Xvtr mode, the CI-V message value is the IF frequency.
+//
+//  The value 'frequency' is a global and is the final displayed frequency, Xvtr band or not.
+//    - On entry to this function, frequency is the global displayed value, may not be the actual radio (IF) frequency
+//      which is yet to be extracted from the CI-V messaage.
+//    - On exit from this function, frequency is either updated (non-XVtr bands) or Xvtr_offset applied, if any.
+//
 // ----------------------------------------
-void read_Frequency(uint8_t data_len) {
-  if (frequency > 0)
-    bands[band].VFO_last = frequency;  // store frequency per band before it maybe changes bands.
-                                       // Required to change IF and restore direct after use as an IF.
+void read_Frequency(uint8_t data_len) {       // This is the displayed frequency, before the radio input, which may have offset applied
+  if (frequency > 0)                          // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
+  //  if (XVTR_enabled) {                       // Store Xvtr band dial frequency before any changes
+  //    bands[XVTR_Band].VFO_last = frequency;  // If Xvtr enabled then VFO_last is XVTR_offset+radio (aka IF) frequency.
+
+  //  }                                     
+  //  else {
+    Serial.printf("read_Frequency: Last Freq %-13llu\n", frequency);
+    bands[band].VFO_last = frequency;       // store Xvtr or non-Xvtr band displayed frequency per band before it changes.
+                                              // if an Xvtr band, subtract the offset to get radio (IF) frequency
+  //  }
+
   frequency = 0;
   uint64_t mul = 1;
 
+  // This frequency from this point is from radio so will never be the XVTR offset applied version of 'frequency'
   //FE FE E0 42 03 <00 00 58 45 01> FD ic-820  IC-705  5bytes, 10bcd digits
   //FE FE 00 40 00 <00 60 06 14> FD ic-732
   //FE FE E0 AC 03 <00 00 58 45 01 01> FD  IC-905 for 10G and up bands - 6bytes, 12 bcd digits
@@ -407,7 +423,12 @@ void read_Frequency(uint8_t data_len) {
 
   band = getBand(frequency);
 
+  //if (frequency > 0 && !XVTR_enabled)   // update after any freq frequency/band change, only for non-XVTRs bands here
+  //
+   // bands[band].VFO_last = frequency;
+
   //Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   BLE_connected %d  radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, BLE_connected, radio_address);
+  // On exit from this function we have a new displayed frequency that has XVTR_Offset added, if any.
 }
 
 #ifdef BTCLASSIC
@@ -1162,8 +1183,8 @@ void display_Xvtr(bool _band, bool _force) {
   }
 }
 
-void display_PTT(uint8_t _PTT_state, bool _force) {
-  static uint8_t _prev_PTT_state = 1;
+void display_PTT(bool _PTT_state, bool _force) {
+  static bool _prev_PTT_state = true;
   String PTT_Tx = "TX";
   //String PTT_Rx = " Rx ";
   int x = 310;
@@ -1299,12 +1320,19 @@ void restart_USBH(void) {
 
 void band_Selector(uint8_t _band_input_pattern) {
   static uint8_t _band_input_pattern_last = 0;
+  static bool XVTR_enabled_last;
+  static uint8_t XVTR_band_before;
 
   if (_band_input_pattern != _band_input_pattern_last)  // only do something if it is different
   {
-    PTT_Output(band, 0);  // send PTT OFF with current band before changing to new band.
+    if (!XVTR_enabled_last && !XVTR_enabled) {   // capture last non-Xvtr band in use
+      XVTR_band_before = band;   // record the non-xvtr band before initial XVTR mode enabled.  
+    }
+
+    PTT_Output(band, false);  // send PTT OFF with current band before changing to new band.
     // Inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
     // translate input band pattern to band index then send to band Decode output
+    
     switch (_band_input_pattern)  // this could be BCD, parallel. For now assume 3 lines in paralle for 3 Xvtrs. Only have 4 inputs on module
     {                             // customize tis for your needs.  This is simple 3 Xvtrs, rig is used for IF only, no direct bands.  Only 3 inputs without going to BCD
       case 1:
@@ -1324,13 +1352,32 @@ void band_Selector(uint8_t _band_input_pattern) {
     Serial.printf("Band Selector Source (wired or polled) Input Pattern = %d, Xvtr enabled = %d\n", _band_input_pattern, XVTR_enabled);
 
     _band_input_pattern_last = _band_input_pattern;
+
+    // Band and Frequency are not yet changed    
+    // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, vever the same band.
+    if (XVTR_enabled) {    // set VFO and other values to last used for the target XVTR band
+      SetFreq(bands[XVTR_Band].VFO_last);   // This value always has Xvtr offset applied
+    }
+
+    // If turning off Xvtr mode, then restore the IF to normal last used values
+    if (XVTR_enabled_last && !XVTR_enabled) {   // This will have Xvtr offset = 0
+      // band is still Xvtr band until the radio actually changes frequency
+      frequency = bands[XVTR_band_before].VFO_last;  // use that band to get last VFO on that band
+      band = getBand(frequency);  // get the non-XVtr band
+      SetFreq(frequency);  // set radio to that last used.
+    }
+
+    // now the band and freq should be updated
     Serial.print(">>>> Last VFO = ");
+    Serial.print(bands[band].VFO_last);
+    Serial.print("   Last Xvtr VFO = ");
     Serial.print(bands[XVTR_Band].VFO_last);
     Serial.print("   Band In = ");
     Serial.print(_band_input_pattern, HEX);
     Serial.print("   PTT = ");
-    Serial.println(PTT);
-    SetFreq(bands[XVTR_Band].VFO_last);
+    Serial.println(PTT);   
+
+    XVTR_enabled_last = XVTR_enabled;
   }
 }
 
@@ -1362,6 +1409,9 @@ uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]) {
   return len;  // 5 or 6
 }
 
+// Send new frequency to radio, radio will change bands as needed. 
+// ToDo:  Radio mode and other settings are not tocuhed so stay the same as the last band used.  We are only changing the frequency, nothing else.
+//        Need to save mode, filter and other stuff to return each band to the last way it was used.
 void SetFreq(uint64_t Freq) {
   uint8_t vfo_dec[7] = {};
 

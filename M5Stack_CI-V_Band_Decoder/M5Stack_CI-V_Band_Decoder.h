@@ -143,10 +143,10 @@
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_PTT_DEFAULT 37  // poll the radio for PTT status odd numbers to stagger them a bit \
-                             // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705. \
+#define POLL_PTT_DEFAULT 47  // poll the radio for PTT status odd numbers to stagger them a bit
+                             // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
                              // Also polls the wired inputs
-#define POLL_PTT_USBHOST 167  // Dynamically changes value based on detected radio address. \
+#define POLL_PTT_USBHOST 162  // Dynamically changes value based on detected radio address.
                              // By observation, on USB, the radio only responds once every few seconds when the radio \
                              //   has not changed states.  It will immediately reply to a poll if the Tx state changed. \
                              //   Still have to poll fast for controlling external PTT, most requests will not be answered. \
@@ -214,7 +214,7 @@ unsigned int hexToDec(String hexString);
 void display_Freq(uint64_t _freq, bool _force);
 void display_Time(uint8_t _UTC, bool _force);
 void display_Xvtr(bool _band, bool _force);
-void display_PTT(uint8_t _PTT_state, bool _force);
+void display_PTT(bool _PTT_state, bool _force);
 void display_Band(uint8_t _band, bool _force);
 void display_Grid(char _grid[], bool _force);
 void SetFreq(uint64_t Freq);
@@ -231,7 +231,7 @@ struct Bands {
   uint64_t Xvtr_offset;  // Offset to add to radio frequency.
                          // When all is correct, it will be within the band limits and allow PTT and Band decoder outputs
   uint64_t VFO_last;     // store the last used frequency on each band.
-                         // Subtract the LO offset and send the result to the radio
+                         // for XVTR bands subtract the LO offset and send the result to the radio
 };
 
 extern uint8_t USBHost_ready;  // 0 = not mounted.  1 = mounted, 2 = system not initialized

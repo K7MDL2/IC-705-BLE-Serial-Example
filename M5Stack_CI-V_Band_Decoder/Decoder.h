@@ -5,8 +5,8 @@
 
 void Band_Decode_Output(uint8_t band);
 void GPIO_Out(uint8_t pattern);
-void PTT_Output(uint8_t band, uint8_t PTT_state);
-void GPIO_PTT_Out(uint8_t pattern, uint8_t PTT_state);
+void PTT_Output(uint8_t band, bool PTT_state);
+void GPIO_PTT_Out(uint8_t pattern, bool PTT_state);
 void Module_4in_8out_Output_test();
 uint8_t Module_4in_8out_Input_scan(void);
 void  Module_4in_8out_setup();
