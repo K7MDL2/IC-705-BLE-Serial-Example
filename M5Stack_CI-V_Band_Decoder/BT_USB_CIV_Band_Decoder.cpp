@@ -99,6 +99,8 @@ extern bool BtnA_pressed;
 extern bool BtnB_pressed;
 extern bool BtnC_pressed;
 extern uint64_t frequency;
+//extern void SendMessageBLE(std::string Message);
+extern void SendMessageBLE(uint8_t Message[], uint8_t len);
 
 // ######################################################################
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
@@ -311,87 +313,71 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   msg_len += 3;  // Tee up to add data if any
 
   uint8_t j = 0;
-  if (Data_len != 0)  // copy in 1 or more data bytes, if any
-  {
+  if (Data_len != 0) { // copy in 1 or more data bytes, if any
     for (j = 0; j < Data_len; j++)  //pick up with value i
       req[msg_len++] = Data[j];
   }
 
   req[msg_len] = STOP_BYTE;
+  req[msg_len+1] = 0;  // null terminate for printing or conversion to String type
 
-//#define SEE_RAW_TX  // an also be set at top of file
-#ifdef SEE_RAW_TX
-  Serial.print(F("--- Tx Raw Msg: "));
-  for (uint8_t k = 0; k <= msg_len; k++) {
-    Serial.print(req[k], HEX);
-    Serial.print(F(","));
-  }
-  Serial.print(F(" msg_len = "));
-  Serial.print(msg_len + 1);
-  Serial.println(F(" END"));
-#endif
+  //#define SEE_RAW_TX  // an also be set at top of file
+  #ifdef SEE_RAW_TX
+    Serial.print(F("--> Tx Raw Msg: "));
+    for (uint8_t k = 0; k <= msg_len; k++) {
+      Serial.print(req[k], HEX);
+      Serial.print(F(","));
+    }
+    Serial.print(F(" msg_len = "));
+    Serial.print(msg_len+1);
+    Serial.println(F(" END"));
+  #endif
 
-  //Serial.print(F("Poll rate = ")); Serial.print(poll_radio_ptt);
   //Serial.print(F("   BT connected = ")); Serial.print(btConnected);
   //Serial.print(F("   USBH connected = ")); Serial.println(USBH_connected);
 
   //#define RAWT  // for a more detailed look
-  if (USBH_connected && !btConnected) {
-    if (msg_len < sizeof(req) - 1)  // ensure our data is not longer than our buffer
-    {
-#ifdef SEE_RAWT
-      DPRINTF("Snd USB Host Msg: ");
-#endif
-      for (uint8_t i = 0; i <= msg_len; i++) {
-#ifdef SEE_RAWT
-        Serial.print(req[i], HEX);
-#endif
-#ifndef PC_PASSTHROUGH
-  #ifdef USBHOST
-      if (!SerialHost.write(req[i]))
-        DPRINTLNF("sendCatRequest: USB Host tx: error");
-  #endif
-#endif
 
-#ifdef SEE_RAWT
-        DPRINTF(",");
-#endif
-      }
-#ifdef SEE_RAWT
+  //if (btConnected && !SerialBT.isClosed() && SerialBT.connected())
+  if (USBH_connected || BLE_connected || btConnected) {
+    if (msg_len < sizeof(req) - 1) { // ensure our data is not longer than our buffer
+      #ifdef SEE_RAWT
+      DPRINTF("Send CI-V Msg: ");
+      #endif
+      
+      #if defined ( BLE )
+        //std::string s( reinterpret_cast< char const* >(req) );
+        //SendMessageBLE(s);
+        SendMessageBLE(req, msg_len+1);
+      #else
+        for (uint8_t i = 0; i <= msg_len; i++) {
+          #ifdef SEE_RAWT
+            Serial.print(req[i], HEX);
+          #endif
+
+            #if defined ( USBHOST )
+              if (!SerialHost.write(req[i])) 
+                DPRINTLNF("sendCatRequest: Tx: error");
+            #elif defined ( BTCLASSIC )
+              if (!SerialBT.write(req[i]))
+                DPRINTLNF("sendCatRequest: Tx: error");
+            #endif
+
+            #ifdef SEE_RAWT
+              DPRINTF(",");
+            #endif
+        }
+      #endif
+
+      #ifdef SEE_RAWT
       DPRINTF(" END TX MSG, msg_len = ");
       DPRINTLN(msg_len);
-#endif
+      #endif
+        
     } else {
-      DPRINTLNF("sendCatRequest: USB Host buffer overflow");
-    }
-  }
-#ifdef BTCLASSIC
-  else if (btConnected && !SerialBT.isClosed() && SerialBT.connected()) {
-    if (msg_len < sizeof(req) - 1)  // ensure our data is not longer than our buffer
-    {
-#ifdef SEE_RAWT
-      DPRINTF("Snd BT Msg: ");
-#endif
-      for (uint8_t i = 0; i <= msg_len; i++) {
-#ifdef SEE_RAWT
-        Serial.print(req[i], HEX);
-#endif
-        if (!SerialBT.write(req[i]))
-          DPRINTLNF("sendCatRequest: BT tx: error");
-#ifdef SEE_RAWT
-        DPRINTF(",");
-#endif
-      }
-#ifdef SEE_RAWT
-      DPRINTF(" END TX MSG, msg_len = ");
-      DPRINTLN(msg_len);
-#endif
-    } else {
-      DPRINTLNF("sendCatRequest: BT buffer overflow");
-    }
-  } else
-    DPRINTLNF(" No open BT or USB Host ports to send to");
-#endif  // BTCLASSIC
+      DPRINTLNF("sendCatRequest: Buffer overflow");
+    }// if overflow 
+  }  // if connected
 }
 
 // ----------------------------------------
@@ -508,7 +494,7 @@ void processCatMessages() {
 
 //#define SEE_RAW_RX
 #ifdef SEE_RAW_RX
-      Serial.print(F("+++ Rx Raw Msg: "));
+      Serial.print(F("<++ Rx Raw Msg: "));
       for (uint8_t k = 0; k < msg_len; k++) {
         Serial.print(read_buffer[k], HEX);
         Serial.print(F(","));

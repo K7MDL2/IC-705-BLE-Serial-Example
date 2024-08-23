@@ -143,7 +143,7 @@
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_PTT_DEFAULT 47  // poll the radio for PTT status odd numbers to stagger them a bit \
+#define POLL_PTT_DEFAULT 37  // poll the radio for PTT status odd numbers to stagger them a bit \
                              // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705. \
                              // Also polls the wired inputs
 #define POLL_PTT_USBHOST 167  // Dynamically changes value based on detected radio address. \

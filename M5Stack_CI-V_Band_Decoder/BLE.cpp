@@ -441,27 +441,26 @@ void Scan_BLE_Servers(void)
 // or fast in one long string.
 // Fast can be used in IOS app BLESerial Pro
 //------------------------------
-void SendMessageBLE(std::string Message)
+void SendMessageBLE(uint8_t Message[], uint8_t len)
 {
  if(connected) 
    {
-    if (1)
     //if (Mem.UseBLELongString)                                                                 // If Fast transmission is possible
-     {
-      pRXCharacteristic->writeValue(Message.c_str()); 
+      pRXCharacteristic->writeValue(Message, len, false); //.c_str()); 
       pRXCharacteristic->canNotify();
-      delay(10);                                                                              // Bluetooth stack will go into congestion, if too many packets are sent
-     } 
-   else                                                                                       // Packets of max 20 bytes
+      //delay(10);                                                                              // Bluetooth stack will go into congestion, if too many packets are sent
+     
+     /*} 
+    else                                                                                       // Packets of max 20 bytes
      {   
       int parts = (Message.length()/20) + 1;
       for(int n=0;n<parts;n++)
         {   
          pRXCharacteristic->writeValue(Message.substr(n*20, 20).c_str()); 
          pRXCharacteristic->canNotify();
-         delay(40);                                                                           // Bluetooth stack will go into congestion, if too many packets are sent
+         //delay(40);                                                                           // Bluetooth stack will go into congestion, if too many packets are sent
         }
-     }
+     }*/
    } 
 }
 
@@ -536,6 +535,7 @@ void BLE_loop(void)
 
   if(connected)
   {
+    /*
     if (millis() >= time_freq + POLL_RADIO_FREQ)   // poll every X ms
     {
       //Serial.println("Poll radio");
@@ -557,16 +557,7 @@ void BLE_loop(void)
       //delay(10);
       time_tx = millis();
     }
-
-    //SendMessageBLE(CIV_frequency);
-    //pRXCharacteristic->writeValue(timeSinceBoot.c_str(), timeSinceBoot.length());
-    //pRXCharacteristic->canNotify();
-
-    // Update the M5 screen
-    //display_Freq(frequency, false);
-    //display_PTT(PTT, false);
-    //display_Band(band, false);
-      
+    */
   }// if connected
   else 
   {
