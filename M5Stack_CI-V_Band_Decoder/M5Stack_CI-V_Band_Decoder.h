@@ -153,8 +153,10 @@
                              //   Unlike other modes.  BT seems to answer every request. USB2 engine is likely the same in \
                              //   all radios, where BT got a capacity upgrade.  The 905 acts the same as the 905 (905 is USB only) \
                              //   Have not compared to a LAN connection.
-#define POLL_RADIO_FREQ 308  // poll the radio for frequency
-#define POLL_RADIO_UTC 1000  // poll radio for time and location
+#define POLL_RADIO_FREQ  308  // poll the radio for frequency
+#define POLL_RADIO_UTC  1000  // poll radio for time and location
+#define POLL_RADIO_MODE 1000 // poll radio for extended mode, filter and datamode
+#define POLL_RADIO_AGC  5210 // poll radio for AGC
 
 // Chose the combination needed.  Note that at least one service must be enabled.
 //#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
@@ -232,6 +234,12 @@ struct Bands {
                          // When all is correct, it will be within the band limits and allow PTT and Band decoder outputs
   uint64_t VFO_last;     // store the last used frequency on each band.
                          // for XVTR bands subtract the LO offset and send the result to the radio
+  uint8_t mode_idx;      // current mode stored as indexc to the modelist table.
+  uint8_t filt;          // current fiult soreds in teh modelist table
+  uint8_t datamode;
+  uint8_t agc;            // store last agc.  Some radio/band/mode combos only have 1.
+  uint8_t preamp;         // some bands there is no preamp (2.4G+ on 905).  Some radios/bands/modes combos have 1 preamp level, others have 2 levels.
+  uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
 };
 
 extern uint8_t USBHost_ready;  // 0 = not mounted.  1 = mounted, 2 = system not initialized

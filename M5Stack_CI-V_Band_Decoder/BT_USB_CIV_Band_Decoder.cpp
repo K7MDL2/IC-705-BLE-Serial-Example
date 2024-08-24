@@ -25,38 +25,56 @@ void UpdateFromFS(fs::FS &fs);
 void printDirectory(File dir, int numTabs);
 extern struct cmdList cmd_List[];
 
+/*  copy of struct here from header file for easy reference.
+struct Bands {
+  char band_name[6];    // Freindly name or label.  Default here but can be changed by user.
+  uint64_t edge_lower;  // band edge limits for TX and for when to change to next band when tuning up or down.
+  uint64_t edge_upper;
+  uint64_t Xvtr_offset;  // Offset to add to radio frequency.
+                         // When all is correct, it will be within the band limits and allow PTT and Band decoder outputs
+  uint64_t VFO_last;     // store the last used frequency on each band.
+                         // for XVTR bands subtract the LO offset and send the result to the radio
+  uint8_t mode_idx;      // current mode stored as indexc to the modelist table.
+  uint8_t filt;          // current fiult soreds in teh modelist table
+  uint8_t datamode;
+  uint8_t agc;            // store last agc.  Some radio/band/mode combos only have 1.
+  uint8_t preamp;         // some bands there is no preamp (2.4G+ on 905).  Some radios/bands/modes combos have 1 preamp level, others have 2 levels.
+  uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
+};
+*/
+
 struct Bands bands[NUM_OF_BANDS] = {
-  { "AM", 535000, 1705000, 0, 535000 },                        // AM
-  { "160M", 1800000, 2000000, 0, 1860000 },                    // 160m
-  { "80M", 3500000, 4000000, 0, 3573000 },                     // 80m
-  { "60M", 5351000, 5367000, 0, 5351000 },                     // 60m
-  { "40M", 7000000, 7300000, 0, 7074000 },                     // 40m
-  { "30M", 10100000, 10150000, 0, 10136000 },                  // 30m
-  { "20M", 14000000, 14350000, 0, 14074000 },                  // 20m
-  { "17M", 18068000, 18168000, 0, 18100000 },                  // 17m
-  { "15M", 21000000, 21450000, 0, 21074000 },                  // 15m
-  { "12M", 24890000, 24990000, 0, 24891500 },                  // 12m
-  { "10M", 28000000, 29700000, 0, 28074000 },                  // 10m
-  { "6M", 50000000, 54000000, 0, 50125000 },                   // 6m
-  { "FM", 88000000, 108000000, 0, 95700000 },                  // FM
-  { "Air", 118000000, 137000000, 0, 119200000 },               // AIR
-  { "2M", 144000000, 148000000, 0, 144200000 },                // 2m
-  { "1.25M", 222000000, 225000000, 194000000, 222100000 },     // 222
-  { "70cm", 430000000, 450000000, 0, 432100000 },              // 430/440
-  { "33cm", 902000000, 928000000, 758000000, 903100000 },      // 902
-  { "23cm", 1240000000, 1300000000, 1152000000, 1296100000 },  // 1296Mhz
-  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000 },  // 2.3 and 2.4GHz
-  { "9cm", 3300000000, 3500000000, 0, 3301000000 },            // 3.3GHz
-  { "6cm", 5650000000, 5925000000, 0, 5760100000 },            // 5.7GHz
-  { "3cm", 10000000000, 10500000000, 0, 10368100000 },         // 10GHz
-  { "24G", 24000000000, 24002000000, 0, 24031000000 },         // 24GHz
-  { "47G", 47000000000, 47002000000, 0, 47192100000 },         // 47GHz
-  { "76G", 76000000000, 76002000000, 0, 76000000000 },         // 76GHz
-  { "122G", 122000000000, 122002000000, 0, 122001000000 },     // 122GHz
-  { "GENE", 0, 123000000000, 0, 432000000 }                    // 0 to 122GHz
+  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0 },      // AM
+  { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0 },                    // 160m
+  { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0 },                     // 80m
+  { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0 },                     // 60m
+  { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0 },                     // 40m
+  { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0 },                  // 30m
+  { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0 },                  // 20m
+  { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0 },                  // 17m
+  { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0 },                  // 15m
+  { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0 },                  // 12m
+  { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0 },                  // 10m
+  { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0 },                   // 6m
+  { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0 },                  // FM
+  { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0 },               // AIR
+  { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0 },                // 2m
+  { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0 },     // 222
+  { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0 },              // 430/440
+  { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0 },      // 902
+  { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0 },  // 1296Mhz
+  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0 },  // 2.3 and 2.4GHz
+  { "9cm", 3300000000, 3500000000, 0, 3301000000, 1, 1, 0, 1, 0, 0 },            // 3.3GHz
+  { "6cm", 5650000000, 5925000000, 0, 5760100000, 1, 1, 0, 1, 0, 0 },            // 5.7GHz
+  { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0 },         // 10GHz
+  { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0 },         // 24GHz
+  { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0 },         // 47GHz
+  { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0 },         // 76GHz
+  { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0 },     // 122GHz
+  { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0 }                    // 0 to 122GHz
 };
 
-String title = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
+char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
 uint16_t baud_rate;                 //Current baud speed
 uint32_t readtimeout = 10;          //Serial port read timeout
 //uint8_t read_buffer[2048];   //Read buffer
@@ -83,9 +101,6 @@ uint8_t  XVTR_Band = 0;         // Xvtr band to display - temp until a band sele
 uint8_t  brightness = 130;      // 0-255
 bool  XVTR_enabled = false;  // true when a transverter feature is active
 uint8_t read_buffer[2048];   //Read buffer
-
-String modes;
-
 uint8_t prev_band = 0xFF;
 uint64_t prev_frequency = 0;
 bool btConnected = false;
@@ -391,20 +406,15 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 //
 // ----------------------------------------
 void read_Frequency(uint8_t data_len) {       // This is the displayed frequency, before the radio input, which may have offset applied
-  if (frequency > 0)                          // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
-  //  if (XVTR_enabled) {                       // Store Xvtr band dial frequency before any changes
-  //    bands[XVTR_Band].VFO_last = frequency;  // If Xvtr enabled then VFO_last is XVTR_offset+radio (aka IF) frequency.
+  if (frequency > 0) {                         // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
 
-  //  }                                     
-  //  else {
-    Serial.printf("read_Frequency: Last Freq %-13llu\n", frequency);
+    //Serial.printf("read_Frequency: Last Freq %-13llu\n", frequency);
     bands[band].VFO_last = frequency;       // store Xvtr or non-Xvtr band displayed frequency per band before it changes.
-                                              // if an Xvtr band, subtract the offset to get radio (IF) frequency
-  //  }
-
+    prev_band = band;                       // store associated band index
+  }                                         // if an Xvtr band, subtract the offset to get radio (IF) frequency
+  
   frequency = 0;
   uint64_t mul = 1;
-
   // This frequency from this point is from radio so will never be the XVTR offset applied version of 'frequency'
   //FE FE E0 42 03 <00 00 58 45 01> FD ic-820  IC-705  5bytes, 10bcd digits
   //FE FE 00 40 00 <00 60 06 14> FD ic-732
@@ -423,11 +433,16 @@ void read_Frequency(uint8_t data_len) {       // This is the displayed frequency
 
   band = getBand(frequency);
 
-  //if (frequency > 0 && !XVTR_enabled)   // update after any freq frequency/band change, only for non-XVTRs bands here
-  //
-   // bands[band].VFO_last = frequency;
-
+  if (prev_band != band) {
+    sendCatRequest(CIV_C_F26A, 0, 0);   // fire off a mode/filter request with a change in band.
+    vTaskDelay(5);
+    processCatMessages();
+    sendCatRequest(CIV_C_AGC_READ, 0, 0);   // fire off agc update
+    vTaskDelay(5);
+    processCatMessages();
+  }
   //Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   BLE_connected %d  radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, BLE_connected, radio_address);
+ 
   // On exit from this function we have a new displayed frequency that has XVTR_Offset added, if any.
 }
 
@@ -758,35 +773,20 @@ void BT_Setup(void) {
 }
 #endif
 // -----------------------------------------------------------------------
-//         Poll tadio for PTT and when CIV Echo Back is off, frequency
+//         Poll radio for PTT, frequency, and other modes.  BLE in particular onkly gets what and when you ask for it (so far)
 // --------------------------------------------------------------------------
 void poll_radio(void) {
   static uint32_t time_last_freq = millis();
   static uint32_t time_last_UTC = millis();
   static uint32_t time_last_ptt = millis();
-
-  if (USBH_connected && btConnected) {
-    //DPRINTLNF("poll_radio: Both enabled, Switch to USB Host port");
-    //DPRINTF("+");
-  }
-  if (USBH_connected && !btConnected) {
-    //DPRINTLNF("poll_radio: Using USB Host port");
-    //DPRINTF("U");
-  }
-  if (!USBH_connected && btConnected) {
-    //DPRINTLNF("poll_radio: Using BT port");
-    //DPRINTF("B");
-  }
-  if (!USBH_connected && !btConnected) {
-    //DPRINTLNF("poll_radio: No ports open, nothing to do");
-    //DPRINTF("-");
-    //return;  // nothing to send to
-  }
+  static uint32_t time_last_agc = millis();
+  static uint32_t time_last_mode = millis();
+  
 
   if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0) {
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
     {
-      sendCatRequest(CIV_C_F_READ, 0, 0);  // Get TX status
+      sendCatRequest(CIV_C_F_READ, 0, 0);  // Get current VFO 
       vTaskDelay(2);
       processCatMessages();
       time_last_freq = millis();
@@ -798,6 +798,22 @@ void poll_radio(void) {
       vTaskDelay(2);
       processCatMessages();
       time_last_ptt = millis();
+    }
+
+    if (millis() >= time_last_mode + POLL_RADIO_MODE)  // poll every X ms
+    {
+      sendCatRequest(CIV_C_F26A, 0, 0);  // Get mode, filter, and datamode status
+      vTaskDelay(2);
+      processCatMessages();
+      time_last_mode = millis();
+    }
+
+    if (millis() >= time_last_agc + POLL_RADIO_AGC)  // poll every X ms
+    {
+      sendCatRequest(CIV_C_AGC_READ, 0, 0);  // Get mode, filter, and datamode status
+      vTaskDelay(2);
+      processCatMessages();
+      time_last_agc = millis();
     }
 
     if (millis() >= time_last_UTC + POLL_RADIO_UTC)  // poll every X ms
@@ -903,7 +919,7 @@ uint16_t read_SD_Card(void) {
       {
         cnt++;  // count the total lines in the file
         line_buffer[i - 1] = '\0';
-        Serial.print(line_buffer);  // Got 1 whole line. print it out for a look-see
+        Serial.println(line_buffer);  // Got 1 whole line. print it out for a look-see
 
         if (line_buffer[0] != ';' && isAlphaNumeric(line_buffer[0])) {  // skip comment and non-content lines
           //Serial.print(F("Before match function: line Number: ")); Serial.print(cnt); Serial.print(F("  line buffer is ")); Serial.print(line_buffer);
@@ -1101,7 +1117,8 @@ void draw_new_screen(void) {
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setTextColor(TFT_YELLOW, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
   M5.Lcd.setTextDatum(MC_DATUM);
-  M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width() / 2), y, font_sz);
+  //M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width() / 2), y, font_sz);
+  M5.Lcd.drawString(title, (int)(M5.Lcd.width() / 2), y, font_sz);
   M5.Lcd.drawFastHLine(1, y + 13, 319, TFT_RED);  // separator below title
   M5.Lcd.setTextDatum(MC_DATUM);
   M5.Lcd.setTextColor(TFT_CYAN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
@@ -1141,19 +1158,17 @@ void display_Time(uint8_t _UTC, bool _force) {
 
     M5.Lcd.setTextDatum(ML_DATUM);  // x is left side
     sprintf(temp_t, "%02d/%02d/%02d", month(), day(), year());
-    M5.Lcd.drawString("" + String(temp_t), x, y, font_sz);
-
+    M5.Lcd.drawString(temp_t, x, y, font_sz);
     M5.Lcd.setTextDatum(MR_DATUM);  // x1 is right side
     sprintf(temp_t, "%02d:%02d:%02d", hour(), minute(), second());
-    M5.Lcd.drawString("" + String(temp_t), x1, y, font_sz);
-
+    M5.Lcd.drawString(temp_t, x1, y, font_sz);
     time_last_disp_UTC = millis();
   }
 }
 
 void display_Xvtr(bool _band, bool _force) {
   static uint8_t _prev_band = 1;
-  String Xvtr = "XV";
+  char Xvtr[3] = "XV";
   int x = 260;
   int y = 150;
   int x1 = x - 33;  // upper left corner of outline box
@@ -1178,15 +1193,13 @@ void display_Xvtr(bool _band, bool _force) {
       M5.Lcd.drawString(Xvtr, x, y, font_sz);
     }
     M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_BLUE);
-
     _prev_band = _band;
   }
 }
 
 void display_PTT(bool _PTT_state, bool _force) {
   static bool _prev_PTT_state = true;
-  String PTT_Tx = "TX";
-  //String PTT_Rx = " Rx ";
+  char PTT_Tx[3] = "TX";
   int x = 310;
   int y = 150;
   int x1 = x - 33;  // upper left corner of outline box
@@ -1197,13 +1210,11 @@ void display_PTT(bool _PTT_state, bool _force) {
   int r = 4;        // box radius corner size
 
   M5.Lcd.setTextDatum(MR_DATUM);
-
   if (_PTT_state != _prev_PTT_state || _force) {
-#ifdef PRINT_PTT_TO_SERIAL
+    #ifdef PRINT_PTT_TO_SERIAL
     Serial.print("*********************************************** PTT = ");
     Serial.println(_PTT_state);
-#endif
-
+    #endif
     if (_PTT_state) {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_RED);
       M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
@@ -1214,7 +1225,6 @@ void display_PTT(bool _PTT_state, bool _force) {
       M5.Lcd.drawString(PTT_Tx, x, y, font_sz);
     }
     M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_RED);
-
     _prev_PTT_state = _PTT_state;
   }
 }
@@ -1227,63 +1237,53 @@ void display_Freq(uint64_t _freq, bool _force) {
   int16_t font_sz = 6;  // font size
 
   if ((_freq != _prev_freq && _freq != 0) || _force) {
-
-#ifdef PRINT_VFO_TO_SERIAL
+    #ifdef PRINT_VFO_TO_SERIAL
     Serial.printf("VFOA: %13sMHz - Band: %s\n", formatVFO(_freq), bands[band].band_name);
-#endif
-
+    #endif
     //M5.Lcd.fillRect(x, y, x1, y1, background_color);
     M5.Lcd.setTextDatum(MC_DATUM);
     M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("" + String(formatVFO(_prev_freq)), (int)(M5.Lcd.width() / 2), y, font_sz);
-
+    M5.Lcd.drawString(formatVFO(_prev_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
     M5.Lcd.setTextColor(color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("" + String(formatVFO(_freq)), (int)(M5.Lcd.width() / 2), y, font_sz);
-
+    M5.Lcd.drawString(formatVFO(_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
     _prev_freq = _freq;
   }
 }
 
 void display_Band(uint8_t _band, bool _force) {
   static uint8_t _prev_band = 255;
+    int x = 8;
+  int y = 150;
+  int font_sz = 4;
 
   M5.Lcd.setTextDatum(ML_DATUM);
-
   if (_band != _prev_band || _force) {
-    int x = 8;
-    int y = 150;
-    int font_sz = 4;
-
     // Update our outputs
     Band_Decode_Output(band);
     //sendBand(band);   // change the IO pins to match band
-
     //Serial.printf("Band %s\n", bands[_band].band_name);
-
     M5.Lcd.setTextDatum(ML_DATUM);
     M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("Band: " + String(bands[_prev_band].band_name), x, y, font_sz);
+    M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
     M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("Band: " + String(bands[_band].band_name), x, y, font_sz);
+    M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
     _prev_band = _band;
   }
 }
 
 void display_Grid(char _grid[], bool _force) {
   static char _last_grid[9] = {};
+  int x = 8;
+  int y = 184;
+  int font_sz = 4;
   // call to convert the strings for Lat and long fronm CIV to floats and then caluclate grid
   if ((strcmp(_last_grid, _grid)) || _force) {
-    int x = 8;
-    int y = 184;
-    int font_sz = 4;
-
     //Serial.printf("Grid Square = %s\n",_grid);
-
     M5.Lcd.setTextDatum(ML_DATUM);
     M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("" + String(_grid), x, y, font_sz);
+    M5.Lcd.drawString(_grid, x, y, font_sz);
     M5.Lcd.setTextColor(TFT_GREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("" + String(_grid), x, y, font_sz);
+    M5.Lcd.drawString(_grid, x, y, font_sz);
     strcpy(_last_grid, _grid);
   }
 }
