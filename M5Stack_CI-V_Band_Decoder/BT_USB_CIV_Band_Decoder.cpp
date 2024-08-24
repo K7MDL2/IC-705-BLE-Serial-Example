@@ -117,6 +117,8 @@ extern bool BtnC_pressed;
 extern uint64_t frequency;
 //extern void SendMessageBLE(std::string Message);
 extern void SendMessageBLE(uint8_t Message[], uint8_t len);
+void write_bands_data(void);
+void read_bands_data(void);
 
 // ######################################################################
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
@@ -874,7 +876,7 @@ char *read_string(char *line_buffer, char const *desired_name) {
   char seperator[2];
 
   Serial.print(F("\nread_string: Line Buffer: "));
-  Serial.print(line_buffer);
+  Serial.println(line_buffer);
   uint8_t i = 0;
 
   while (sscanf(line_buffer, "%s %s %127[^\n]*%*s", name, seperator, val) != 0) {
@@ -890,6 +892,34 @@ char *read_string(char *line_buffer, char const *desired_name) {
     }
   }
   return NULL;
+}
+
+void write_bands_data(void) {
+  if (SD.exists("/bands.dat")) {
+      SD.remove("/bands.dat");   // delete old file and replace with new stuff
+      Serial.println(F("write_bands_data: Deleted old bands table file on SD card"));
+  }
+  File myFile = SD.open("/bands.dat", FILE_WRITE);  // Create if needed and open the file for write
+  if (myFile) {
+      Serial.println(F("write_bands_data: Writing bands table to SD card"));
+      // Write bands data table to the SD car
+      myFile.write((uint8_t *) &bands, sizeof(bands));
+  }
+  myFile.close();
+  Serial.println("write_bands_data: Done writing file");
+}
+
+
+void read_bands_data(void) {
+    Serial.println("read_bands_data: Opening /bands.data file for read");
+    File myFile = SD.open("/bands.dat", FILE_READ);
+    if (myFile) {
+        myFile.read((uint8_t *)&bands, sizeof(bands)/sizeof(uint8_t));
+        Serial.println("read_bands_data: Done reading file");
+        myFile.close();
+    } else {
+         Serial.println("read_bands_data: Failed to open /bands.data file for read");
+    }   
 }
 
 uint16_t read_SD_Card(void) {
@@ -1267,6 +1297,10 @@ void display_Band(uint8_t _band, bool _force) {
     M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
     M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
+
+    if (frequency != 0)
+        write_bands_data();  // store the updated table proir to new band changes
+
     _prev_band = _band;
   }
 }
@@ -1450,15 +1484,15 @@ void refesh_display(void) {
 void app_setup(void) {
   //Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
-
+     
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
 
-#ifdef IO_MODULE
+  #ifdef IO_MODULE
   Module_4in_8out_setup();  //Set up our IO modules comms on I2C
-#endif
+  #endif
 
-#ifdef USBHOST
+  #ifdef USBHOST
   int count_usb = 0;
   while (count_usb < 60 && USBHost_ready == 2)  // 0 = not mounted.  1 = mounted, 2 = system not initialized
   {
@@ -1492,6 +1526,7 @@ void app_setup(void) {
     printDirectory(root, 0);  // look what is on the SD card
     root.close();
     UpdateFromFS(SD);                 // if there is an update, do it.  Otherwise read config file.
+    read_bands_data();  // overwrite default bands table with last known values saved on SD card
     uint16_t lines = read_SD_Card();  // get line count
     Serial.printf("Setup: config.ini line count is %d\n", lines);
     Serial.print(F("Updated bd_address:"));

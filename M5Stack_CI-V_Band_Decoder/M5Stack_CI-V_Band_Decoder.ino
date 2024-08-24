@@ -212,9 +212,6 @@ uint64_t frequency = 0;
 //   Main Setup for ESP32
 //
 void setup() {
-
-
-
   Serial.begin(115200);
   while ( !Serial ) delay(10);   // wait for native usb
 
@@ -254,7 +251,7 @@ void setup() {
     M5.Touch.update(ms);
     }
     #endif
-   
+
   #else
     Serial.println("Core Basic defined");
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
