@@ -2,9 +2,9 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 23 - Band and frequency in use before Xvtr mode is turned on is now restored when Xvtr is turned off.  Need to save mode and filter for this and each Xvtr band.  This is a major convenience feature when operating with both Xvtrs and direct bands.
+Latest summary: As of Aug 24 - Per band settings updated to include band, frequency, mode, filter, datamode, AGC, Preamp, and Atten for any band.  Mode, Filter, and data mode are now saved and restored on band changes for all XVTR bands and the band active prior to switching into XVTR mode.  The goal is to set the radio back to reasonably normal state as if the Xvtr usage never occured.  AGC, Premp and Atten have the RX side fucntion in place, the polling for them is not yet done.  This is a major convenience feature when operating with both Xvtrs and direct bands.  Most of the dev and testing recently is on the Core2.  Buttons are working nicely.
 
-Core3 now works with IO and BLE. Core2 does both BLE and BT Classic, IO works also.  Core Basic is BT Classic.  So all generations are operational now. SD card config is only used for BT Classic BT address today.  BLE is now using a tool generated UUID.
+CoreS3-SE now works with IO and BLE. Core2 does both BLE and BT Classic, IO works also.  Core Basic is BT Classic.  So all generations are operational now. SD card config is only used for BT Classic BT address today.  BLE is now using a tool generated UUID.
 
 For the 4IN8OUT module to work on i2c on the CoreS3, it required &Wire1, vs. &Wire used for the older models.  The SDA and SCL pins (12 & 11) seem to be ignored, can swap them no impact.  This was spotted in their CoreS3 example motor encoder driver.  Below is how it looks for Core3 now. 
 
