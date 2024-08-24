@@ -34,8 +34,8 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_F1_SEND,         {1,0x05}},                      // send operating frequency to one
     {CIV_C_F_READ,          {1,0x03}},                      // read operating frequency
     {CIV_C_F26,        		  {1,0x26}},                      // read selected VFO m data, filt -  26 datafield template; selected VFO; mode, data on/off(0-1), filter (1-3);
-    {CIV_C_F26A,        	  {2,0x26,0x00}},                 // read selected VFO m data, filt
-    {CIV_C_F26B,       		  {2,0x26,0x01}},                 // read un- selected VFO m data, filt
+    {CIV_C_F26A,        	  {2,0x26,0x00}},                 // read/set selected VFO m data, filt
+    {CIV_C_F26B,       		  {2,0x26,0x01}},                 // read/set  un- selected VFO m data, filt
     {CIV_C_F25A_SEND,       {2,0x25,0x00}},                 // set selected VFO frequency
     {CIV_C_F25B_SEND,       {2,0x25,0x01}},                 // set un-selected VFO frequency
 
@@ -419,6 +419,14 @@ void ConvertToMinutes(char _gps_msg[])
         sniprintf(Longitude, 13, "%c%s", ' ', tempstring); 
 }        
  
+// send to radio Mode, Data mode, and Filter
+void SetMode(uint8_t  _band) {
+  uint8_t data[5] = {0x00, 0x00, 0x00, 0x00, 0x00};  // data template - first byte will stay 0 for selected VFO
+  data[1] = modeList[bands[_band].mode_idx].mode_num;   // convert from our mode/daamode combo list index to separate values
+  data[2] = bands[_band].datamode;
+  data[3] = bands[_band].filt;
+  sendCatRequest(CIV_C_F26, data, 4);
+}
 
 uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uint8_t buffer[])
 {
@@ -522,14 +530,14 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           for (i = 0; i < MODES_NUM; i++) {
             if ((modeList[i].mode_num == radio_mode) && (modeList[i].data == radio_data)) {   // convert to our list index and also validate number received
               bands[band].mode_idx = i;  // mode is in HEX
-              break;
+              break;  // found our match, exit loop
             } 
           }
           
-          if (i >= MODES_NUM) {
+          if (i >= MODES_NUM) {   // if i reaches the top of the list then a match was not found, skip out
             DPRINTF("CIV_Action: ERROR: Extended Mode Info - Invalid Mode: "); DPRINTLN(radio_mode, HEX);       
             break;
-          } else {
+          } else {  // we have a vaid match, finish up.
             bands[band].datamode = radio_data;  // data on/off  0-1
             bands[band].filt = radio_filter;  // filter setting 1-3
             DPRINTF("CIV_Action: Extended Mode Info - ModeNum: "); DPRINT(bands[band].mode_idx, DEC); 

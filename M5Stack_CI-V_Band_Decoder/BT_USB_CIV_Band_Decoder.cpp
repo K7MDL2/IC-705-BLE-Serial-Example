@@ -24,6 +24,7 @@
 void UpdateFromFS(fs::FS &fs);
 void printDirectory(File dir, int numTabs);
 extern struct cmdList cmd_List[];
+extern const struct Modes_List modeList[];
 
 /*  copy of struct here from header file for easy reference.
 struct Bands {
@@ -407,7 +408,6 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 // ----------------------------------------
 void read_Frequency(uint8_t data_len) {       // This is the displayed frequency, before the radio input, which may have offset applied
   if (frequency > 0) {                         // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
-
     //Serial.printf("read_Frequency: Last Freq %-13llu\n", frequency);
     bands[band].VFO_last = frequency;       // store Xvtr or non-Xvtr band displayed frequency per band before it changes.
     prev_band = band;                       // store associated band index
@@ -435,11 +435,11 @@ void read_Frequency(uint8_t data_len) {       // This is the displayed frequency
 
   if (prev_band != band) {
     sendCatRequest(CIV_C_F26A, 0, 0);   // fire off a mode/filter request with a change in band.
-    vTaskDelay(5);
-    processCatMessages();
+    //vTaskDelay(5);
+    //processCatMessages();
     sendCatRequest(CIV_C_AGC_READ, 0, 0);   // fire off agc update
-    vTaskDelay(5);
-    processCatMessages();
+    //vTaskDelay(5);
+    //processCatMessages();
   }
   //Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   BLE_connected %d  radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, BLE_connected, radio_address);
  
@@ -1357,6 +1357,8 @@ void band_Selector(uint8_t _band_input_pattern) {
     // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, vever the same band.
     if (XVTR_enabled) {    // set VFO and other values to last used for the target XVTR band
       SetFreq(bands[XVTR_Band].VFO_last);   // This value always has Xvtr offset applied
+      vTaskDelay(200);  // Give some time for the radio to change bands
+      SetMode(XVTR_Band);
     }
 
     // If turning off Xvtr mode, then restore the IF to normal last used values
@@ -1365,6 +1367,8 @@ void band_Selector(uint8_t _band_input_pattern) {
       frequency = bands[XVTR_band_before].VFO_last;  // use that band to get last VFO on that band
       band = getBand(frequency);  // get the non-XVtr band
       SetFreq(frequency);  // set radio to that last used.
+      vTaskDelay(200);  // Give some time for the radio to change bands
+      SetMode(band);   // now update the mode, filt, and datamode on theradio
     }
 
     // now the band and freq should be updated

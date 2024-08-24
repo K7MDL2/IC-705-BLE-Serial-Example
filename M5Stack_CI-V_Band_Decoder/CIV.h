@@ -57,6 +57,7 @@ void ftoa(float n, char *res, int afterpoint);
 int positionToMaidenhead(char m[]);
 int Convert_to_MH(void);
 void ConvertToMinutes(char _gps_msg[]);
+void SetMode(uint8_t _band);
 
 // command "body" of the CIV commands currently in use
 // Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.

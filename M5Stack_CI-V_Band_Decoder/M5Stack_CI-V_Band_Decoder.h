@@ -143,7 +143,7 @@
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_PTT_DEFAULT 47  // poll the radio for PTT status odd numbers to stagger them a bit
+#define POLL_PTT_DEFAULT 147  // poll the radio for PTT status odd numbers to stagger them a bit
                              // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
                              // Also polls the wired inputs
 #define POLL_PTT_USBHOST 162  // Dynamically changes value based on detected radio address.
@@ -155,7 +155,7 @@
                              //   Have not compared to a LAN connection.
 #define POLL_RADIO_FREQ  308  // poll the radio for frequency
 #define POLL_RADIO_UTC  1000  // poll radio for time and location
-#define POLL_RADIO_MODE 1000 // poll radio for extended mode, filter and datamode
+#define POLL_RADIO_MODE 2000 // poll radio for extended mode, filter and datamode
 #define POLL_RADIO_AGC  5210 // poll radio for AGC
 
 // Chose the combination needed.  Note that at least one service must be enabled.
