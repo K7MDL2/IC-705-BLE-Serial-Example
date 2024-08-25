@@ -474,7 +474,7 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
 //
 
 //#define DBG_CIV1  // command parser entry
-#define DBG_CIV2  // just do summary print
+//#define DBG_CIV2  // just do summary print
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t rd_buffer[])
 { 

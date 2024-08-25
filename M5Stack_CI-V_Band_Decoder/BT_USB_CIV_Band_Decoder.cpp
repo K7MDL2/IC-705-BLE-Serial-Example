@@ -652,7 +652,10 @@ void sendBand(byte band) {
 void bt_loop(void) {
   if (BT_enabled && !btConnected) {
     draw_new_screen();
-    DPRINTLNF("BT Loop");
+    DPRINTF("BT Loop - Using bd_address:");  // print default bd_address
+    for (int z = 0; z < 6; z++)
+      DPRINT(bd_address[z], HEX);
+    DPRINTLNF("");
     M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     M5.Lcd.drawString("Connecting to BT ...", 80, 100, 4);
 
@@ -1565,7 +1568,7 @@ void app_setup(void) {
     Serial.println("Card failed, or not present");
   } else {
   #else
-  if (1) {
+  if (SD.exists("/config.ini")) {
   #endif
     Serial.println("Looking for SD Card to try update and read config");
     File root = SD.open("/");
