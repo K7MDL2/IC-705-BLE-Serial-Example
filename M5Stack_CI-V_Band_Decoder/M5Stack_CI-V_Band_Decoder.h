@@ -91,8 +91,8 @@
 
       If you are using BT Classic SPP then it is important to set the "bd_address" in the next lines below!
 *************************************************************************/
-#ifndef BT_USB_
-#define BT_USB_
+#ifndef _BT_USB_
+#define _BT_USB_
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
@@ -143,9 +143,9 @@
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_PTT_DEFAULT 147  // poll the radio for PTT status odd numbers to stagger them a bit
+#define POLL_PTT_DEFAULT 187  // poll the radio for PTT status odd numbers to stagger them a bit
                              // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
-                             // Also polls the wired inputs
+                             // Also polls the wired inputs  Can go down to 25-45.  When using wired PTT set this slow.
 #define POLL_PTT_USBHOST 162  // Dynamically changes value based on detected radio address.
                              // By observation, on USB, the radio only responds once every few seconds when the radio \
                              //   has not changed states.  It will immediately reply to a poll if the Tx state changed. \
@@ -153,15 +153,17 @@
                              //   Unlike other modes.  BT seems to answer every request. USB2 engine is likely the same in \
                              //   all radios, where BT got a capacity upgrade.  The 905 acts the same as the 905 (905 is USB only) \
                              //   Have not compared to a LAN connection.
-#define POLL_RADIO_FREQ  308  // poll the radio for frequency
-#define POLL_RADIO_UTC  1000  // poll radio for time and location
-#define POLL_RADIO_MODE 2000 // poll radio for extended mode, filter and datamode
-#define POLL_RADIO_AGC  5210 // poll radio for AGC
+#define POLL_RADIO_FREQ 308  // poll the radio for frequency
+#define POLL_RADIO_UTC  998  // poll radio for time and location
+#define POLL_RADIO_MODE 1101 // poll radio for extended mode, filter and datamode
+#define POLL_RADIO_AGC  1203 // poll radio for AGC
+#define POLL_RADIO_ATTN 1305 // poll radio for atten status
+#define POLL_RADIO_PRE  1404 // poll radio for preamp status
 
 // Chose the combination needed.  Note that at least one service must be enabled.
-//#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
+#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
                     // BT Classic does not work on Core3.  It might on Core2 (untested)
-#define BLE         // Core 3.  Maybe works on Core 2, TBD
+//#define BLE         // Core 3.  Maybe works on Core 2, TBD
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
 #define IO_MODULE   // enable the 4-In/8-Out module
 #define SDCARD      // enable sd card features
@@ -248,5 +250,6 @@ extern bool restart_USBH_flag;
 extern bool restart_BT_flag;
 extern uint16_t background_color;
 extern uint64_t frequency;
+extern bool update_radio_settings_flag;
 
 #endif

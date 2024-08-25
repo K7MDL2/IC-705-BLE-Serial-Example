@@ -17,9 +17,6 @@
 //#define SEE_RAW_RX // see raw hex messages from radio
 //#define SEE_RAW_TX // see raw hex messages from radio
 
-#define IC705 0xA4
-#define IC905 0xAC
-
 //extern bool XVTR_enabled;
 void UpdateFromFS(fs::FS &fs);
 void printDirectory(File dir, int numTabs);
@@ -111,11 +108,11 @@ uint32_t temp_passkey;
 uint16_t poll_radio_ptt = POLL_PTT_DEFAULT;  // can be changed with detected radio address.
 static bool get_new_address_flag = false;
 uint8_t UTC = 1;  // 0 local time, 1 UTC time
+bool update_radio_settings_flag = false;
 extern bool BtnA_pressed;
 extern bool BtnB_pressed;
 extern bool BtnC_pressed;
 extern uint64_t frequency;
-//extern void SendMessageBLE(std::string Message);
 extern void SendMessageBLE(uint8_t Message[], uint8_t len);
 void write_bands_data(void);
 void read_bands_data(void);
@@ -411,8 +408,10 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 void read_Frequency(uint8_t data_len) {       // This is the displayed frequency, before the radio input, which may have offset applied
   if (frequency > 0) {                         // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
     //Serial.printf("read_Frequency: Last Freq %-13llu\n", frequency);
-    bands[band].VFO_last = frequency;       // store Xvtr or non-Xvtr band displayed frequency per band before it changes.
-    prev_band = band;                       // store associated band index
+    if (!update_radio_settings_flag) {               // wait until any XVTR transition complete
+      bands[band].VFO_last = frequency;       // store Xvtr or non-Xvtr band displayed frequency per band before it changes.
+      prev_band = band;                       // store associated band index
+    }
   }                                         // if an Xvtr band, subtract the offset to get radio (IF) frequency
   
   frequency = 0;
@@ -436,10 +435,10 @@ void read_Frequency(uint8_t data_len) {       // This is the displayed frequency
   band = getBand(frequency);
 
   if (prev_band != band) {
-    sendCatRequest(CIV_C_F26A, 0, 0);   // fire off a mode/filter request with a change in band.
+    //sendCatRequest(CIV_C_F26A, 0, 0);   // fire off a mode/filter request with a change in band.
     //vTaskDelay(5);
     //processCatMessages();
-    sendCatRequest(CIV_C_AGC_READ, 0, 0);   // fire off agc update
+    //sendCatRequest(CIV_C_AGC_READ, 0, 0);   // fire off agc update
     //vTaskDelay(5);
     //processCatMessages();
   }
@@ -783,7 +782,8 @@ void poll_radio(void) {
   static uint32_t time_last_ptt = millis();
   static uint32_t time_last_agc = millis();
   static uint32_t time_last_mode = millis();
-  
+  static uint32_t time_last_attn = millis();
+  static uint32_t time_last_pre = millis();
 
   if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0) {
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
@@ -816,6 +816,22 @@ void poll_radio(void) {
       vTaskDelay(2);
       processCatMessages();
       time_last_agc = millis();
+    }
+
+    if (millis() >= time_last_attn + POLL_RADIO_ATTN)  // poll every X ms
+    {
+      sendCatRequest(CIV_C_ATTN_READ, 0, 0);  // Get mode, filter, and datamode status
+      vTaskDelay(2);
+      processCatMessages();
+      time_last_attn = millis();
+    }
+
+    if (millis() >= time_last_pre + POLL_RADIO_PRE)  // poll every X ms
+    {
+      sendCatRequest(CIV_C_PREAMP_READ, 0, 0);  // Get mode, filter, and datamode status
+      vTaskDelay(2);
+      processCatMessages();
+      time_last_pre = millis();
     }
 
     if (millis() >= time_last_UTC + POLL_RADIO_UTC)  // poll every X ms
@@ -1297,10 +1313,13 @@ void display_Band(uint8_t _band, bool _force) {
     M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
     M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
-
-    if (frequency != 0)
-        write_bands_data();  // store the updated table proir to new band changes
-
+    
+    if (frequency != 0) {
+      if (!update_radio_settings_flag) 
+         write_bands_data();    // save on band changes.  Other times would be good bu this catches the most.
+      else   // by this time we should be stable after XVTR transitions
+        update_radio_settings_flag = false;
+    }
     _prev_band = _band;
   }
 }
@@ -1359,6 +1378,7 @@ void band_Selector(uint8_t _band_input_pattern) {
 
   if (_band_input_pattern != _band_input_pattern_last)  // only do something if it is different
   {
+    write_bands_data();       // capture all before XVTR transition
     if (!XVTR_enabled_last && !XVTR_enabled) {   // capture last non-Xvtr band in use
       XVTR_band_before = band;   // record the non-xvtr band before initial XVTR mode enabled.  
     }
@@ -1387,22 +1407,48 @@ void band_Selector(uint8_t _band_input_pattern) {
 
     _band_input_pattern_last = _band_input_pattern;
 
-    // Band and Frequency are not yet changed    
-    // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, vever the same band.
+    // Band and Frequency are not yet changed
+
+    // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, never the same band.
     if (XVTR_enabled) {    // set VFO and other values to last used for the target XVTR band
-      SetFreq(bands[XVTR_Band].VFO_last);   // This value always has Xvtr offset applied
-      vTaskDelay(200);  // Give some time for the radio to change bands
       SetMode(XVTR_Band);
+      vTaskDelay(10);
+      SetPre(XVTR_Band);
+      vTaskDelay(10);
+      SetAttn(XVTR_Band);
+      vTaskDelay(10);
+      SetAGC(XVTR_Band);
+      vTaskDelay(10);
+      SetFreq(bands[XVTR_Band].VFO_last);   // This value always has Xvtr offset applied      
+      update_radio_settings_flag = true;
     }
 
     // If turning off Xvtr mode, then restore the IF to normal last used values
     if (XVTR_enabled_last && !XVTR_enabled) {   // This will have Xvtr offset = 0
       // band is still Xvtr band until the radio actually changes frequency
-      frequency = bands[XVTR_band_before].VFO_last;  // use that band to get last VFO on that band
-      band = getBand(frequency);  // get the non-XVtr band
-      SetFreq(frequency);  // set radio to that last used.
-      vTaskDelay(200);  // Give some time for the radio to change bands
-      SetMode(band);   // now update the mode, filt, and datamode on theradio
+      SetMode(XVTR_band_before);
+      vTaskDelay(10);
+      SetPre(XVTR_band_before);
+      vTaskDelay(10);
+      SetAttn(XVTR_band_before);
+      vTaskDelay(10);
+      SetAGC(XVTR_band_before);
+      vTaskDelay(10);
+      SetFreq(bands[XVTR_band_before].VFO_last);  // set radio to that last non-XVTR band used.
+      update_radio_settings_flag = true;
+    }
+
+    if (update_radio_settings_flag == true) {
+      vTaskDelay(300);  // Give some time for the radio to change bands
+      #ifdef BTCLASSIC
+        if (btConnected) SerialBT.flush();
+      #endif
+      #ifdef BLE 
+        //if (BLE_connected) xxxxx.flush();
+      #endif
+      #ifdef USBOST
+        if (USBH_connected) SerialHost.flush();
+      #endif
     }
 
     // now the band and freq should be updated
@@ -1484,7 +1530,7 @@ void refesh_display(void) {
 void app_setup(void) {
   //Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
-     
+ 
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
 

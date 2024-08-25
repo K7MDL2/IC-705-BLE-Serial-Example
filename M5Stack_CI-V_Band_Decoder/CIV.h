@@ -58,6 +58,9 @@ int positionToMaidenhead(char m[]);
 int Convert_to_MH(void);
 void ConvertToMinutes(char _gps_msg[]);
 void SetMode(uint8_t _band);
+void SetAGC(uint8_t  _band);
+void SetPre(uint8_t  _band);
+void SetAttn(uint8_t  _band);
 
 // command "body" of the CIV commands currently in use
 // Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.
@@ -95,6 +98,7 @@ enum cmds {
     CIV_C_PREAMP_READ,
     CIV_C_PREAMP_OFF,
     CIV_C_PREAMP_ON,
+    CIV_C_PREAMP_ON2,
     CIV_C_AGC_READ,
     CIV_C_AGC_FAST,
     CIV_C_AGC_MID,

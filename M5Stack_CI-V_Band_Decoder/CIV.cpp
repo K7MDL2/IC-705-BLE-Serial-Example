@@ -65,7 +65,8 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_S_MTR_LVL,       {2,0x15,0x02}},                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
     {CIV_C_PREAMP_READ,     {2,0x16,0x02}},             	// read preamp state
     {CIV_C_PREAMP_OFF,      {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
-    {CIV_C_PREAMP_ON,       {3,0x16,0x02,0x01}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
+    {CIV_C_PREAMP_ON,       {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
+    {CIV_C_PREAMP_ON2,      {3,0x16,0x02,0x02}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON - not on 905
     {CIV_C_AGC_READ,        {2,0x16,0x12}},                 // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
     {CIV_C_AGC_FAST,        {3,0x16,0x12,0x01}},            // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
     {CIV_C_AGC_MID,         {3,0x16,0x12,0x02}},            // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
@@ -206,16 +207,11 @@ const struct Modes_List modeList[MODES_NUM] = {
     {0x23, "ATV   ", 1, 0}   // hex 23 is 35 dec  // not on 705, on 905
  };
 
-struct AGC {
-    char        agc_name[6];
-    uint8_t     agc_reserved;
-};
-
-const struct AGC agc_set[AGC_SET_NUM] = {
-    {"AGC- ", 0},  // 0 reserved for AGC OFF
-    {"AGC-F", 1},  // 1
-    {"AGC-M", 2},  // 2
-    {"AGC-S", 3}   // 3
+const char AgcStr[4][6] = {
+    {"AGC- "},  // 0 reserved for AGC OFF
+    {"AGC-F"},  // 1
+    {"AGC-M"},  // 2
+    {"AGC-S"}   // 3
 };
 
 // translation of the radio's general mode
@@ -428,6 +424,34 @@ void SetMode(uint8_t  _band) {
   sendCatRequest(CIV_C_F26, data, 4);
 }
 
+// send to radio Mode, Data mode, and Filter
+void SetAGC(uint8_t  _band) {
+  switch (bands[_band].agc) {
+    case 1: sendCatRequest(CIV_C_AGC_FAST, 0, 0); break;
+    case 2: sendCatRequest(CIV_C_AGC_MID, 0, 0); break;
+    case 3:
+    default: sendCatRequest(CIV_C_AGC_SLOW, 0, 0);  break;
+  };
+}
+
+// set attenuaor on radio
+void SetAttn(uint8_t  _band) {
+  if (bands[_band].atten)
+    sendCatRequest(CIV_C_ATTN_ON, 0, 0);
+  else
+    sendCatRequest(CIV_C_ATTN_OFF, 0, 0);
+}
+
+// set preamp on radio
+void SetPre(uint8_t  _band) {
+  switch (bands[_band].preamp) {
+    case 0: sendCatRequest(CIV_C_PREAMP_OFF, 0, 0); break;
+    case 1: sendCatRequest(CIV_C_PREAMP_ON, 0, 0); break;
+    case 2:
+    default: sendCatRequest(CIV_C_PREAMP_ON2, 0, 0);  break;
+  };
+}
+
 uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uint8_t buffer[])
 {
   if (m_Counter < offset + 3)
@@ -449,7 +473,8 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
 //  3. add the new switch case statement with the new enum index
 //
 
-//#define DBG_CIV1
+//#define DBG_CIV1  // command parser entry
+#define DBG_CIV2  // just do summary print
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t rd_buffer[])
 { 
@@ -478,10 +503,6 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           TX_last = PTT;
         }         
         break;                     // Call PTT output here rather than in teh main loop to avoid any loop delay time.
-
-    case CIV_C_PREAMP_READ:
-        Serial.printf("CIV_Action: Preamp = %d\n", rd_buffer[data_start_idx]);
-        break;
 
     case CIV_C_MOD_READ:
     case CIV_C_MOD1_SEND:
@@ -535,15 +556,15 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           }
           
           if (i >= MODES_NUM) {   // if i reaches the top of the list then a match was not found, skip out
-            DPRINTF("CIV_Action: ERROR: Extended Mode Info - Invalid Mode: "); DPRINTLN(radio_mode, HEX);       
+            //DPRINTF("CIV_Action: ERROR: Extended Mode Info - Invalid Mode: "); DPRINTLN(radio_mode, HEX);       
             break;
           } else {  // we have a vaid match, finish up.
             bands[band].datamode = radio_data;  // data on/off  0-1
             bands[band].filt = radio_filter;  // filter setting 1-3
-            DPRINTF("CIV_Action: Extended Mode Info - ModeNum: "); DPRINT(bands[band].mode_idx, DEC); 
-            DPRINTF("   Mode: "); DPRINT(modeList[bands[band].mode_idx].mode_label);
-            DPRINTF("   DATA: "); DPRINT(ModeStr[bands[band].datamode]);
-            DPRINTF("   Filt: "); DPRINTLN(FilStr[bands[band].filt]);
+            //DPRINTF("CIV_Action: Extended Mode Info - ModeNum: "); DPRINT(bands[band].mode_idx, DEC); 
+            //DPRINTF("   Mode: "); DPRINT(modeList[bands[band].mode_idx].mode_label);
+            //DPRINTF("   DATA: "); DPRINT(ModeStr[bands[band].datamode]);
+            //DPRINTF("   Filt: "); DPRINTLN(FilStr[bands[band].filt]);
           }
         }  // else the changes are for the unselected VFO				
         break;       
@@ -662,21 +683,38 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           break;
         }  // MY Position
 
+    case CIV_C_PREAMP_READ: {
+          uint8_t _val = rd_buffer[data_start_idx];
+
+          //DPRINTF("CIV_Action:  CI-V Returned Preamp status: "); DPRINTLN(_val);
+          if (_val > 0)
+          {
+              //bands[band].atten = ATTN_OFF;
+              bands[band].preamp = _val;              
+          }
+          if (_val == 0)
+          {
+              bands[band].preamp = PREAMP_OFF;
+          }
+          //displayAttn();
+          //displayPreamp();
+          break;
+        }
+
     case CIV_C_ATTN_READ:	
 		case CIV_C_ATTN_ON:
-    case CIV_C_ATTN_OFF:
-				{
+    case CIV_C_ATTN_OFF: {
 					uint8_t _val = rd_buffer[data_start_idx];
 
-					DPRINTF("CIV_Action:  CI-V Returned Attn status: "); DPRINTLN(_val);
+					//DPRINTF("CIV_Action:  CI-V Returned Attn status: "); DPRINTLN(_val);
 					if (_val > 0)
 					{
-// ToDo:					//bandmem[curr_band].preamp 		= PREAMP_OFF;
-						//bandmem[curr_band].attenuator  	= ATTN_ON;
+              //bands[band].preamp = PREAMP_OFF;
+						  bands[band].atten = ATTN_ON;
 					}
 					if (_val == 0)
 					{
-						//bandmem[curr_band].attenuator   = ATTN_OFF;
+						 bands[band].atten = ATTN_OFF;
 					}
 					//displayAttn();
 					//displayPreamp();
@@ -691,7 +729,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
 					uint8_t _val = rd_buffer[data_start_idx];
           bands[band].agc = _val;
 					//displayAgc();
-          DPRINTF("CIV_Action:  AGC mode: "); DPRINTLN(agc_set[_val].agc_name);
+          //DPRINTF("CIV_Action:  AGC mode: "); DPRINTLN(AgcStr[_val]);
 					break;
 				}  // AGC changed
 
@@ -759,5 +797,10 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     default: DPRINTLNF("CIV_Action: *** default action");
           //knowncommand = false;
   }
+  #ifdef DBG_CIV2
+    Serial.printf("CIV_Action: Radio Status %13llu  %7s  %11s  %5s  %6s  PRE:%d  ATT:%d  PTT:%d\n", \
+          frequency, modeList[bands[band].mode_idx].mode_label, ModeStr[bands[band].datamode], FilStr[bands[band].filt], \
+          AgcStr[bands[band].agc], bands[band].preamp, bands[band].atten, PTT);
+  #endif
 }
 
