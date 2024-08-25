@@ -2,7 +2,7 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 24 - At each band change, enire bands table is written to SD card.  It is read back at startup.  Per band settings updated to include band, frequency, mode, filter, datamode, AGC, Preamp, and Atten for any band.  Mode, Filter, and data mode are now saved and restored on band changes for all XVTR bands and the band active prior to switching into XVTR mode.  The goal is to set the radio back to reasonably normal state as if the Xvtr usage never occured.  AGC, Premp and Atten have the RX side fucntion in place, the polling for them is not yet done.  This is a major convenience feature when operating with both Xvtrs and direct bands.  Most of the dev and testing recently is on the Core2.  Buttons are working nicely.
+Latest summary: As of Aug 24 - At each band change, the entire bands table is written to SD card.  It is read back at startup.  Per band settings updated to include band, frequency, mode, filter, datamode, AGC, Preamp, and Atten for any band.  These parameters are saved and restored on band changes for all XVTR bands and the band active prior to switching into XVTR mode.  The goal is to set the radio back to reasonably normal state as if the Xvtr usage never occured.  This is a major convenience feature when operating with both Xvtrs and direct bands.  Most of the dev and testing recently has been with BLE on the Core2.  Buttons are working nicely.  
 
 CoreS3-SE now works with IO and BLE. Core2 does both BLE and BT Classic, IO works also.  Core Basic is BT Classic.  So all generations are operational now. SD card config is only used for BT Classic BT address today.  BLE is now using a tool generated UUID.
 
