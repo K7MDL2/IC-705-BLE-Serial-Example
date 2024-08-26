@@ -516,7 +516,7 @@ void processCatMessages() {
   uint8_t match = 0;
   uint8_t data_start_idx = 0;
   uint8_t data_len = 0;
-  uint8_t data[20] = {};
+  uint8_t data[50] = {};
   
   if (1)
   {
