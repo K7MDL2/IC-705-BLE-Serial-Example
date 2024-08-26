@@ -2,7 +2,7 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 26 - I have a stripped down version of the BLE decoder running on a M5StampC3U module. Very small, low cost, no screen or IO module but wil fi into a very small box and tuck out of the way or fit inside another box such as one holding coax switches.
+Latest summary: As of Aug 26 - I have a version of the BLE decoder running on a M5StampC3U module. Very small, low cost, no screen or IO module but will fit into a very small box and tuck out of the way or fit inside another box such as one holding coax switches.
 
 Goal is to flip the roles around, turning it into a USB to BLE CI-V interface dongle that can plug into USB only radios, like my 905. Does the band decode stuff plus offers a BT connection to a PC for diital modes and logging, including the XVTR frequency translation both directions.  Plan to use OTG features of the S3 for USBHost, or the onboard USB bridge chip on the M5StampC3U for USBHost, see if these work better than the USB module. Without a SD card, I plan to store the settings in the 8K RTC SRAM by creating a 'file' using Preferences.
 
