@@ -163,10 +163,12 @@
 // Chose the combination needed.  Note that at least one service must be enabled.
 #define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
                     // BT Classic does not work on Core3.  It might on Core2 (untested)
-//#define BLE         // Core 3.  Maybe works on Core 2, TBD
+#define BLE         // Core 3.  Maybe works on Core 2, TBD
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
 #define IO_MODULE   // enable the 4-In/8-Out module
 #define SDCARD      // enable sd card features
+#define RELAY2      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
+//#define RELAY4    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
 
 //#define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
