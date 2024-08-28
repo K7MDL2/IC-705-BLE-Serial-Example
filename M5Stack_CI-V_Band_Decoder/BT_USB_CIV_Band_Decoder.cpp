@@ -42,7 +42,7 @@ struct Bands {
 */
 
 struct Bands bands[NUM_OF_BANDS] = {
-  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0 },      // AM
+  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0 },                        // AM
   { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0 },                    // 160m
   { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0 },                     // 80m
   { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0 },                     // 60m
@@ -73,8 +73,8 @@ struct Bands bands[NUM_OF_BANDS] = {
 };
 
 char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
-uint16_t baud_rate;                 //Current baud speed
-uint32_t readtimeout = 10;          //Serial port read timeout
+uint16_t baud_rate;                   //Current baud speed
+uint32_t readtimeout = 10;            //Serial port read timeout
 //uint8_t read_buffer[2048];   //Read buffer
 //extern uint64_t frequency;                 //Current frequency in Hz
 uint8_t band = B_GENERAL;
@@ -87,18 +87,18 @@ extern char Grid_Square[];
 bool BLE_buff_flag = false;
 
 uint8_t radio_address = RADIO_ADDR;  //Transceiver address.  0 allows auto-detect on first messages form radio
-bool  auto_address = false;        // If true, detects new radio address on connection mode changes
-                               // If false, then the last used address, or the preset address is used.
-                               // If Search for Radio button pushed, then ignores this and looks for new address
-                               //   then follows rules above when switch connections
-bool  use_wired_PTT = true;        // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
-bool  XVTR = true;                 // Enables Xvtr support
+bool auto_address = false;           // If true, detects new radio address on connection mode changes
+                                     // If false, then the last used address, or the preset address is used.
+                                     // If Search for Radio button pushed, then ignores this and looks for new address
+                                     //   then follows rules above when switch connections
+bool use_wired_PTT = true;           // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
+bool XVTR = true;                    // Enables Xvtr support
   // Edit the bands table farther down the page to enter the fixed LO offset (in Hz) to add to radio dial
   // frequency for the transverter band of interest. Only 1 band supported at this point
-uint8_t  XVTR_Band = 0;         // Xvtr band to display - temp until a band select menu is built
-uint8_t  brightness = 130;      // 0-255
-bool  XVTR_enabled = false;  // true when a transverter feature is active
-uint8_t read_buffer[2048];   //Read buffer
+uint8_t XVTR_Band = 0;      // Xvtr band to display - temp until a band select menu is built
+uint8_t brightness = 130;   // 0-255
+bool XVTR_enabled = false;  // true when a transverter feature is active
+uint8_t read_buffer[2048];  //Read buffer
 uint8_t prev_band = 0xFF;
 uint64_t prev_frequency = 0;
 bool btConnected = false;
@@ -125,7 +125,7 @@ uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f, 0x00 };  // Rick's
 //uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9, 0x00 };  // Mike's 705
 // ######################################################################
 
-#ifdef USBHOST 
+#ifdef USBHOST
 // CDC Host object
 #include "M5_Max3421E_Usb.h"
 extern Adafruit_USBH_CDC SerialHost;
@@ -146,7 +146,7 @@ bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0,
 bool BLE_enabled = 0;
 #endif
 
-#ifdef BLE           // can set to BT on or off at startup
+#ifdef BLE  // can set to BT on or off at startup
 //#include "BLE.h"
 bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 bool BLE_enabled = 1;
@@ -197,7 +197,7 @@ void configRadioBaud(uint16_t baudrate) {
   // Connect to client:
 
 
-#ifdef BTCLASSIC
+  #ifdef BTCLASSIC
   //DPRINTF("Connect to bluetooth client ...");
   if (BT_enabled) {
     if (btPaired && !btConnected) {
@@ -207,7 +207,7 @@ void configRadioBaud(uint16_t baudrate) {
     if (btPaired && btConnected)
       DPRINTLNF("Transceiver paired and connected");
   }
-#endif
+  #endif
 }
 
 // ----------------------------------------
@@ -220,47 +220,47 @@ uint8_t readLine(void) {
 
   if (BT_enabled) {
     #ifdef BTCLASSIC
-      while (btConnected) {
-        while (!SerialBT.available()) {
-          if (--ed == 0 || !btConnected) return 0;  // leave the loop if BT connection is lost
-        }
-        ed = readtimeout;
-        byte = SerialBT.read();
-        if (byte == 0xFF) continue;  //TODO skip to start byte instead
-
-        read_buffer[counter++] = byte;
-        if (STOP_BYTE == byte) break;
-
-        if (counter >= sizeof(read_buffer)) return 0;
+    while (btConnected) {
+      while (!SerialBT.available()) {
+        if (--ed == 0 || !btConnected) return 0;  // leave the loop if BT connection is lost
       }
+      ed = readtimeout;
+      byte = SerialBT.read();
+      if (byte == 0xFF) continue;  //TODO skip to start byte instead
+
+      read_buffer[counter++] = byte;
+      if (STOP_BYTE == byte) break;
+
+      if (counter >= sizeof(read_buffer)) return 0;
+    }
     #endif
   } else if (BLE_connected && BLE_buff_flag) {
-      BLE_buff_flag = false;  // reset and wait for next new data to arrive
-      for (int i=0; i < sizeof(read_buffer); i++) {
-        byte = read_buffer[i];
-        if (byte == 0xFF) continue;  //TODO skip to start byte instead
+    BLE_buff_flag = false;  // reset and wait for next new data to arrive
+    for (int i = 0; i < sizeof(read_buffer); i++) {
+      byte = read_buffer[i];
+      if (byte == 0xFF) continue;  //TODO skip to start byte instead
 
-        read_buffer[counter++] = byte;
-        if (STOP_BYTE == byte) break;
+      read_buffer[counter++] = byte;
+      if (STOP_BYTE == byte) break;
 
-        if (counter >= sizeof(read_buffer)) return 0;
-      }
-      //DPRINTF("readLine: BLE read buffer length:"); DPRINTLN(counter);
+      if (counter >= sizeof(read_buffer)) return 0;
+    }
+    //DPRINTF("readLine: BLE read buffer length:"); DPRINTLN(counter);
   } else {
     #ifdef USBHOST
-      while (USBH_connected) {
-        while (!SerialHost.available()) {
-          if (--ed == 0 || !USBH_connected) return 0;  // leave the loop if connection is lost
-        }
-        ed = readtimeout;
-        byte = SerialHost.read();
-        if (byte == 0xFF) continue;  //TODO skip to start byte instead
+    while (USBH_connected) {
+      while (!SerialHost.available()) {
+        if (--ed == 0 || !USBH_connected) return 0;  // leave the loop if connection is lost
+      }
+      ed = readtimeout;
+      byte = SerialHost.read();
+      if (byte == 0xFF) continue;  //TODO skip to start byte instead
 
-        read_buffer[counter++] = byte;
-        if (STOP_BYTE == byte) break;
+      read_buffer[counter++] = byte;
+      if (STOP_BYTE == byte) break;
 
-        if (counter >= sizeof(read_buffer)) return 0;
-      }  // host
+      if (counter >= sizeof(read_buffer)) return 0;
+    }  // host
     #endif
   }  // usb host
 
@@ -270,7 +270,7 @@ uint8_t readLine(void) {
     Serial.write(read_buffer, counter);
     Serial.flush();
   }
-#endif
+  #endif
 
   return counter;
 }
@@ -328,25 +328,25 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   msg_len += 3;  // Tee up to add data if any
 
   uint8_t j = 0;
-  if (Data_len != 0) { // copy in 1 or more data bytes, if any
+  if (Data_len != 0) {              // copy in 1 or more data bytes, if any
     for (j = 0; j < Data_len; j++)  //pick up with value i
       req[msg_len++] = Data[j];
   }
 
   req[msg_len] = STOP_BYTE;
-  req[msg_len+1] = 0;  // null terminate for printing or conversion to String type
+  req[msg_len + 1] = 0;  // null terminate for printing or conversion to String type
 
-  //#define SEE_RAW_TX  // an also be set at top of file
-  #ifdef SEE_RAW_TX
-    Serial.print(F("--> Tx Raw Msg: "));
-    for (uint8_t k = 0; k <= msg_len; k++) {
-      Serial.print(req[k], HEX);
-      Serial.print(F(","));
-    }
-    Serial.print(F(" msg_len = "));
-    Serial.print(msg_len+1);
-    Serial.println(F(" END"));
-  #endif
+//#define SEE_RAW_TX  // an also be set at top of file
+#ifdef SEE_RAW_TX
+  Serial.print(F("--> Tx Raw Msg: "));
+  for (uint8_t k = 0; k <= msg_len; k++) {
+    Serial.print(req[k], HEX);
+    Serial.print(F(","));
+  }
+  Serial.print(F(" msg_len = "));
+  Serial.print(msg_len + 1);
+  Serial.println(F(" END"));
+#endif
 
   //Serial.print(F("   BT connected = ")); Serial.print(btConnected);
   //Serial.print(F("   USBH connected = ")); Serial.println(USBH_connected);
@@ -355,42 +355,42 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 
   //if (btConnected && !SerialBT.isClosed() && SerialBT.connected())
   if (USBH_connected || BLE_connected || btConnected) {
-    if (msg_len < sizeof(req) - 1) { // ensure our data is not longer than our buffer
-      #ifdef SEE_RAWT
+    if (msg_len < sizeof(req) - 1) {  // ensure our data is not longer than our buffer
+#ifdef SEE_RAWT
       DPRINTF("Send CI-V Msg: ");
-      #endif
-      
-      #if defined ( BLE )
-        SendMessageBLE(req, msg_len+1);
-      #else
-        for (uint8_t i = 0; i <= msg_len; i++) {
-          #ifdef SEE_RAWT
-            Serial.print(req[i], HEX);
-          #endif
+#endif
 
-            #if defined ( USBHOST )
-              if (!SerialHost.write(req[i])) 
-                DPRINTLNF("sendCatRequest: Tx: error");
-            #elif defined ( BTCLASSIC )
-              if (!SerialBT.write(req[i]))
-                DPRINTLNF("sendCatRequest: Tx: error");
-            #endif
+#if defined(BLE)
+      SendMessageBLE(req, msg_len + 1);
+#else
+      for (uint8_t i = 0; i <= msg_len; i++) {
+#ifdef SEE_RAWT
+        Serial.print(req[i], HEX);
+#endif
 
-            #ifdef SEE_RAWT
-              DPRINTF(",");
-            #endif
-        }
-      #endif
+#if defined(USBHOST)
+        if (!SerialHost.write(req[i]))
+          DPRINTLNF("sendCatRequest: Tx: error");
+#elif defined(BTCLASSIC)
+        if (!SerialBT.write(req[i]))
+          DPRINTLNF("sendCatRequest: Tx: error");
+#endif
 
-      #ifdef SEE_RAWT
+#ifdef SEE_RAWT
+        DPRINTF(",");
+#endif
+      }
+#endif
+
+#ifdef SEE_RAWT
       DPRINTF(" END TX MSG, msg_len = ");
       DPRINTLN(msg_len);
-      #endif
-        
+#endif
+
     } else {
       DPRINTLNF("sendCatRequest: Buffer overflow");
-    }// if overflow 
-  }  // if connected
+    }  // if overflow
+  }    // if connected
 }
 
 // ----------------------------------------
@@ -405,15 +405,15 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 //    - On exit from this function, frequency is either updated (non-XVtr bands) or Xvtr_offset applied, if any.
 //
 // ----------------------------------------
-void read_Frequency(uint8_t data_len) {       // This is the displayed frequency, before the radio input, which may have offset applied
-  if (frequency > 0) {                         // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
+void read_Frequency(uint8_t data_len) {  // This is the displayed frequency, before the radio input, which may have offset applied
+  if (frequency > 0) {                   // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
     //Serial.printf("read_Frequency: Last Freq %-13llu\n", frequency);
-    if (!update_radio_settings_flag) {               // wait until any XVTR transition complete
-      bands[band].VFO_last = frequency;       // store Xvtr or non-Xvtr band displayed frequency per band before it changes.
-      prev_band = band;                       // store associated band index
+    if (!update_radio_settings_flag) {   // wait until any XVTR transition complete
+      bands[band].VFO_last = frequency;  // store Xvtr or non-Xvtr band displayed frequency per band before it changes.
+      prev_band = band;                  // store associated band index
     }
-  }                                         // if an Xvtr band, subtract the offset to get radio (IF) frequency
-  
+  }  // if an Xvtr band, subtract the offset to get radio (IF) frequency
+
   frequency = 0;
   uint64_t mul = 1;
   // This frequency from this point is from radio so will never be the XVTR offset applied version of 'frequency'
@@ -443,7 +443,7 @@ void read_Frequency(uint8_t data_len) {       // This is the displayed frequency
     //processCatMessages();
   }
   //Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   BLE_connected %d  radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, BLE_connected, radio_address);
- 
+
   // On exit from this function we have a new displayed frequency that has XVTR_Offset added, if any.
 }
 
@@ -517,9 +517,8 @@ void processCatMessages() {
   uint8_t data_start_idx = 0;
   uint8_t data_len = 0;
   uint8_t data[50] = {};
-  
-  if (1)
-  {
+
+  if (1) {
     bool knowncommand = true;
     int i;
     int msg_len;
@@ -791,7 +790,7 @@ void poll_radio(void) {
   if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0) {
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
     {
-      sendCatRequest(CIV_C_F_READ, 0, 0);  // Get current VFO 
+      sendCatRequest(CIV_C_F_READ, 0, 0);  // Get current VFO
       vTaskDelay(2);
       processCatMessages();
       time_last_freq = millis();
@@ -915,30 +914,30 @@ char *read_string(char *line_buffer, char const *desired_name) {
 
 void write_bands_data(void) {
   if (SD.exists("/bands.dat")) {
-      SD.remove("/bands.dat");   // delete old file and replace with new stuff
-      Serial.println(F("write_bands_data: Deleted old bands table file on SD card"));
+    SD.remove("/bands.dat");  // delete old file and replace with new stuff
+    DPRINTLNF("write_bands_data: Deleted old bands table file on SD card");
   }
   File myFile = SD.open("/bands.dat", FILE_WRITE);  // Create if needed and open the file for write
   if (myFile) {
-      Serial.println(F("write_bands_data: Writing bands table to SD card"));
-      // Write bands data table to the SD car
-      myFile.write((uint8_t *) &bands, sizeof(bands));
+    DPRINTLNF("write_bands_data: Writing bands table to SD card");
+    // Write bands data table to the SD car
+    myFile.write((uint8_t *)&bands, sizeof(bands));
   }
   myFile.close();
-  Serial.println("write_bands_data: Done writing file");
+  DPRINTLNF("write_bands_data: Done writing file");
 }
 
 
 void read_bands_data(void) {
-    Serial.println("read_bands_data: Opening /bands.data file for read");
-    File myFile = SD.open("/bands.dat", FILE_READ);
-    if (myFile) {
-        myFile.read((uint8_t *)&bands, sizeof(bands)/sizeof(uint8_t));
-        Serial.println("read_bands_data: Done reading file");
-        myFile.close();
-    } else {
-         Serial.println("read_bands_data: Failed to open /bands.data file for read");
-    }   
+  Serial.println("read_bands_data: Opening /bands.data file for read");
+  File myFile = SD.open("/bands.dat", FILE_READ);
+  if (myFile) {
+    myFile.read((uint8_t *)&bands, sizeof(bands) / sizeof(uint8_t));
+    Serial.println("read_bands_data: Done reading file");
+    myFile.close();
+  } else {
+    Serial.println("read_bands_data: Failed to open /bands.data file for read");
+  }
 }
 
 uint16_t read_SD_Card(void) {
@@ -1174,9 +1173,9 @@ void draw_new_screen(void) {
 #if (defined(BT_CLASSIC) || defined(BLE)) && defined(USBHOST)
   M5.Lcd.drawString("BT Mode       Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
 #elif (defined(BT_CLASSIC) || defined(BLE)) && !defined(USBHOST)
-   M5.Lcd.drawString("                Search          XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
+  M5.Lcd.drawString("                Search          XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
 #elif defined(USBHOST)
-   M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
+  M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
 #else
   if (XVTR)
     M5.Lcd.drawString("                Search         XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
@@ -1260,10 +1259,10 @@ void display_PTT(bool _PTT_state, bool _force) {
 
   M5.Lcd.setTextDatum(MR_DATUM);
   if (_PTT_state != _prev_PTT_state || _force) {
-    #ifdef PRINT_PTT_TO_SERIAL
-    Serial.print("*********************************************** PTT = ");
-    Serial.println(_PTT_state);
-    #endif
+#ifdef PRINT_PTT_TO_SERIAL
+    DPRINTF("*********************************************** PTT = ");
+    DPRINTLN(_PTT_state);
+#endif
     if (_PTT_state) {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_RED);
       M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
@@ -1286,9 +1285,9 @@ void display_Freq(uint64_t _freq, bool _force) {
   int16_t font_sz = 6;  // font size
 
   if ((_freq != _prev_freq && _freq != 0) || _force) {
-    #ifdef PRINT_VFO_TO_SERIAL
+#ifdef PRINT_VFO_TO_SERIAL
     Serial.printf("VFOA: %13sMHz - Band: %s\n", formatVFO(_freq), bands[band].band_name);
-    #endif
+#endif
     //M5.Lcd.fillRect(x, y, x1, y1, background_color);
     M5.Lcd.setTextDatum(MC_DATUM);
     M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
@@ -1301,7 +1300,7 @@ void display_Freq(uint64_t _freq, bool _force) {
 
 void display_Band(uint8_t _band, bool _force) {
   static uint8_t _prev_band = 255;
-    int x = 8;
+  int x = 8;
   int y = 150;
   int font_sz = 4;
 
@@ -1316,11 +1315,11 @@ void display_Band(uint8_t _band, bool _force) {
     M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
     M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
-    
+
     if (frequency != 0) {
-      if (!update_radio_settings_flag) 
-         write_bands_data();    // save on band changes.  Other times would be good bu this catches the most.
-      else   // by this time we should be stable after XVTR transitions
+      if (!update_radio_settings_flag)
+        write_bands_data();  // save on band changes.  Other times would be good bu this catches the most.
+      else                   // by this time we should be stable after XVTR transitions
         update_radio_settings_flag = false;
     }
     _prev_band = _band;
@@ -1381,15 +1380,15 @@ void band_Selector(uint8_t _band_input_pattern) {
 
   if (_band_input_pattern != _band_input_pattern_last)  // only do something if it is different
   {
-    write_bands_data();       // capture all before XVTR transition
-    if (!XVTR_enabled_last && !XVTR_enabled) {   // capture last non-Xvtr band in use
-      XVTR_band_before = band;   // record the non-xvtr band before initial XVTR mode enabled.  
+    write_bands_data();                         // capture all before XVTR transition
+    if (!XVTR_enabled_last && !XVTR_enabled) {  // capture last non-Xvtr band in use
+      XVTR_band_before = band;                  // record the non-xvtr band before initial XVTR mode enabled.
     }
 
     PTT_Output(band, false);  // send PTT OFF with current band before changing to new band.
     // Inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
     // translate input band pattern to band index then send to band Decode output
-    
+
     switch (_band_input_pattern)  // this could be BCD, parallel. For now assume 3 lines in paralle for 3 Xvtrs. Only have 4 inputs on module
     {                             // customize tis for your needs.  This is simple 3 Xvtrs, rig is used for IF only, no direct bands.  Only 3 inputs without going to BCD
       case 1:
@@ -1406,14 +1405,15 @@ void band_Selector(uint8_t _band_input_pattern) {
         break;
       default: XVTR_enabled = false;
     }
-    Serial.printf("Band Selector Source (wired or polled) Input Pattern = %d, Xvtr enabled = %d\n", _band_input_pattern, XVTR_enabled);
+    DPRINTF("Band Selector Source (wired or polled) Input Pattern = ");
+    DPRINT(_band_input_pattern); DPRINTF("Xvtr enabled = "); DPRINTLN(XVTR_enabled);
 
     _band_input_pattern_last = _band_input_pattern;
 
     // Band and Frequency are not yet changed
 
     // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, never the same band.
-    if (XVTR_enabled) {    // set VFO and other values to last used for the target XVTR band
+    if (XVTR_enabled) {  // set VFO and other values to last used for the target XVTR band
       SetMode(XVTR_Band);
       vTaskDelay(10);
       SetPre(XVTR_Band);
@@ -1422,12 +1422,12 @@ void band_Selector(uint8_t _band_input_pattern) {
       vTaskDelay(10);
       SetAGC(XVTR_Band);
       vTaskDelay(10);
-      SetFreq(bands[XVTR_Band].VFO_last);   // This value always has Xvtr offset applied      
+      SetFreq(bands[XVTR_Band].VFO_last);  // This value always has Xvtr offset applied
       update_radio_settings_flag = true;
     }
 
     // If turning off Xvtr mode, then restore the IF to normal last used values
-    if (XVTR_enabled_last && !XVTR_enabled) {   // This will have Xvtr offset = 0
+    if (XVTR_enabled_last && !XVTR_enabled) {  // This will have Xvtr offset = 0
       // band is still Xvtr band until the radio actually changes frequency
       SetMode(XVTR_band_before);
       vTaskDelay(10);
@@ -1443,26 +1443,26 @@ void band_Selector(uint8_t _band_input_pattern) {
 
     if (update_radio_settings_flag == true) {
       vTaskDelay(300);  // Give some time for the radio to change bands
-      #ifdef BTCLASSIC
-        if (btConnected) SerialBT.flush();
-      #endif
-      #ifdef BLE 
+#ifdef BTCLASSIC
+      if (btConnected) SerialBT.flush();
+#endif
+#ifdef BLE
         //if (BLE_connected) xxxxx.flush();
-      #endif
-      #ifdef USBOST
-        if (USBH_connected) SerialHost.flush();
-      #endif
+#endif
+#ifdef USBHOST
+      if (USBH_connected) SerialHost.flush();
+#endif
     }
 
     // now the band and freq should be updated
-    Serial.print(">>>> Last VFO = ");
-    Serial.print(bands[band].VFO_last);
-    Serial.print("   Last Xvtr VFO = ");
-    Serial.print(bands[XVTR_Band].VFO_last);
-    Serial.print("   Band In = ");
-    Serial.print(_band_input_pattern, HEX);
-    Serial.print("   PTT = ");
-    Serial.println(PTT);   
+    DPRINTF(">>>> Last VFO = ");
+    DPRINT(bands[band].VFO_last);
+    DPRINTF("   Last Xvtr VFO = ");
+    DPRINT(bands[XVTR_Band].VFO_last);
+    DPRINTF("   Band In = ");
+    DPRINT(_band_input_pattern, HEX);
+    DPRINTF("   PTT = ");
+    DPRINTLN(PTT);
 
     XVTR_enabled_last = XVTR_enabled;
   }
@@ -1483,7 +1483,7 @@ uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]) {
       vfo_dec[i] = bcdByteEncode(static_cast<uint8_t>(x));
       vfo = vfo / 100;
     }
-    Serial.printf(" VFO: < 10G Bands = Reversed hex to DEC byte %02X %02X %02X %02X %02X %02X\n", vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
+    //Serial.printf(" VFO: < 10G Bands = Reversed hex to DEC byte %02X %02X %02X %02X %02X %02X\n", vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
   } else {
     len = 6;
     for (uint8_t i = 0; i < len; i++) {
@@ -1491,12 +1491,12 @@ uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]) {
       vfo_dec[i] = bcdByteEncode(static_cast<uint8_t>(x));
       vfo = vfo / 100;
     }
-    Serial.printf(" VFO: > 10G Bands = Reversed hex to DEC byte %02X %02X %02X %02X %02X %02X %02X\n", vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5], vfo_dec[6]);
+    //Serial.printf(" VFO: > 10G Bands = Reversed hex to DEC byte %02X %02X %02X %02X %02X %02X %02X\n", vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5], vfo_dec[6]);
   }
   return len;  // 5 or 6
 }
 
-// Send new frequency to radio, radio will change bands as needed. 
+// Send new frequency to radio, radio will change bands as needed.
 // ToDo:  Radio mode and other settings are not tocuhed so stay the same as the last band used.  We are only changing the frequency, nothing else.
 //        Need to save mode, filter and other stuff to return each band to the last way it was used.
 void SetFreq(uint64_t Freq) {
@@ -1533,15 +1533,15 @@ void refesh_display(void) {
 void app_setup(void) {
   //Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
- 
+
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
 
-  #ifdef IO_MODULE
+#ifdef IO_MODULE
   Module_4in_8out_setup();  //Set up our IO modules comms on I2C
-  #endif
+#endif
 
-  #ifdef USBHOST
+#ifdef USBHOST
   int count_usb = 0;
   while (count_usb < 60 && USBHost_ready == 2)  // 0 = not mounted.  1 = mounted, 2 = system not initialized
   {
@@ -1562,44 +1562,47 @@ void app_setup(void) {
   vTaskDelay(500);
 
 #ifdef SDCARD
-  #if defined ( CORE3 ) || defined ( CORE2 )
+#if defined(CORE3) || defined(CORE2)
   if (!SD.begin(SD_SPI_CS_PIN, SPI, 25000000)) {
     // Print a message if the SD card initialization fails or if the SD card does not exist.
     Serial.println("Card failed, or not present");
   } else {
-  #else
+#else
   if (SD.exists("/config.ini")) {
-  #endif
+#endif
     Serial.println("Looking for SD Card to try update and read config");
     File root = SD.open("/");
     printDirectory(root, 0);  // look what is on the SD card
     root.close();
     UpdateFromFS(SD);                 // if there is an update, do it.  Otherwise read config file.
-    read_bands_data();  // overwrite default bands table with last known values saved on SD card
+    read_bands_data();                // overwrite default bands table with last known values saved on SD card
     uint16_t lines = read_SD_Card();  // get line count
     Serial.printf("Setup: config.ini line count is %d\n", lines);
-    Serial.print(F("Updated bd_address:"));
-    for (int z = 0; z < 6; z++)
-      Serial.print(bd_address[z], HEX);
-    Serial.println("");
     //printLineN(lines);
   }
 #endif
+
+  Serial.print(F("Updated bd_address:"));
+  for (int z = 0; z < 6; z++)
+    Serial.print(bd_address[z], HEX);
+  Serial.println("");
 
   draw_new_screen();
 
   usbh_setup();  // Just talk normal USB serial
 
-#ifdef BLE
-  BLE_Setup();
-  Scan_BLE_Servers();
-#endif
+  #ifdef BLE
+    BLE_Setup();
+    Scan_BLE_Servers();
+  #endif
 
-#ifdef BTCLASSIC
-  if (BT_enabled)
-    restart_BT();
-//else
-#endif
+  #ifdef BTCLASSIC
+    if (BT_enabled)
+      restart_BT();
+  //else
+  #endif
+
+  poll_radio();  // do not send stuff to radio when a PC app is doing the same
   // restart_USBH();
 }
 
@@ -1638,10 +1641,10 @@ void app_loop(void) {
     BtnC_pressed = false;
 
 // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
-#ifdef USBHOST
+    #ifdef USBHOST
     Serial.print(F("BtnC pressed - Switch to USB Host mode"));
     restart_USBH_flag = true;
-#else
+    #else
     if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
     {
       xvtr_band_select++;
@@ -1656,7 +1659,7 @@ void app_loop(void) {
         default: xvtr_band_select = 0; break;
       }
     }
-#endif
+    #endif
   }  // end Btn C
 
   processCatMessages();  // look for delayed or unsolicited messages from radio
@@ -1665,61 +1668,74 @@ void app_loop(void) {
 
   Get_Radio_address();  // can autodiscover CI-V address if not predefined.
 
-#if defined ( PC_PASSTHROUGH  )
-  uint8_t buf[64];
-  // Serial -> SerialHost
-  if (Serial.available()) {
-    size_t count = Serial.read(buf, sizeof(buf));
-    if (SerialHost && SerialHost.connected()) {
-      SerialHost.write(buf, count);
-      SerialHost.flush();
-    }
-  }
-#else
-  poll_radio();  // do not send stuff to radio when a PC app is doing the same
-#endif
+  #if defined(PC_PASSTHROUGH)
+    uint8_t buf[64];
+    // Serial -> SerialHost
+    if (Serial.available()) {
+      size_t count = Serial.read(buf, sizeof(buf));
 
-#ifdef USBHOST
-  if (restart_USBH_flag) {
-    restart_USBH();
-    restart_USBH_flag = false;
-  }
+      if (buf[0] == 0xFE && buf[1] == 0xFE && ( (buf[4] == 0x00 || buf[4] == 0x05 || buf[4] == 0x03) || (buf[4] == 0x25 && buf[5] == 0x00) )) {
+          read_Frequency(5);  // add XVTR offset if enabled.
+          SetFreq(frequency);
+      } else {
+      #if defined ( BTCLASSIC )
+        if (btConnected && SerialBT.connected()) {
+          SerialBT.write(buf, count);
+          //SerialBT.flush();
+        }
+      #elif defined ( BLE )
+        if (BLE_connected) {
+          SendMessage(buf, count);
+        }
+      #endif
+      }
+    }
+  #endif
+
+  if (update_radio_settings_flag)
+    poll_radio();  // do not send stuff to radio when a PC app is doing the same
+
+  #ifdef USBHOST
+    if (restart_USBH_flag) {
+      restart_USBH();
+      restart_USBH_flag = false;
+    }
 #endif
 
 #ifdef BLE
-  //BLE_loop();  // calling from the main loop for now.
+    //BLE_loop();  // calling from the main loop for now.
 #endif
 
 #ifdef BTCLASSIC
-  bt_loop();  // handle all BT serial messaging in place of the USB host serial
-  if (restart_BT_flag) {
-    restart_BT();
-    restart_BT_flag = false;
-  }
+    bt_loop();  // handle all BT serial messaging in place of the USB host serial
+    if (restart_BT_flag) {
+      restart_BT();
+      restart_BT_flag = false;
+    }
 #endif
 
 #ifdef IO_MODULE
-  if (millis() > last_input_poll + POLL_PTT_DEFAULT) {
-    // Process the band input and PTT input pins
-    decode_in = Module_4in_8out_Input_scan();
-    decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit
-    decode_Band_temp = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
+    if (millis() > last_input_poll + POLL_PTT_DEFAULT) {
+      // Process the band input and PTT input pins
+      decode_in = Module_4in_8out_Input_scan();
+      decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit
+      decode_Band_temp = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
 
-    // 4th pin is wired PTT from radio.
-    // extract the 4rh input to pass on PTT through slected bands IO pin.
-    if ((decode_PTT_temp != decode_PTT_temp_last) && use_wired_PTT)  // only call when the state changes
-    {
-      PTT_Output(band, decode_PTT_temp);  // should add debounce but cpu in the IO module seems to be doing that already well enough
-      decode_PTT_temp_last = decode_PTT_temp;
+      // 4th pin is wired PTT from radio.
+      // extract the 4rh input to pass on PTT through slected bands IO pin.
+      if ((decode_PTT_temp != decode_PTT_temp_last) && use_wired_PTT)  // only call when the state changes
+      {
+        PTT_Output(band, decode_PTT_temp);  // should add debounce but cpu in the IO module seems to be doing that already well enough
+        decode_PTT_temp_last = decode_PTT_temp;
+      }
+
+      if (decode_Band_temp != decode_Band_temp_last)  // skip if nothing changed on the wired inputs
+      {
+        band_Selector(decode_Band_temp);  // converts input patern to band (real or virtual Xvtr band)
+        decode_Band_temp_last = decode_Band_temp;
+      }
+
+      last_input_poll = millis();
     }
-
-    if (decode_Band_temp != decode_Band_temp_last)  // skip if nothing changed on the wired inputs
-    {
-      band_Selector(decode_Band_temp);  // converts input patern to band (real or virtual Xvtr band)
-      decode_Band_temp_last = decode_Band_temp;
-    }
-
-    last_input_poll = millis();
-  }
 #endif
-}
+  }

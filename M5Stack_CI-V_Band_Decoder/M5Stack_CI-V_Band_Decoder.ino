@@ -106,7 +106,7 @@ typedef struct {
 // CFG_TUH_DEVICE_MAX is defined by tusb_config header
 dev_info_t dev_info[CFG_TUH_DEVICE_MAX] = { 0 };
 
-#ifdef _PC_PASSTHRU   // This is unused code, saving for reference
+#ifdef PC_PASSTHRU_USBHOST   // This is unused code, saving for reference
 // forward Serial <-> SerialHost
 void forward_serial(void) {
   uint8_t buf[64];
@@ -134,6 +134,7 @@ void forward_serial(void) {
 // Using Host shield MAX3421E controller
 //--------------------------------------------------------------------+
 //#define CFG_TUD_COUNT 2
+#endif
 
 #ifdef USE_FREERTOS
 
@@ -419,7 +420,7 @@ void loop() {
       loop_max_time = temp_time;
     //Serial.print("!");   // Turn on to see RTOS scheduling time allocated visually
     if (loop_max_time > loop_time_threshold) {
-      Serial.printf("! loop time > %d  current time = %d  max time seen %d\n", loop_time_threshold, temp_time, loop_max_time);
+      //Serial.printf("! loop time > %d  current time = %d  max time seen %d\n", loop_time_threshold, temp_time, loop_max_time);
       //Serial.println(" App loop time > 500!");
       M5.Lcd.setTextDatum(ML_DATUM);
       M5.Lcd.setTextColor(WHITE, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
@@ -433,49 +434,11 @@ void loop() {
       M5.Lcd.drawString("!", 0, 0, 2);
     }
   }
-  uint32_t stack_sz;
-  stack_sz = uxTaskGetStackHighWaterMark( NULL );
-  if (stack_sz < 1000)
-    Serial.printf("\n  #######   App Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+  //uint32_t stack_sz;
+  //stack_sz = uxTaskGetStackHighWaterMark( NULL );
+  //if (stack_sz < 1000)
+    //Serial.printf("\n  #######   App Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
 }
-
-#elif defined(ARDUINO_ARCH_RP2040)
-//--------------------------------------------------------------------+
-// For RP2040 use both core0 for device stack, core1 for host stack
-//--------------------------------------------------------------------+
-
-//------------- Core0 -------------//
-void setup() {
-  Serial.begin(115200);
-  // while ( !Serial ) delay(10);   // wait for native usb
-  Serial.println("TinyUSB Host Serial Echo Example");
-  //app_setup();  // setup app stuff
-}
-
-void loop() {
-  forward_serial();
-  //app_loop();   // call to application main loop
-}
-
-//------------- Core1 -------------//
-void setup1() {
-  // configure pio-usb: defined in usbh_helper.h
-  rp2040_configure_pio_usb();
-
-  // run host stack on controller (rhport) 1
-  // Note: For rp2040 pico-pio-usb, calling USBHost.begin() on core1 will have most of the
-  // host bit-banging processing works done in core1 to free up core0 for other works
-  USBHost.begin(1);
-
-  // Initialize SerialHost
-  SerialHost.begin(115200);
-}
-
-void loop1() {
-  USBHost.task();
-}
-
-#endif
 
 void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx,
                             uint8_t const* report, uint16_t len) {
@@ -675,4 +638,4 @@ void utf16_to_utf8(uint16_t *temp_buf, size_t buf_len) {
   ((uint8_t *) temp_buf)[utf8_len] = '\0';
 }
 
-#endif
+#endif  // extras

@@ -9,7 +9,9 @@
 #include "DebugPrint.h"
 #include "M5Stack_CI-V_Band_Decoder.h"
 
+#ifdef IO_MODULE
 MODULE_4IN8OUT module;
+#endif
 
 #ifdef RELAY2
   #if defined ( CORE3 )   // Use Port A OK
@@ -183,7 +185,7 @@ void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
 
     // Operate a relay anytime PT is high. Probably not useful if have more than 1 PTT but is here for a test
     // This is a M5Stack 1 rleay Unit.  The 1 and 2 relay units oeprate on a grove port (B or C) with simple digital IO.  
-    // On a Care, Port A is the same pins as the rest of the internal i2c, operating a relay on them would screw up I2C likely.
+    // On a Core, Port A is the same pins as the rest of the internal i2c, operating a relay on them would screw up I2C likely.
     // The 4 relay unit is i2c addressed and normally plugs into Port A on the Corexx itself. 
     // I2C on Port B is a separate IC2 port for the Core2 and Core3
 
