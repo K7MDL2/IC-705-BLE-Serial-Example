@@ -4,6 +4,7 @@
 #define CIV_h
 
 #include <string>
+#include "M5Stack_CI-V_Band_Decoder.h"
 
 //inline uint8_t bcdByte(const uint8_t x) const { return  (((x & 0xf0) >> 4) * 10) + (x & 0x0f); }
 inline uint8_t bcdByte(const uint8_t x) { return  (((x & 0xf0) >> 4) * 10) + (x & 0x0f); }
@@ -125,9 +126,81 @@ enum cmds {
     End_of_Cmd_List
 };
 
+// For CIV commands
+
+#define MODES_NUM   16
+#define CW          3
+#define CW_R        7
+#define USB         1
+#define LSB         0     
+#define RTTY        4     
+#define RTTY_R      8     
+#define AM          2
+#define FM          5
+#define DV          23
+#define DD          34
+#define ATV         35
+
+#define AGC_SET_NUM 4
+#define AGC_OFF     0       // Index to AGC Settings table
+#define AGC_SLOW    3
+#define AGC_MID     2
+#define AGC_FAST    1
+
+#define FILTER      4
+#define FILT1       1
+#define FILT2       2
+#define FILT3       3
+#define VFO_A       1
+#define VFO_B       0
+
+#define ATTN_OFF   0       // Bypass
+#define ATTN_ON    1       // Turn relay on
+#define PREAMP_OFF  0       // Bypass
+#define PREAMP_ON   1       // Switch relay on
+
 struct cmdList {
     cmds cmd;
     uint8_t cmdData[6];  // first byte is number of bytes in the command (sub commands)
+};
+
+struct Modes_List {
+    uint8_t     mode_num;
+    char        mode_label[8];
+    uint8_t     filtx;             // bandwidth in HZ - look up matching width in Filter table when changing modes
+    uint8_t     data;
+};
+
+// translation of the radio's general mode
+const char ModeStr[3][11] = {
+  "MODE_VOICE",
+  "MODE_DATA",
+  "MODE_NDEF"
+};
+
+const char AgcStr[4][6] = {
+    {"AGC- "},  // 0 reserved for AGC OFF
+    {"AGC-F"},  // 1
+    {"AGC-M"},  // 2
+    {"AGC-S"}   // 3
+};
+
+// clear text translation of the Filter setting
+const char FilStr[4][5] = {
+  "NDEF",
+  "FIL1",   // 1 (1 .. 3 is according to ICOM's documentation)
+  "FIL2",
+  "FIL3"
+};
+
+// states of radio's DC-Power (on/Off State)
+const char radioOnOffStr[6][13] = {
+  "RADIO_OFF",
+  "RADIO_ON",
+  "RADIO_OFF_TR",     // transit from OFF to ON
+  "RADIO_ON_TR",      // transit from ON to OFF
+  "RADIO_NDEF",       // don't know
+  "RADIO_TOGGLE"
 };
 
 #endif // CIV.h header file

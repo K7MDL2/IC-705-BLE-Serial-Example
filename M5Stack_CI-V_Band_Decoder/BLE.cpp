@@ -74,12 +74,12 @@
 #define BLE_
 #ifdef BLE_
 
+#include "M5Stack_CI-V_Band_Decoder.h"
 #include "BLEDevice.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #include "BLEScan.h"
-#include "CIV.h"
-//#include "M5Stack_CI-V_Band_Decoder.h"
+//#include "CIV.h"
 #include "sdkconfig.h"
 #if defined(CONFIG_BLUEDROID_ENABLED)
 #include <esp_gap_ble_api.h>
@@ -87,7 +87,6 @@
 #include "BLEAdvertisedDevice.h"
 #include "BLEClient.h"
 #include "RTOS.h"
-#include "M5Stack_CI-V_Band_Decoder.h"
 #include "BLE.h"
 //#include "BLEAddress.h"
 

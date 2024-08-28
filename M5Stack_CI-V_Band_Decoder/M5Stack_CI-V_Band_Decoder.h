@@ -91,8 +91,8 @@
 
       If you are using BT Classic SPP then it is important to set the "bd_address" in the next lines below!
 *************************************************************************/
-#ifndef _BT_USB_
-#define _BT_USB_
+#ifndef _M5_BT_USB_
+#define _M5_BT_USB_
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
@@ -118,6 +118,10 @@
   #define CORE2
 #else
   #include <M5Stack.h>
+  #define SD_SPI_SCK_PIN  18
+  #define SD_SPI_MISO_PIN 19
+  #define SD_SPI_MOSI_PIN 23
+  #define SD_SPI_CS_PIN   4
   #define CORE
 #endif
 
@@ -166,7 +170,7 @@
 //#define BLE         // Core 3.  Maybe works on Core 2, TBD
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
 #define IO_MODULE   // enable the 4-In/8-Out module
-#define SDCARD      // enable sd card features
+#define SD_CARD      // enable sd card features
 #define RELAY2      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
 //#define RELAY4    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
 

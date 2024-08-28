@@ -1,7 +1,7 @@
 #ifndef DEBUGPRINT_H_
 #define DEBUGPRINT_H_
 
-#define DEBUG  //set for debug output
+//#define DEBUG  //set for debug output
 
 #ifdef  DEBUG
 #define DEBUG_ERROR true

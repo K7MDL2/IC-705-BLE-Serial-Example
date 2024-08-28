@@ -227,12 +227,12 @@ void setup() {
       M5.Touch.update(ms);
     //M5.Power.setExtOutput(true);  // .powerModeSet(POWER_MODE_USB_IN_BUS_OUT);
     Serial.println("CoreS3 and CoreS3SE defined");
-    SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
 
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
     Serial.println("Core2 defined");
     Wire.begin(21,22);
-    SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
     
     #ifdef CORE2LIB
     // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
@@ -257,8 +257,11 @@ void setup() {
     Serial.println("Core Basic defined");
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
     Wire.begin(21,22);
+    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
   #endif
     
+  SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+  
   #ifdef USBHOST  
   // init host stack on controller (rhport) 1
   USBHost.begin(1);

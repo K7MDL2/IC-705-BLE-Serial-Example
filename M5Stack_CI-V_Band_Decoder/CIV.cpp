@@ -98,88 +98,6 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_RADIO_ON,		    {2,0x18,0x01}}	          	  // Turn on the radio
 };
 
-// For CIV commands
-
-#define MODES_NUM   16
-#define CW          3
-#define CW_R        7
-#define USB         1
-#define LSB         0     
-#define RTTY        4     
-#define RTTY_R      8     
-#define AM          2
-#define FM          5
-#define DV          23
-#define DD          34
-#define ATV         35
-
-#define AGC_SET_NUM 4
-#define AGC_OFF     0       // Index to AGC Settings table
-#define AGC_SLOW    3
-#define AGC_MID     2
-#define AGC_FAST    1
-
-#define FILTER      4
-#define FILT1       1
-#define FILT2       2
-#define FILT3       3
-#define VFO_A       1
-#define VFO_B       0
-
-#define ATTN_OFF   0       // Bypass
-#define ATTN_ON    1       // Turn relay on
-#define PREAMP_OFF  0       // Bypass
-#define PREAMP_ON   1       // Switch relay on
-
-// states of radio's DC-Power (on/Off State)
-const char radioOnOffStr[6][13] = {
-  "RADIO_OFF",
-  "RADIO_ON",
-  "RADIO_OFF_TR",     // transit from OFF to ON
-  "RADIO_ON_TR",      // transit from ON to OFF
-  "RADIO_NDEF",       // don't know
-  "RADIO_TOGGLE"
-};
-
-struct Modes_List {
-    uint8_t     mode_num;
-    char        mode_label[8];
-    uint8_t     filtx;             // bandwidth in HZ - look up matching width in Filter table when changing modes
-    uint8_t     data;
-};
-
-/*  probably can delete these
-
-// clear text translation of the modulation modes
-const String modModeStr[MODES_NUM+1] = {
-  "LSB   ", // 00 (00 .. 08 is according to ICOM's documentation) 
-  "USB   ", // 01
-  "AM    ", // 02
-  "CW    ", // 03
-  "RTTY  ", // 04
-  "FM    ", // 05
-  //"WFM   ", // 06
-  "CW-R  ", // 07
-  "RTTY-R", // 08
-  "DV    ", // 09 (Note: on the ICOM CIV bus, this is coded as 17 in BCD-code, i.e. 0x17)
-  "DD    ",
-  "ATV   ",
-  "LSB-D ",
-  "USB-D ",
-  "AM-D  ",
-  "FM-D  ",
-  "NDEF  "  // 10
-};
-*/
-
-// clear text translation of the Filter setting
-const char FilStr[4][5] = {
-  "NDEF",
-  "FIL1",   // 1 (1 .. 3 is according to ICOM's documentation)
-  "FIL2",
-  "FIL3"
-};
-
 //
 // Icom mode number, model Label, range of filt choices allowed (1, 2, or 3), and data mode allowed table (set for data capable modes only)
 // per mode, can use filtX and datamode clumns to determine allowable value to write to the radio, or to allow for display.
@@ -188,7 +106,7 @@ const char FilStr[4][5] = {
 // For datamode, simple check for 1 or 0. If o hen data mode must be off.  If 1, data mode must be on.  
 // in a table search, that would change the displayed mode label from USB to USB-D for example, they are both the same base mode, 0x01.
 // 
-const struct Modes_List modeList[MODES_NUM] = {
+struct Modes_List modeList[MODES_NUM] = {
     {0x00, "LSB   ", 3, 0},
     {0x01, "USB   ", 3, 0},
     {0x02, "AM    ", 3, 0},
@@ -206,20 +124,6 @@ const struct Modes_List modeList[MODES_NUM] = {
     {0x22, "DD    ", 1, 0},  // hex 22 is 34 dec  // not on 705, on 905
     {0x23, "ATV   ", 1, 0}   // hex 23 is 35 dec  // not on 705, on 905
  };
-
-const char AgcStr[4][6] = {
-    {"AGC- "},  // 0 reserved for AGC OFF
-    {"AGC-F"},  // 1
-    {"AGC-M"},  // 2
-    {"AGC-S"}   // 3
-};
-
-// translation of the radio's general mode
-const char ModeStr[3][11] = {
-  "MODE_VOICE",
-  "MODE_DATA",
-  "MODE_NDEF"
-};
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -509,11 +413,12 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     case CIV_C_MOD_SEND:
         //Serial.printf("CIV_Action: Mode, Len = %d\n", data_len);
                   // command CIV_C_MODE_READ received
-        radio_mode = rd_buffer[data_start_idx]/100;  // CIVresultL.value/100;
-        DPRINTF("CIV_Action: Mode in BCD: "); DPRINTLN(radio_mode);
+        radio_mode = rd_buffer[data_start_idx];  // CIVresultL.value/100;
+        DPRINTF("CIV_Action: Mode in HEX: "); DPRINTLN(radio_mode, HEX);
         
+        uint8_t i;
         // look up the bcd value in our modelist table to see what radio mode it is 
-        for (uint8_t i = 0; i< MODES_NUM; i++)
+        for (i = 0; i< MODES_NUM; i++)
         {
           if (modeList[i].mode_num == radio_mode)  // match bcd value to table mode_num value to get out mode index that we store
           {	
@@ -522,18 +427,18 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           }
         }// radio_mode now converted to a table index
         
-        radio_filter = rd_buffer[data_start_idx] - ((rd_buffer[data_start_idx]/100)*100);
+        radio_filter = rd_buffer[data_start_idx+1];
         
-        uint8_t i;
-        for (int i = 0; i < MODES_NUM; i++) {
-          if (modeList[i].mode_num == radio_mode) {   // convert to our list index and also validate number received
-          }
-        }
+        //uint8_t i;
+        //for (int i = 0; i < MODES_NUM; i++) {
+        //  if (modeList[i].mode_num == radio_mode) {   // convert to our list index and also validate number received
+        //  }
+        //}
         // This command info lacks data mode status so have to use it to trigger extended mode info
         sendCatRequest(CIV_C_F26A, 0, 0);  // Get extended info -  mode, filter, and datamode status
         
         DPRINTF("CIV_Action: CI-V Returned Mode: "); DPRINT(modeList[i].mode_label);  
-        DPRINTF("  Radio Mode: "); DPRINT(radio_mode, HEX); 
+        DPRINTF("  Mode Index: "); DPRINT(i); 
         DPRINTF("  Filter: "); DPRINTLN(FilStr[radio_filter]);    
         break;
 
@@ -561,10 +466,10 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           } else {  // we have a vaid match, finish up.
             bands[band].datamode = radio_data;  // data on/off  0-1
             bands[band].filt = radio_filter;  // filter setting 1-3
-            //DPRINTF("CIV_Action: Extended Mode Info - ModeNum: "); DPRINT(bands[band].mode_idx, DEC); 
-            //DPRINTF("   Mode: "); DPRINT(modeList[bands[band].mode_idx].mode_label);
-            //DPRINTF("   DATA: "); DPRINT(ModeStr[bands[band].datamode]);
-            //DPRINTF("   Filt: "); DPRINTLN(FilStr[bands[band].filt]);
+            DPRINTF("CIV_Action: Extended Mode Info - ModeNum: "); DPRINT(bands[band].mode_idx, DEC); 
+            DPRINTF("   Mode: "); DPRINT(modeList[bands[band].mode_idx].mode_label);
+            DPRINTF("   DATA: "); DPRINT(ModeStr[bands[band].datamode]);
+            DPRINTF("   Filt: "); DPRINTLN(FilStr[bands[band].filt]);
           }
         }  // else the changes are for the unselected VFO				
         break;       
