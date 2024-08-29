@@ -404,7 +404,7 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 //    - On exit from this function, frequency is either updated (non-XVtr bands) or Xvtr_offset applied, if any.
 //
 // ----------------------------------------
-void read_Frequency(uint8_t data_len) {  // This is the displayed frequency, before the radio input, which may have offset applied
+void read_Frequency(uint64_t freq, uint8_t data_len) {  // This is the displayed frequency, before the radio input, which may have offset applied
   if (frequency > 0) {                   // store frequency per band before it maybe changes bands.  Required to change IF and restore direct after use as an IF.
     //Serial.printf("read_Frequency: Last Freq %-13llu\n", frequency);
     if (!update_radio_settings_flag) {   // wait until any XVTR transition complete
@@ -413,18 +413,19 @@ void read_Frequency(uint8_t data_len) {  // This is the displayed frequency, bef
     }
   }  // if an Xvtr band, subtract the offset to get radio (IF) frequency
 
-  frequency = 0;
-  uint64_t mul = 1;
+  //frequency = 0;
+  //uint64_t mul = 1;
   // This frequency from this point is from radio so will never be the XVTR offset applied version of 'frequency'
   //FE FE E0 42 03 <00 00 58 45 01> FD ic-820  IC-705  5bytes, 10bcd digits
   //FE FE 00 40 00 <00 60 06 14> FD ic-732
   //FE FE E0 AC 03 <00 00 58 45 01 01> FD  IC-905 for 10G and up bands - 6bytes, 12 bcd digits
   // use the data length to loop an extra byte when needed for the IC905 on 10GHz bands and up
-  for (uint8_t i = 5; i < 5 + data_len; i++) {
-    if (read_buffer[i] == 0xFD) continue;  //spike
-    frequency += (read_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
-    frequency += (read_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
-  }
+  //for (uint8_t i = 5; i < 5 + data_len; i++) {
+  //  if (read_buffer[i] == 0xFD) continue;  //spike
+  //  frequency += (read_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
+  //  frequency += (read_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
+  //}
+  frequency = freq;
 
   if (XVTR_enabled)
     frequency += bands[XVTR_Band].Xvtr_offset;
