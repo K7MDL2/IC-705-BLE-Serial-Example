@@ -237,16 +237,15 @@ uint8_t readLine(void) {
     }
     #endif
   } else if (BLE_connected && BLE_buff_flag) {
-    BLE_buff_flag = false;  // reset and wait for next new data to arrive
     for (int i = 0; i < sizeof(read_buffer); i++) {
       byte = read_buffer[i];
       if (byte == 0xFF) continue;  //TODO skip to start byte instead
 
       read_buffer[counter++] = byte;
       if (STOP_BYTE == byte) break;
-
       if (counter >= sizeof(read_buffer)) return 0;
     }
+    BLE_buff_flag = false;  // reset and allow new data to arrive
     //DPRINTF("readLine: BLE read buffer length:"); DPRINTLN(counter);
   } else {
     #ifdef USBHOST
@@ -413,18 +412,7 @@ void read_Frequency(uint64_t freq, uint8_t data_len) {  // This is the displayed
     }
   }  // if an Xvtr band, subtract the offset to get radio (IF) frequency
 
-  //frequency = 0;
-  //uint64_t mul = 1;
-  // This frequency from this point is from radio so will never be the XVTR offset applied version of 'frequency'
-  //FE FE E0 42 03 <00 00 58 45 01> FD ic-820  IC-705  5bytes, 10bcd digits
-  //FE FE 00 40 00 <00 60 06 14> FD ic-732
-  //FE FE E0 AC 03 <00 00 58 45 01 01> FD  IC-905 for 10G and up bands - 6bytes, 12 bcd digits
-  // use the data length to loop an extra byte when needed for the IC905 on 10GHz bands and up
-  //for (uint8_t i = 5; i < 5 + data_len; i++) {
-  //  if (read_buffer[i] == 0xFD) continue;  //spike
-  //  frequency += (read_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
-  //  frequency += (read_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
-  //}
+  // Could do more validation here. Freq Calculation moved to CIV.cpp
   frequency = freq;
 
   if (XVTR_enabled)
@@ -432,16 +420,7 @@ void read_Frequency(uint64_t freq, uint8_t data_len) {  // This is the displayed
 
   band = getBand(frequency);
 
-  if (prev_band != band) {
-    //sendCatRequest(CIV_C_F26A, 0, 0);   // fire off a mode/filter request with a change in band.
-    //vTaskDelay(5);
-    //processCatMessages();
-    //sendCatRequest(CIV_C_AGC_READ, 0, 0);   // fire off agc update
-    //vTaskDelay(5);
-    //processCatMessages();
-  }
   //Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   BLE_connected %d  radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, BLE_connected, radio_address);
-
   // On exit from this function we have a new displayed frequency that has XVTR_Offset added, if any.
 }
 

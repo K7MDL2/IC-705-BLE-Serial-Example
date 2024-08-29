@@ -206,13 +206,15 @@ void printFrequency(const uint8_t freq[])
 
 uint8_t *r = read_buffer;
 
+// This can pop up inthe middle of a read_buffer processing fucntion so use a semaphore and only copy the buffer if the process is done with the old one.
 static void notifyCallback(
   BLERemoteCharacteristic* pBLERemoteCharacteristic,
   uint8_t* pData,
   size_t length,
   bool isNotify) 
 {
-  BLE_buff_flag = false;
+  uint8_t buf[64] = {};
+
   //Serial.printf("Callback Notify value = \n",isNotify);
   #ifdef WATCH_BLE_SERIAL
   DPRINTF("Notify callback - Data: ");
@@ -230,17 +232,10 @@ static void notifyCallback(
     }
 
     if (pData[0] == 0xFE && pData[1] == 0xFE)
-        r[i] = pData[i];  // copy into main read buffer
+        buf[i] = pData[i];  // copy into main read buffer
 
     if (pData[i] == 0xFD)
     {
-      r[i+1] = 0;
-      BLE_buff_flag = true;   // consuming functions will reset this once it is read and won't waste time reading stale data
-      
-      #ifdef WATCH_BLE_SERIAL
-        DPRINTLNF("");
-      #endif
-
       if (pData[1] == 0xF1 && pData[2] == 0x00)
       {
         switch (pData[3])
@@ -266,9 +261,19 @@ static void notifyCallback(
             break;
         }
         BLE_buff_flag = false;   // consuming functions will reset this once it is read and won't waste time reading stale data
+        return;
       }
-      //BLE_buff_flag = false;   // consuming functions will reset this once it is read and won't waste time reading stale data
-      break;
+
+      buf[i+1] = 0;
+
+      if (!BLE_buff_flag) {
+        memcpy(r, buf, i+1);     // only move data into read_buffer if it has already been read by the main program.
+        BLE_buff_flag = true;   // buffer reaady - consuming functions will reset this once it is read and won't waste time reading stale data
+      }
+
+      #ifdef WATCH_BLE_SERIAL
+        DPRINTLNF("");
+      #endif
     }
   }
   
