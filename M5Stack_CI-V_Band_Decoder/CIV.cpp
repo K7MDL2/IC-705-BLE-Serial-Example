@@ -19,6 +19,7 @@ time_t prevDisplay = 0; // When the digital clock was displayed
 extern bool use_wired_PTT;
 extern uint8_t band;
 extern void PTT_Output(uint8_t band, bool PTT_state);
+extern uint8_t radio_address;
 struct position p[1] = {};
 extern struct Bands bands[]; 
 uint8_t radio_mode;      // mode from radio messages
@@ -378,13 +379,13 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
 //
 
 //#define DBG_CIV1  // command parser entry
-//#define DBG_CIV2  // just do summary print
+#define DBG_CIV2  // just do summary print
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t rd_buffer[])
 { 
   
   #ifdef DBG_CIV1
-  Serial.printf("cmd = %X  data_start_idx = %d  data_len = %d  rd_buffer:%X %X %X %X %X %X %X %X %x %X %X\n", cmd_List[cmd_num].cmdData[1], \
+  Serial.printf("CIV_Action: Entry - cmd = %X  data_start_idx = %d  data_len = %d  rd_buffer:%X %X %X %X %X %X %X %X %x %X %X\n", cmd_List[cmd_num].cmdData[1], \
              data_start_idx, data_len, rd_buffer[0], rd_buffer[1], rd_buffer[2], rd_buffer[3],rd_buffer[4], rd_buffer[5], rd_buffer[6], \
              rd_buffer[7],rd_buffer[8], rd_buffer[9], rd_buffer[10]);
   #endif
@@ -394,10 +395,13 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     case CIV_C_F_READ:
     case CIV_C_F_SEND:
     case CIV_C_F1_SEND:
-        read_Frequency(data_len);
+        if (data_len == 5 || (radio_address == IC905 && data_len == 6))
+          read_Frequency(data_len);
         break;
 
     case CIV_C_TX:  // Used to request RX TX status from radio
+        if (data_len != 1)
+          break;
         PTT = rd_buffer[data_start_idx] == 1 ? true : false;
         if (TX_last != PTT)
         {

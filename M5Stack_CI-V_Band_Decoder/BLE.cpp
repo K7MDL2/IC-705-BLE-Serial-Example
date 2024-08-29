@@ -214,7 +214,9 @@ static void notifyCallback(
 {
   BLE_buff_flag = false;
   //Serial.printf("Callback Notify value = \n",isNotify);
+  #ifdef WATCH_BLE_SERIAL
   DPRINTF("Notify callback - Data: ");
+  #endif
   for (int i = 0; i < length; i++) 
   {
     // DPRINT((char)pData[i]);     // Print character to uart
