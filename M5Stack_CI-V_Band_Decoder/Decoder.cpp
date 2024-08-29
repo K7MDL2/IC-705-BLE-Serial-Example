@@ -118,7 +118,7 @@ void GPIO_Out(uint8_t pattern)
     #endif
 
     //pattern = !pattern;
-
+    #ifdef IO_MODULE
     // mask each bit and apply the 1 or 0 to the assigned pin
     if (BAND_DECODE_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_0, (pattern & 0x01) ? 1 : 0);  // bit 0
     if (BAND_DECODE_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_1, (pattern & 0x02) ? 1 : 0);  // bit 1
@@ -128,6 +128,7 @@ void GPIO_Out(uint8_t pattern)
     if (BAND_DECODE_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_5, (pattern & 0x20) ? 1 : 0);  // bit 5
     if (BAND_DECODE_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_6, (pattern & 0x40) ? 1 : 0);  // bit 6
     if (BAND_DECODE_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_PIN_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+    #endif
 }
 
 void PTT_Output(uint8_t band, bool PTT_state)
@@ -204,6 +205,7 @@ void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
     
     //Serial.println((pattern & 0x10 & PTT_state) ? 0 : 1);
     
+    #ifdef IO_MODULE
     // mask each bit and apply the 1 or 0 to the assigned pin
     if (BAND_DECODE_PTT_OUTPUT_PIN_0 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
     if (BAND_DECODE_PTT_OUTPUT_PIN_1 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_1, (pattern & 0x02 & PTT_state) ? 1 : 1);}  // bit 1
@@ -213,6 +215,7 @@ void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
     if (BAND_DECODE_PTT_OUTPUT_PIN_5 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_5, (pattern & 0x20 & PTT_state) ? 1 : 0);}  // bit 5
     if (BAND_DECODE_PTT_OUTPUT_PIN_6 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
     if (BAND_DECODE_PTT_OUTPUT_PIN_7 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_PIN_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
+    #endif
 }
 
 /*  Not used for the 4-In/8-Out module, all are fixed direction
@@ -259,6 +262,7 @@ void  Module_4in_8out_setup()
       pinMode(pinR2, OUTPUT);  // Set pin to output mode.
     #endif
 
+    #ifdef IO_MODULE
     #ifdef CONFIG_IDF_TARGET_ESP32S3
       Serial.println("Decoder: CoreS3 i2c pins used");
       while (!module.begin(&Wire1, 12, 11, MODULE_4IN8OUT_ADDR) && counter < 4) {  // for cores3
@@ -273,6 +277,7 @@ void  Module_4in_8out_setup()
       }
   if (counter < 4)
       Serial.println("4IN8OUT INIT Success");
+  #endif
 }
 
 long interval = 0;
@@ -283,10 +288,12 @@ bool level    = false;
 uint8_t Module_4in_8out_Input_scan(void) 
 {
   uint8_t pattern = 0;
+ #ifdef IO_MODULE
   pattern |= module.getInput(0) ; 
   pattern |= module.getInput(1) << 1;
   pattern |= module.getInput(2) << 2;
   pattern |= module.getInput(3) << 3;
+ #endif
   return pattern & 0x0F;
 }
 
