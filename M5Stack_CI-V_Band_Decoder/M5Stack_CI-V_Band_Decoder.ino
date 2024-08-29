@@ -355,7 +355,7 @@ void setup() {
   #endif
     
   SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
-  SPI.setFrequency(SPI_FREQ);
+  //SPI.setFrequency(SPI_FREQ);
   
   #ifdef USBHOST  
   // init host stack on controller (rhport) 1
