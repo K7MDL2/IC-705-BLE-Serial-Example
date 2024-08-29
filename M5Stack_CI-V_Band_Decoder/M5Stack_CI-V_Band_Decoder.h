@@ -232,7 +232,7 @@ void display_Band(uint8_t _band, bool _force);
 void display_Grid(char _grid[], bool _force);
 void SetFreq(uint64_t Freq);
 
-const uint64_t decMulti[] = { 100000000000, 10000000000, 1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1 };
+//const uint64_t decMulti[] = { 100000000000, 10000000000, 1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1 };
 
 #define BAUD_RATES_SIZE 4
 const uint16_t baudRates[BAUD_RATES_SIZE] = { 19200, 9600, 4800, 1200 };

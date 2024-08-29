@@ -1236,8 +1236,8 @@ void display_PTT(bool _PTT_state, bool _force) {
   M5.Lcd.setTextDatum(MR_DATUM);
   if (_PTT_state != _prev_PTT_state || _force) {
 #ifdef PRINT_PTT_TO_SERIAL
-    DPRINTF("*********************************************** PTT = ");
-    DPRINTLN(_PTT_state);
+    Serial.print(F("*********************************************** PTT = "));
+    Serial.println(_PTT_state);
 #endif
     if (_PTT_state) {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_RED);

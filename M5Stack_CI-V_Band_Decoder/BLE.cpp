@@ -123,6 +123,11 @@ uint8_t CIV_ID1[] = {0xFE, 0xF1, 0x00, 0x62, 0x49, 0x43, 0x37, 0x30, 0x35, 0x2D,
 // The RX and Tx UUIDs are the same number.  Unlike most devices, the CI-V bus is not full duplex, 
 //    they share the same wire for Rx and TX and so it goes for the digital wire here.
 
+#ifdef CORE3
+extern HWCDC Serial;
+#else
+#include "M5Stack_CI-V_Band_Decoder.h"
+#endif
 
 int scanTime = 5; //In seconds
 static BLEScan *pBLEScan = NULL;
@@ -132,7 +137,7 @@ static BLEAddress *pServerAddress = NULL;
 static bool connected = false;
 static BLERemoteCharacteristic* pTXCharacteristic;
 static BLERemoteCharacteristic* pRXCharacteristic;
-const uint32_t decMulti[]    = {1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1};
+//const uint64_t decMulti[]    = {1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1};
 static bool BT_ADDR_confirm = false;
 static bool Name_confirm = false;
 static bool Token_confirm = false;
@@ -147,12 +152,9 @@ extern uint8_t PTT;
 extern uint8_t radio_address;
 extern bool XVTR_enabled;
 extern uint8_t  XVTR_Band;
-//extern byte getBand(uint64_t _freq);
-//extern struct Bands bands[];
 extern uint64_t frequency;
 extern uint8_t read_buffer[];   //Read buffer
 extern bool BLE_buff_flag;
-extern HWCDC Serial;
 
 static void notifyCallback(
   BLERemoteCharacteristic* pBLERemoteCharacteristic,
@@ -160,8 +162,7 @@ static void notifyCallback(
   size_t length,
   bool isNotify);
 
-void printFrequency(void);
-
+//void printFrequency(void);
 
 // The onDisconnect() callback function worked but am using pClient->isConnected() instead.
 // It also arrives asynchronously which has to be handled as such.  Not using this now.
@@ -187,6 +188,7 @@ class MyClientCallback : public BLEClientCallbacks
 // ----------------------------------------
 //      Print the received frequency
 // ----------------------------------------
+/*
 void printFrequency(const uint8_t freq[])
 {
   if (BLE_connected) {
@@ -203,7 +205,7 @@ void printFrequency(const uint8_t freq[])
     DPRINTF("VFO:"); DPRINTLN(frequency); 
   }
 }
-
+*/
 uint8_t *r = read_buffer;
 
 // This can pop up inthe middle of a read_buffer processing fucntion so use a semaphore and only copy the buffer if the process is done with the old one.
