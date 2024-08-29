@@ -187,6 +187,9 @@
 //*************************************  should not be any user config below this point *********************************************
 //*************************************************************************************************************************************
 
+#define SPI_FREQ    (25000000u)   // SPI bus speed - impacts reliability of SD card and mostly the USB v1.2 module
+                                  //  which is desgned for 26Mhz but we get lockups at higher speeds.
+
 #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) 
   #undef BTCLASSIC   // Only BLE on S3
   //#define USBHOST   // use this for now until BLE code added

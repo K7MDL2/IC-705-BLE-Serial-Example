@@ -98,7 +98,7 @@ bool XVTR = true;                    // Enables Xvtr support
 uint8_t XVTR_Band = 0;      // Xvtr band to display - temp until a band select menu is built
 uint8_t brightness = 130;   // 0-255
 bool XVTR_enabled = false;  // true when a transverter feature is active
-uint8_t read_buffer[2048];  //Read buffer
+uint8_t read_buffer[64];  //Read buffer
 uint8_t prev_band = 0xFF;
 uint64_t prev_frequency = 0;
 bool btConnected = false;
@@ -120,6 +120,8 @@ void read_bands_data(void);
 // ######################################################################
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
 // settings in section 'Bluetooth Device Information'
+// Or better, create a config.ini file with the radio address on a line per this example
+//    bd_address = 30:31:7D:33:BB:7F
 
 uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f, 0x00 };  // Rick's 705
 //uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9, 0x00 };  // Mike's 705
@@ -1313,7 +1315,11 @@ void display_Band(uint8_t _band, bool _force) {
 
     if (frequency != 0) {
       if (!update_radio_settings_flag)
+        #ifdef SD_CARD
         write_bands_data();  // save on band changes.  Other times would be good bu this catches the most.
+        #else
+        ; // nothing
+        #endif
       else                   // by this time we should be stable after XVTR transitions
         update_radio_settings_flag = false;
     }
@@ -1551,7 +1557,7 @@ void app_setup(void) {
 
 #if defined ( SD_CARD )
   DPRINTLNF("Looking for SD Card to try update and read config");
-  if (SD.begin(SD_SPI_CS_PIN, SPI, 25000000)) {
+  if (SD.begin(SD_SPI_CS_PIN, SPI, SPI_FREQ)) {
     if (SD.exists("/config.ini")) {
       File root = SD.open("/");
       printDirectory(root, 0);  // look what is on the SD card
