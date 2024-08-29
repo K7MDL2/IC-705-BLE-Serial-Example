@@ -215,9 +215,9 @@ static void notifyCallback(
 {
   uint8_t buf[64] = {};
 
-  Serial.print("Callback length: "); Serial.println(length);
   //Serial.printf("Callback Notify value = \n",isNotify);
   #ifdef WATCH_BLE_SERIAL
+  DPRINTF("Callback length: "); DPRINTLN(length);
   DPRINTF("Notify callback - Data: ");
   #endif
 
@@ -286,32 +286,6 @@ static void notifyCallback(
         DPRINTLNF("");
       #endif
     }
-  }
-  
-  //CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t read_buffer[])
-  //CIV_Action(pData[4], data_start_idx, data_len, sizeof(pData), read_buffer[])
-  if (connected)
-  {
-    /*   Replaced with app_loop sharing processing with USB host and BT Classic
-    for (int i = 0; i < length; i++) 
-      DPRINT(r[i],HEX);
-    DPRINTLNF("");
-    
-    switch (pData[4])
-    {
-      case 0x00:
-      case 0x03:
-      case 0x05:
-        printFrequency(pData); // VFO frequency
-        //read_Frequency(sizeof(pData));
-        break;
-      case 0x1C:
-        if (pData[5] == 0)  // RX/TX state message
-          PTT = pData[6];
-        break;
-      default: break;
-    }
-   */
   } 
 }
 
