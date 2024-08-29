@@ -139,7 +139,7 @@ void forward_serial(void) {
 #ifdef USE_FREERTOS
 
 #ifdef ARDUINO_ARCH_ESP32
-  #define USBH_STACK_SZ 6000
+  #define USBH_STACK_SZ 8000
 #else
   #define USBH_STACK_SZ 200
 #endif
@@ -150,7 +150,7 @@ void usbhost_rtos_task(void *param) {
  (void) param;
   while (1) {
     //Serial.print("+");
-    USBHost.task();
+    USBHost.task(2, false);
     //vTaskDelay(10);
      // test for stack size
     uint32_t stack_sz;
@@ -196,6 +196,24 @@ void BLE_loop_rtos_task(void *param) {
   vTaskDelete(NULL);
 }
 #endif // BLE
+
+
+void btn_loop_rtos_task(void *param) {
+ (void) param;
+  while (1) {
+    chk_btns();
+    //Serial.print("\nT");
+    //vTaskDelay(12);
+    // test for stack size
+    uint32_t stack_sz;
+    stack_sz = uxTaskGetStackHighWaterMark( NULL );
+    if (stack_sz < 1000)
+      Serial.printf("\n  ^^^^^^^^^^^  chk_btns: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+  }
+  vTaskDelete(NULL);
+}
+
+
 #endif  // FREERTOS
 
 extern void   BLE_Setup();
@@ -209,123 +227,8 @@ bool BtnA_pressed = false;
 bool BtnB_pressed = false;
 bool BtnC_pressed = false;
 uint64_t frequency = 0;
-//
-//   Main Setup for ESP32
-//
-void setup() {
-  Serial.begin(115200);
-  while ( !Serial ) delay(10);   // wait for native usb
 
-  #ifdef CONFIG_IDF_TARGET_ESP32S3
-    auto cfg = M5.config();
-    M5.begin(cfg);
-    M5.Power.begin();
-    Wire.begin(12,11);
-    //M5.Touch.begin();
-    auto ms = millis();
-    if (M5.Touch.isEnabled())
-      M5.Touch.update(ms);
-    //M5.Power.setExtOutput(true);  // .powerModeSet(POWER_MODE_USB_IN_BUS_OUT);
-    Serial.println("CoreS3 and CoreS3SE defined");
-    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
-
-  #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-    Serial.println("Core2 defined");
-    Wire.begin(21,22);
-    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
-    
-    #ifdef CORE2LIB
-    // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
-    M5.begin();
-    M5.Axp.begin();
-    Serial.print("Power Status 0=external, 1=internal 2=max  "); Serial.println(M5.Axp.isACIN() ? 0 : 1);
-    M5.Touch.begin();
-    //if (M5.Touch.isEnabled())
-    M5.Touch.update();
-    #else
-    //// M5Unified.h stuff =  kills USB Host though, makes the touch buttons work.
-    auto cfg = M5.config();
-    M5.begin(cfg);
-    M5.Power.begin();
-    auto ms = millis();
-    if (M5.Touch.isEnabled()) {
-    M5.Touch.update(ms);
-    }
-    #endif
-
-  #else
-    Serial.println("Core Basic defined");
-    M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
-    Wire.begin(21,22);
-    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
-  #endif
-    
-  SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
-  
-  #ifdef USBHOST  
-  // init host stack on controller (rhport) 1
-  USBHost.begin(1);
-  // Initialize SerialHost
-  SerialHost.begin(115200);
-  #endif
-
-  #ifdef USE_FREERTOS
-    #ifdef USBHOST
-      // Create a task to run USBHost.task() in background
-      xTaskCreate(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 4, NULL);
-      
-      Serial.printf("USB pre-start status = %d\n", USBHost_ready);
-      Serial.printf("   USBH_connected = %d\n",USBH_connected);
-      int count = 0;
-        while (USBHost_ready == 2 && count < 200)  // 0 of nothing, 1 for device connected. value started at 2 so we know init is done.
-        {
-          delay(10);
-          Serial.print(count);
-          count++;
-        }
-      Serial.printf("USB post-start status = %d\n", USBHost_ready);
-      Serial.printf("   USBH_connected = %d\n", USBH_connected);
-      
-      app_setup();  // setup app stuff
-      //xTaskCreatePinnedToCore(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle, 1);
-      //xTaskCreate(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle); 
-      //xTaskCreate(BLE_loop_rtos_task, "BLE", 8000, NULL, 2, &xHandle);   // callback on server ID not working inside a task
-    #endif
-  #endif
-
-  #ifndef USBHOST
-    app_setup();  // setup app stuff
-  #endif
-  
-  #ifdef BLE
-    BLE_Setup();
-    Scan_BLE_Servers();
-  #endif
-
-  Serial.println("TinyUSB Host Serial Setup Done");
-}
-
-//*****************************************************************************
-//
-// Main Loop.  Call app_setup() to run main application
-//
-//*****************************************************************************
-
-void loop() {
-  
-  static int32_t loop_time = 0;
-  static int32_t loop_max_time = 0;
-  int32_t loop_time_threshold = 30;
-  static int32_t prev_loop_time = 0;
-
-  loop_time = millis();  // watermark
-  
-  M5.update();
-
-  #ifdef USE_FREERTOS
-    //USBHost.task();
-  #endif
-
+void chk_btns(void) {
   #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
     auto touchPoint = M5.Touch.getDetail(); 
     if (prev_state != touchPoint.state) {
@@ -399,6 +302,128 @@ void loop() {
         Serial.println("C");
     }
   #endif
+  }
+//
+//   Main Setup for ESP32
+//
+void setup() {
+  Serial.begin(115200);
+  while ( !Serial ) delay(10);   // wait for native usb
+
+  #ifdef CONFIG_IDF_TARGET_ESP32S3
+    auto cfg = M5.config();
+    M5.begin(cfg);
+    M5.Power.begin();
+    Wire.begin(12,11);
+    //M5.Touch.begin();
+    auto ms = millis();
+    if (M5.Touch.isEnabled())
+      M5.Touch.update(ms);
+    //M5.Power.setExtOutput(true);  // .powerModeSet(POWER_MODE_USB_IN_BUS_OUT);
+    Serial.println("CoreS3 and CoreS3SE defined");
+    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+
+  #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
+    Serial.println("Core2 defined");
+    Wire.begin(21,22);
+    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+    
+    #ifdef CORE2LIB
+    // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
+    M5.begin();
+    M5.Axp.begin();
+    Serial.print("Power Status 0=external, 1=internal 2=max  "); Serial.println(M5.Axp.isACIN() ? 0 : 1);
+    M5.Touch.begin();
+    //if (M5.Touch.isEnabled())
+    M5.Touch.update();
+    #else
+    //// M5Unified.h stuff =  kills USB Host though, makes the touch buttons work.
+    auto cfg = M5.config();
+    M5.begin(cfg);
+    M5.Power.begin();
+    auto ms = millis();
+    if (M5.Touch.isEnabled()) {
+    M5.Touch.update(ms);
+    }
+    #endif
+
+  #else
+    Serial.println("Core Basic defined");
+    M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
+    Wire.begin(21,22);
+    //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+  #endif
+    
+  SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+  SPI.setFrequency(SPI_FREQ);
+  
+  #ifdef USBHOST  
+  // init host stack on controller (rhport) 1
+  USBHost.begin(1);
+  // Initialize SerialHost
+  SerialHost.begin(115200);
+  #endif
+
+  #ifdef USE_FREERTOS
+    #ifdef USBHOST
+      // Create a task to run USBHost.task() in background
+      xTaskCreatePinnedToCore(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 4, NULL, 0);
+      
+      Serial.printf("USB pre-start status = %d\n", USBHost_ready);
+      Serial.printf("   USBH_connected = %d\n",USBH_connected);
+      int count = 0;
+        while (USBHost_ready == 2 && count < 200)  // 0 of nothing, 1 for device connected. value started at 2 so we know init is done.
+        {
+          delay(10);
+          Serial.print(count);
+          count++;
+        }
+      Serial.printf("USB post-start status = %d\n", USBHost_ready);
+      Serial.printf("   USBH_connected = %d\n", USBH_connected);
+      
+      app_setup();  // setup app stuff
+      //xTaskCreatePinnedToCore(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle, 1);
+      //xTaskCreate(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle); 
+      //xTaskCreate(BLE_loop_rtos_task, "BLE", 8000, NULL, 2, &xHandle);   // callback on server ID not working inside a task
+      //xTaskCreate(btn_loop_rtos_task, "btns", 8000, NULL, 2, &xHandle);   // callback on server ID not working inside a task
+    #endif
+  #endif
+
+  #ifndef USBHOST
+    app_setup();  // setup app stuff
+  #endif
+  
+  #ifdef BLE
+    BLE_Setup();
+    Scan_BLE_Servers();
+  #endif
+
+  Serial.println("TinyUSB Host Serial Setup Done");
+}
+
+//*****************************************************************************
+//
+// Main Loop.  Call app_setup() to run main application
+//
+//*****************************************************************************
+
+void loop() {
+  
+  static int32_t loop_time = 0;
+  static int32_t loop_max_time = 0;
+  int32_t loop_time_threshold = 30;
+  static int32_t prev_loop_time = 0;
+
+  loop_time = millis();  // watermark
+  
+  M5.update();
+
+  #ifdef USE_FREERTOS
+    USBHost.task(10,false);
+    //USBHost.task();
+  #endif
+
+  chk_btns();
   
   #ifdef _PC_PASSTHRU   // Unused code, save for reference or test
   // allow a PC to talk o teh radio and opposite.  Need debug shuto    ff typically
