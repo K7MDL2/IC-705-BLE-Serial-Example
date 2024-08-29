@@ -378,7 +378,7 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
 //  3. add the new switch case statement with the new enum index
 //
 
-//#define DBG_CIV1  // command parser entry
+#define DBG_CIV1  // command parser entry
 //#define DBG_CIV2  // just do summary print
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t rd_buffer[]) { 
@@ -405,16 +405,17 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
             f += (rd_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
             f += (rd_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
           }
-          //Serial.printf("CIV_Action: Freq %-13llu\n", f);
+          Serial.printf("CIV_Action: Freq %-13llu\n", f);
           read_Frequency(f, data_len);
         }
         break;
     }
 
     case CIV_C_TX: { // Used to request RX TX status from radio
-        if (data_len != 1)
+        if (data_len != 1 || !(rd_buffer[4] == 0x1C && rd_buffer[5] == 0x00))
           break;
-        PTT = rd_buffer[data_start_idx] == 1 ? true : false;
+
+        PTT = rd_buffer[6] == 1 ? true : false;
         if (TX_last != PTT)
         {
           if (!use_wired_PTT)        // normally the wired input will pass thru the PTT from radio hardware PTT. 

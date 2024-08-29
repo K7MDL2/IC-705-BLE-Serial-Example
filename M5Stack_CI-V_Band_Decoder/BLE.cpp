@@ -215,11 +215,22 @@ static void notifyCallback(
 {
   uint8_t buf[64] = {};
 
+  Serial.print("Callback length: "); Serial.println(length);
   //Serial.printf("Callback Notify value = \n",isNotify);
   #ifdef WATCH_BLE_SERIAL
   DPRINTF("Notify callback - Data: ");
   #endif
-  for (int i = 0; i < length; i++) 
+
+  int i = 0;
+  //   it is possble for several messages to be stacked up making length larger than the buffer.  
+  //   Process the first and ignore the rest.
+  //  Ideally we would parse several and put then into a queue
+  //  Another option is to load up the read_buffer but that is not a circular buffer today
+
+   if (length >= sizeof(buf))   // if length > buffer size will get a stack crash
+    length = sizeof(buf) - 1;
+
+  for (i; i < length; i++) 
   {
     // DPRINT((char)pData[i]);     // Print character to uart
     #ifdef WATCH_BLE_SERIAL
@@ -227,8 +238,8 @@ static void notifyCallback(
       DPRINTF(",");
     #endif
     
-    if (pData[0] != 0xFE) {
-      return;
+    if (pData[0] != 0xFE) {   
+      break;
     }
 
     if (pData[0] == 0xFE && pData[1] == 0xFE)
@@ -261,7 +272,7 @@ static void notifyCallback(
             break;
         }
         BLE_buff_flag = false;   // consuming functions will reset this once it is read and won't waste time reading stale data
-        return;
+        break;
       }
 
       buf[i+1] = 0;
