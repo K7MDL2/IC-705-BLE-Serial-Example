@@ -502,34 +502,23 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
 
     case CIV_C_MY_POSIT_READ:
         {
+          // if (data_len == 23) then altitude is invalid and not sent out, skip
+          bool skip_altitude = false;
+          if (data_len == 23)
+              skip_altitude = true;   // skip 4 bytes when looking for time and date.
+          else if (data_len != 27)
+            return;
+          
           //Serial.printf("processCatMessages: Position, Len = %d\n", data_len);
           //uint8_t RX = CIVresultL.value;
 
           //DPRINTF("CIV_Action:  CI-V Returned MY POSITION and TIME: "); DPRINTLN(retValStr[CIVresultL.value]);
           //               pos                  1  2  3  4   5     6  7  8  9  10   11       12 13 14 15   16 17   18 19 20   21 22  23  24  25 26 27  term
           // FE.FE.E0.AC.  23.00.  datalen 27  47.46.92.50.  01.   01.22.01.98.70.  00.      00.15.59.00.  01.05.  00.00.07.  20.24. 07. 20. 23.32.45. FD
+          //                                   47,46,92,40,  01,   01,22,01,99,60,  00,                    00,58,  00,01,09,  20,24, 08, 28, 11,07,41  FD
+          //                                                                                 00,15,64,00,  00,72,  00,00,20
           //                               lat 4746.9250   01(N)     12201.9870    00(-1) long  155.900m alt  105deg   0.7km/h   2024   07  20  23:32:45 UTC
           // when using datafield, add 1 to prog guide index to account for first byte used as length counter - so 27 is 28 here.
-          //DPRINTF("CIV_Action: ** Time from Radio is: ");
-          
-          int _hr = bcdByte(rd_buffer[data_start_idx+24]); //Serial.print(_hr); DPRINTF(":");
-          int _min = bcdByte(rd_buffer[data_start_idx+25]); //Serial.print(_min);DPRINTF(":");
-          int _sec = bcdByte(rd_buffer[data_start_idx+26]); //Serial.print(_sec);DPRINTF(" ");
-          
-          int _month = bcdByte(rd_buffer[data_start_idx+22]); //Serial.print(_month);DPRINTF(".");
-          int _day = bcdByte(rd_buffer[data_start_idx+23]); //Serial.print(_day); DPRINTF(".");
-          int _yr = bcdByte(rd_buffer[data_start_idx+21]); //Serial.print(_yr); // yr can be 4 or 2 digits  2024 or 24                    
-          
-          if (!UTC) 
-          {
-            setTime(_hr+hr_off,_min+min_off,_sec,_day,_month,_yr);  // correct to local time                      
-            //Serial.printf("Local Time: %d:%d:%d  %d/%d/20%d\n",_hr+hr_off,_min+min_off,_sec,_month,_day,_yr); 
-          }
-          else
-          {
-            setTime(_hr,_min,_sec,_day,_month,_yr);  // display UTC time
-            //Serial.printf("UTC Time: %d:%d:%d  %d/%d/20%d\n",_hr,_min,_sec,_month,_day,_yr); 
-          }
           
           // Extract and Process Lat and Long for Maidenhead Grid Square stored in global Grid_Square[]
           //char GPS_Msg[NMEA_MAX_LENGTH] = {}; // {"4746.92382,N,12201.98606,W\0"};
@@ -585,6 +574,30 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           Convert_to_MH();
           //Serial.printf("CIV_Action: GPS Converted: Lat = %s  Long = %s  Grid Square is %s\n", Latitude, Longitude, Grid_Square);
 
+          //DPRINTF("CIV_Action: ** Time from Radio is: ");
+          
+          uint8_t d_index = 0;
+          if (skip_altitude) 
+             d_index = 4;
+
+          int _hr = bcdByte(rd_buffer[data_start_idx+24-d_index]); //Serial.print(_hr); DPRINTF(":");
+          int _min = bcdByte(rd_buffer[data_start_idx+25-d_index]); //Serial.print(_min);DPRINTF(":");
+          int _sec = bcdByte(rd_buffer[data_start_idx+26-d_index]); //Serial.print(_sec);DPRINTF(" ");
+          
+          int _month = bcdByte(rd_buffer[data_start_idx+22-d_index]); //Serial.print(_month);DPRINTF(".");
+          int _day = bcdByte(rd_buffer[data_start_idx+23-d_index]); //Serial.print(_day); DPRINTF(".");
+          int _yr = bcdByte(rd_buffer[data_start_idx+21-d_index]); //Serial.print(_yr); // yr can be 4 or 2 digits  2024 or 24                    
+          
+          if (!UTC) 
+          {
+            setTime(_hr+hr_off,_min+min_off,_sec,_day,_month,_yr);  // correct to local time                      
+            //Serial.printf("Local Time: %d:%d:%d  %d/%d/20%d\n",_hr+hr_off,_min+min_off,_sec,_month,_day,_yr); 
+          }
+          else
+          {
+            setTime(_hr,_min,_sec,_day,_month,_yr);  // display UTC time
+            //Serial.printf("UTC Time: %d:%d:%d  %d/%d/20%d\n",_hr,_min,_sec,_month,_day,_yr); 
+          }
           break;
         }  // MY Position
 
