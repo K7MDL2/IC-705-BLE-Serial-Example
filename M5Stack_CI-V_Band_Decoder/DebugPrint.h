@@ -12,6 +12,7 @@
 
 #define DEBUG_INFORMATION true
 #define DEBUG_INFORMATION_SERIAL if(DEBUG_INFORMATION)Serial
+
 #define DSERIALBEGIN(...)   Serial.begin(__VA_ARGS__)
 #define DPRINTLN(...)       Serial.println(__VA_ARGS__)
 #define DPRINT(...)         Serial.print(__VA_ARGS__)
