@@ -39,38 +39,39 @@ struct Bands {
   uint8_t agc;            // store last agc.  Some radio/band/mode combos only have 1.
   uint8_t preamp;         // some bands there is no preamp (2.4G+ on 905).  Some radios/bands/modes combos have 1 preamp level, others have 2 levels.
   uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
+  uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
 };
 */
 
 struct Bands bands[NUM_OF_BANDS] = {
-  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0 },                        // AM
-  { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0 },                    // 160m
-  { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0 },                     // 80m
-  { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0 },                     // 60m
-  { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0 },                     // 40m
-  { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0 },                  // 30m
-  { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0 },                  // 20m
-  { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0 },                  // 17m
-  { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0 },                  // 15m
-  { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0 },                  // 12m
-  { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0 },                  // 10m
-  { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0 },                   // 6m
-  { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0 },                  // FM
-  { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0 },               // AIR
-  { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0 },                // 2m
-  { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0 },     // 222
-  { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0 },              // 430/440
-  { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0 },      // 902
-  { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0 },  // 1296Mhz
-  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0 },  // 2.3 and 2.4GHz
-  { "9cm", 3300000000, 3500000000, 0, 3301000000, 1, 1, 0, 1, 0, 0 },            // 3.3GHz
-  { "6cm", 5650000000, 5925000000, 0, 5760100000, 1, 1, 0, 1, 0, 0 },            // 5.7GHz
-  { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0 },         // 10GHz
-  { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0 },         // 24GHz
-  { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0 },         // 47GHz
-  { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0 },         // 76GHz
-  { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0 },     // 122GHz
-  { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0 }                    // 0 to 122GHz
+  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BANDAM },                        // AM
+  { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
+  { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
+  { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
+  { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
+  { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
+  { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
+  { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
+  { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
+  { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
+  { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
+  { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
+  { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, DECODE_INPUT_BANDFM },                  // FM
+  { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
+  { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND144 },                // 2m
+  { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND222 },     // 222
+  { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
+  { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND902 },      // 902
+  { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
+  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
+  { "9cm", 3300000000, 3500000000, 0, 3301000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
+  { "6cm", 5650000000, 5925000000, 0, 5760100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
+  { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
+  { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
+  { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
+  { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
+  { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
+  { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
 };
 
 char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
@@ -131,6 +132,10 @@ uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f, 0x00 };  // Rick's
 // CDC Host object
 #include "M5_Max3421E_Usb.h"
 extern Adafruit_USBH_CDC SerialHost;
+#endif
+
+#ifdef EXT_IO2_UNIT
+  #undef IO_MODULE   // only 1 at a time for now
 #endif
 
 #ifdef SSP
@@ -1358,6 +1363,7 @@ void band_Selector(uint8_t _band_input_pattern) {
   static uint8_t _band_input_pattern_last = 0;
   static bool XVTR_enabled_last;
   static uint8_t XVTR_band_before;
+  uint8_t _input_band;
 
   if (_band_input_pattern != _band_input_pattern_last)  // only do something if it is different
   {
@@ -1369,25 +1375,23 @@ void band_Selector(uint8_t _band_input_pattern) {
     PTT_Output(band, false);  // send PTT OFF with current band before changing to new band.
     // Inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
     // translate input band pattern to band index then send to band Decode output
-
-    switch (_band_input_pattern)  // this could be BCD, parallel. For now assume 3 lines in paralle for 3 Xvtrs. Only have 4 inputs on module
-    {                             // customize tis for your needs.  This is simple 3 Xvtrs, rig is used for IF only, no direct bands.  Only 3 inputs without going to BCD
-      case 1:
-        XVTR_Band = BAND_33cm;
+    
+    DPRINTF("Band Selector input = "); DPRINTLN(_band_input_pattern);
+    for (uint8_t _input_band = 0; _input_band < NUM_OF_BANDS; _input_band++) {
+      //DPRINTF("Input search index = "); DPRINTLN(_input_band);
+      //DPRINTF("Band Map Value = "); DPRINTLN(bands[_input_band].InputMap);
+      if (bands[_input_band].InputMap == _band_input_pattern) {
+        //DPRINTF("Band Selector MATCH = "); DPRINTLN(bands[_input_band].InputMap); 
+        XVTR_Band = _input_band;
         XVTR_enabled = true;
-        break;
-      case 2:
-        XVTR_Band = BAND_23cm;
-        XVTR_enabled = true;
-        break;  // match up choice with the btnC choices and the output patterns for each band
-      case 4:
-        XVTR_Band = BAND_13cm;
-        XVTR_enabled = true;
-        break;
-      default: XVTR_enabled = false;
+        break;   // we have a match, use this as the target band
+      } else {
+        //DPRINTF("Band Selector NO MATCH = "); DPRINTLN(bands[_input_band].InputMap);
+        XVTR_enabled = false;   // No match, do nothing
+      }
     }
     DPRINTF("Band Selector Source (wired or polled) Input Pattern = ");
-    DPRINT(_band_input_pattern); DPRINTF("Xvtr enabled = "); DPRINTLN(XVTR_enabled);
+    DPRINT(_band_input_pattern); DPRINTF("   Xvtr enabled = "); DPRINTLN(XVTR_enabled);
 
     _band_input_pattern_last = _band_input_pattern;
 
@@ -1518,55 +1522,66 @@ void app_setup(void) {
   M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
   //M5.Lcd.drawString(title, 5, 5, 4);
 
-#ifdef USBHOST
-  int count_usb = 0;
-  while (count_usb < 60 && USBHost_ready == 2)  // 0 = not mounted.  1 = mounted, 2 = system not initialized
-  {
-    count_usb++;
-    delay(100);
-    DPRINTF("Waiting for USB Initialization -  Retry count = ");
-    DPRINT(count_usb);
-    DPRINTF("   USB mount status = ");
-    DPRINTLN(USBHost_ready);
-  }
-  DPRINTF("USB mount status = ");
-  DPRINTLN(USBHost_ready);
-  USBHost_ready = 1;
-  USBH_connected = 1;
-#endif
-
-#if defined ( SD_CARD )
-  DPRINTLNF("Looking for SD Card to try update and read config");
-  if (SD.begin(SD_SPI_CS_PIN, SPI, SPI_FREQ)) {
-    if (SD.exists("/config.ini")) {
-      File root = SD.open("/");
-      printDirectory(root, 0);  // look what is on the SD card
-      root.close();
-      UpdateFromFS(SD);                 // if there is an update, do it.  Otherwise read config file.
-      read_bands_data();                // overwrite default bands table with last known values saved on SD card
-      uint16_t lines = read_SD_Card();  // get line count
-      Serial.printf("Setup: config.ini line count is %d\n", lines);
-      //printLineN(lines);
-    } else {
-      Serial.println(F("Setup: cannot open config.ini"));
+  #ifdef USBHOST
+    int count_usb = 0;
+    while (count_usb < 60 && USBHost_ready == 2)  // 0 = not mounted.  1 = mounted, 2 = system not initialized
+    {
+      count_usb++;
+      delay(100);
+      DPRINTF("Waiting for USB Initialization -  Retry count = ");
+      DPRINT(count_usb);
+      DPRINTF("   USB mount status = ");
+      DPRINTLN(USBHost_ready);
     }
-  } else {
-    Serial.println(F("Setup: Cannot start SD card subsystem"));
-  }
-#else
-  Serial.println(F("Setup: SD Card feature not enabled"));
-#endif
+    DPRINTF("USB mount status = ");
+    DPRINTLN(USBHost_ready);
+    USBHost_ready = 1;
+    USBH_connected = 1;
+  #endif
 
-  Serial.print(F("Updated bd_address:"));
-  for (int z = 0; z < 6; z++)
-    Serial.print(bd_address[z], HEX);
-  Serial.println("");
+  #if defined ( SD_CARD )
+    DPRINTLNF("Looking for SD Card to try update and read config");
+    if (SD.begin(SD_SPI_CS_PIN, SPI, SPI_FREQ)) {
+      if (SD.exists("/config.ini")) {
+        File root = SD.open("/");
+        printDirectory(root, 0);  // look what is on the SD card
+        root.close();
+        #ifdef CLEAN_SD_DB_FILE
+          write_bands_data();   // used when the data structure has changed, force an overwrite with data from memory
+        #endif
+        UpdateFromFS(SD);                 // if there is an update, do it.  Otherwise read config file.
+        read_bands_data();                // overwrite default bands table with last known values saved on SD card
+        uint16_t lines = read_SD_Card();  // get line count
+        Serial.printf("Setup: config.ini line count is %d\n", lines);
+        //printLineN(lines);
+      } else {
+        Serial.println(F("Setup: cannot open config.ini"));
+      }
+    } else {
+      Serial.println(F("Setup: Cannot start SD card subsystem"));
+    }
+  #else
+    Serial.println(F("Setup: SD Card feature not enabled"));
+  #endif
 
-#ifdef IO_MODULE
-  //Module_4in_8out_Output_test();
-  //vTaskDelay(500);
-  Module_4in_8out_setup();  //Set up our IO modules comms on I2C
-#endif
+    Serial.print(F("Updated bd_address:"));
+    for (int z = 0; z < 6; z++)
+      Serial.print(bd_address[z], HEX);
+    Serial.println("");
+
+  #ifdef IO_MODULE
+    //Module_4in_8out_Output_test();
+    //vTaskDelay(500);
+    Module_4in_8out_setup();  //Set up our IO modules comms on I2C
+  #endif
+
+  #ifdef MODULE_4RELAY_13_2
+    Module_4_Relay_setup();   // Setup the stacking 4 channel relay module on i2c bus
+  #endif
+
+  #ifdef EXT_IO2_UNIT
+    Unit_EXTIO2_setup();
+  #endif
 
   draw_new_screen();
 
@@ -1694,13 +1709,20 @@ void app_loop(void) {
     }
   #endif
 
-  #ifdef IO_MODULE
+  // scan our input sources for wired PTT and band change - only 1 module type at a time for now
+  #if defined ( IO_MODULE ) || defined ( EXT_IO2_UNIT )
     if (millis() > last_input_poll + POLL_PTT_DEFAULT) {
       // Process the band input and PTT input pins
-      decode_in = Module_4in_8out_Input_scan();
+
+      #if defined ( IO_MODULE )
+        decode_in = Module_4in_8out_Input_scan();
+      #elif defined ( EXT_IO2_UNIT )
+        decode_in = Unit_EXTIO2_Input_scan();
+      #endif
+
       decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit
       decode_Band_temp = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
-
+      
       // 4th pin is wired PTT from radio.
       // extract the 4rh input to pass on PTT through slected bands IO pin.
       if ((decode_PTT_temp != decode_PTT_temp_last) && use_wired_PTT)  // only call when the state changes

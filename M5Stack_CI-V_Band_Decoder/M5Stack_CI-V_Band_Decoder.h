@@ -94,6 +94,8 @@
 #ifndef _M5_BT_USB_
 #define _M5_BT_USB_
 
+//#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
+
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
 #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
@@ -169,10 +171,13 @@
                     // BT Classic does not work on Core3.  It might on Core2 (untested)
 //#define BLE         // Core 3.  Maybe works on Core 2, TBD
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
-#define IO_MODULE   // enable the 4-In/8-Out module
+#define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
+//#define EXT_IO2_UNIT  // EXT.IO2 UNIT GIO extender - plugs into Port A i2c Grove port on CPU module, adds 8 GPIO ports at 3.3V max.
 #define SD_CARD      // enable sd card features
-#define RELAY2      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
-//#define RELAY4    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
+//#define RELAY2_UNIT      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
+//#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
+#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
+
 
 //define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
@@ -251,6 +256,7 @@ struct Bands {
   uint8_t agc;            // store last agc.  Some radio/band/mode combos only have 1.
   uint8_t preamp;         // some bands there is no preamp (2.4G+ on 905).  Some radios/bands/modes combos have 1 preamp level, others have 2 levels.
   uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
+  uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
 };
 
 extern uint8_t USBHost_ready;  // 0 = not mounted.  1 = mounted, 2 = system not initialized
