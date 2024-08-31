@@ -1651,7 +1651,7 @@ void app_loop(void) {
           case 1: band_Selector(1); break;
           case 2: band_Selector(2); break;
           case 3: band_Selector(4); break;
-          case 4: band_Selector(0);  // fall thru to reset counter
+          case 4: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
           default: xvtr_band_select = 0; break;
         }
       }
