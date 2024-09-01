@@ -24,6 +24,11 @@ M5_EXTIO2 extio; //EXT.IO2 8 port GPIO extender unit
 extio_io_mode_t mode = DIGITAL_INPUT_MODE;
 #endif
 
+#ifdef RELAY4_UNIT
+#include "Unit_4RELAY.h"
+UNIT_4RELAY relay;
+#endif
+
 #ifdef RELAY2_UNIT
   #if defined ( CORE3 )   // Use Port A OK
     // Core 3 Port A
@@ -151,6 +156,30 @@ void GPIO_Out(uint8_t pattern)
     if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);  // bit 6
     if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);  // bit 7
     #endif
+    
+    #ifdef EXT_IO2_UNIT
+    // mask each bit and apply the 1 or 0 to the assigned pin
+    //if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01) ? 1 : 0);}  // bit 0
+    //if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02) ? 1 : 0);}  // bit 1
+    //if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04) ? 1 : 0);}  // bit 2
+    //if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08) ? 1 : 0);}  // bit 3
+    if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);}  // bit 4
+    if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);}  // bit 5
+    if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);}  // bit 6
+    if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);}  // bit 7
+    #endif
+
+    #ifdef RELAY4_UNIT
+    // mask each bit and apply the 1 or 0 to the assigned pin
+    if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_0, (pattern & 0x01) ? 1 : 0);  // bit 0
+    if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_1, (pattern & 0x02) ? 1 : 0);  // bit 1
+    if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_2, (pattern & 0x04) ? 1 : 0);  // bit 2
+    if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_3, (pattern & 0x08) ? 1 : 0);  // bit 3
+    //if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);  // bit 4
+    //if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);  // bit 5
+    //if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);  // bit 6
+    //if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+    #endif
 }
 
 void PTT_Output(uint8_t band, bool PTT_state)
@@ -250,6 +279,30 @@ void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
     if (BAND_DECODE_PTT_OUTPUT_6 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
     if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
     #endif
+
+    #ifdef EXT_IO2_UNIT
+    // mask each bit and apply the 1 or 0 to the assigned pin
+    //if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
+    //if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02 & PTT_state) ? 1 : 0);}  // bit 1
+    //if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04 & PTT_state) ? 1 : 0);}  // bit 2
+    //if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08 & PTT_state) ? 1 : 0);}  // bit 3
+    if (BAND_DECODE_PTT_OUTPUT_4 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_4, (pattern & 0x10 & PTT_state) ? 1 : 0);}  // bit 4
+    if (BAND_DECODE_PTT_OUTPUT_5 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_5, (pattern & 0x20 & PTT_state) ? 1 : 0);}  // bit 5
+    if (BAND_DECODE_PTT_OUTPUT_6 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
+    if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
+    #endif
+
+    #ifdef RELAY4_UNIT
+    // mask each bit and apply the 1 or 0 to the assigned pin
+    if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01 & PTT_state) ? 1 : 0);  // bit 0
+    if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02 & PTT_state) ? 1 : 0);  // bit 1
+    if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04 & PTT_state) ? 1 : 0);  // bit 2
+    if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08 & PTT_state) ? 1 : 0);  // bit 3
+    //if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);  // bit 4
+    //if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);  // bit 5
+    //if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);  // bit 6
+    //if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+    #endif
 }
 
 /*  Not used for the 4-In/8-Out module, all are fixed direction
@@ -297,17 +350,17 @@ void Module_4_Relay_setup()
 
   #ifdef MODULE_4RELAY_13_2
     #ifdef CONFIG_IDF_TARGET_ESP32S3
-      Serial.println("Decoder: CoreS3 i2c pins used for 4-Relay module setup");
+      DPRINTLNF("Decoder: CoreS3 i2c pins used for 4-Relay module setup");
       while (!RELAY.begin(&Wire1, MODULE_4RELAY_ADDR, 12, 11, 200000L) && counter < 4) {  //for core S3
     #else
       while (!RELAY.begin(&Wire, MODULE_4RELAY_ADDR, 21, 22, 200000L) && counter < 4) {  //for core basic core 2
     #endif
-      Serial.println("4-RELAY Module INIT ERROR, Check Module is plugged in tight!");
+      DPRINTLNF("4-RELAY Module INIT ERROR, Check Module is plugged in tight!");
       delay(10);
       counter++;
     }
     if (counter < 4) {
-      Serial.println("4-RELAY Module INIT Success");
+      DPRINTLNF("4-RELAY Module INIT Success");
       Serial.printf("raw 8bit adc: %d\r\n", RELAY.getRawADC(ADC_8BIT));
       Serial.printf("raw 12bit adc: %d\r\n", RELAY.getRawADC(ADC_12BIT));
       Serial.printf("voltage: %fV\r\n", RELAY.getVoltage());
@@ -331,17 +384,57 @@ void Module_4in_8out_setup()
 
   #ifdef IO_MODULE
     #ifdef CONFIG_IDF_TARGET_ESP32S3
-      Serial.println("Decoder: CoreS3 i2c pins used");
+      DPRINTLNF("Decoder: CoreS3 i2c pins used");
       while (!module.begin(&Wire1, 12, 11, MODULE_4IN8OUT_ADDR) && counter < 4) {  // for cores3
     #else
       while (!module.begin(&Wire, 21, 22, MODULE_4IN8OUT_ADDR) && counter < 4) {  //for core basic
     #endif
-        Serial.println("4IN8OUT INIT ERROR, Check Module is plugged in tight!");
+        DPRINTLNF("4IN8OUT INIT ERROR, Check Module is plugged in tight!");
         delay(10);
         counter++;
       }
       if (counter < 4)
-        Serial.println("4IN8OUT INIT Success");
+        DPRINTLNF("4IN8OUT INIT Success");
+  #endif
+}
+
+void Unit_RELAY4_setup()
+{
+  uint8_t counter = 0;
+
+  #ifdef RELAY4_UNIT
+    #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
+      if (board_type == M5ATOMS3) {
+        DPRINTLNF("Decoder: M5ATOMS3 Port A i2c pins used for i2c RELAY4_UNIT UNIT setup");
+        //   Note 0x45 is also default for the 4IN8OUT module.  Reassign one of them
+        while (!relay.begin(&Wire, 2, 1) && counter < 4) {  // for cores3 and AtomS3 ext i2c bus use Wire1?  addr = 0x26
+          DPRINTLNF("RELAY4_UNIT INIT ERROR, Check Module is plugged in tight in Port A");
+          delay(10);
+          counter++;
+        }
+      } else {
+        DPRINTLNF("Decoder: CoreS3 Port A i2c pins used for i2c RELAY4_UNIT UNIT setup");
+        while (!relay.begin(&Wire1, 12, 11) && counter < 4) {  // for cores3 - Wire1???? addr = 0x26
+          DPRINTLNF("RELAY4_UNIT INIT ERROR, Check Module is plugged in tight in Port A");
+          delay(10);
+          counter++;
+        }
+      }
+    #else
+      while (!relay.begin(&Wire, 21, 22) && counter < 4) {  //for core basic   - core 2 wire 1??? addr = 0x26
+        DPRINTLNF("RELAY4_UNIT INIT ERROR, Check Module is plugged in tight in Port A");
+        delay(10);
+        counter++;
+      }
+    #endif
+        
+      if (counter < 4) {
+        DPRINTLNF("RELAY4_UNIT INIT Success");
+        relay.Init(1); // Set the lamp and relay to synchronous mode(Async = 0, Sync = 1)
+        relay.relayAll(1);
+        vTaskDelay(1000);
+        relay.relayAll(0);
+      }
   #endif
 }
 
@@ -351,18 +444,32 @@ void Unit_EXTIO2_setup()
 
   #ifdef EXT_IO2_UNIT
     #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
-      Serial.println("Decoder: CoreS3 Port A i2c pins used for i2c EXTIO2 UNIT setup");
-      //   Note 0x45 is also default for the 4IN8OUT module.  Reassign one of them
-      while (!extio.begin(&Wire1, 12, 11, 0x45) && counter < 4) {  // for cores3 - Wire1????
+      if (board_type == M5ATOMS3) {
+        DPRINTLNF("Decoder: M5ATOMS3 Port A i2c pins used for i2c EXTIO2 UNIT setup");
+        //   Note 0x45 is also default for the 4IN8OUT module.  Reassign one of them
+        while (!extio.begin(&Wire, 2, 1, 0x45) && counter < 4) {  // for cores3 and AtomS3 ext i2c bus use Wire1?
+          DPRINTLNF("EXT_IO2 INIT ERROR, Check Module is plugged in tight in Port A");
+          delay(10);
+          counter++;
+        }
+      } else {
+        DPRINTLNF("Decoder: CoreS3 Port A i2c pins used for i2c EXTIO2 UNIT setup");
+        while (!extio.begin(&Wire1, 12, 11, 0x45) && counter < 4) {  // for cores3 - Wire1????
+          DPRINTLNF("EXT_IO2 INIT ERROR, Check Module is plugged in tight in Port A");
+          delay(10);
+          counter++;
+        }
+      }
     #else
       while (!extio.begin(&Wire, 21, 22, 0x45) && counter < 4) {  //for core basic   - core 2 wire 1???
-    #endif
-        Serial.println("EXT_IO2 INIT ERROR, Check Module is plugged in tight in Port A");
+        DPRINTLNF("EXT_IO2 INIT ERROR, Check Module is plugged in tight in Port A");
         delay(10);
         counter++;
       }
+    #endif
+        
       if (counter < 4) {
-        Serial.println("EXT_IO2 INIT Success, Configure lower 4 pins as INPUT, upper 4 as OUTPUT");
+        DPRINTLNF("EXT_IO2 INIT Success, Configure lower 4 pins as INPUT, upper 4 as OUTPUT");
         mode = DIGITAL_INPUT_MODE;
         extio.setPinMode(GPIO_MOD_IO_PIN_0, mode);
         extio.setPinMode(GPIO_MOD_IO_PIN_1, mode);

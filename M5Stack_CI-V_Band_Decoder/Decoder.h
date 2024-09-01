@@ -14,6 +14,7 @@ uint8_t Unit_EXTIO2_Input_scan(void);
 void Module_4in_8out_setup();
 void Module_4_Relay_setup();
 void Unit_EXTIO2_setup();
+void Unit_RELAY4_setup();
 
 
 enum band_idx { BAND_AM,
