@@ -1127,7 +1127,7 @@ char *formatVFO(uint64_t vfo) {
   uint16_t Hz = (vfo % 1000) / 10;
   uint16_t KHz = ((vfo % 1000000) - Hz) / 1000;
   if (board_type == M5ATOMS3) {
-    sprintf(vfo_str, "%lu.%03u.%01u", MHz, KHz, Hz);
+    sprintf(vfo_str, "%lu.%03u.%01u", MHz, KHz, Hz/10);
   } else {
     sprintf(vfo_str, "%lu.%03u.%02u", MHz, KHz, Hz);
   }
