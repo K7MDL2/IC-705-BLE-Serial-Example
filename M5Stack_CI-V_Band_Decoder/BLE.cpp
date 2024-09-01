@@ -219,8 +219,8 @@ static void notifyCallback(
 
   //Serial.printf("Callback Notify value = \n",isNotify);
   #ifdef WATCH_BLE_SERIAL
-  DPRINTF("Callback length: "); DPRINTLN(length);
-  DPRINTF("Notify callback - Data: ");
+    DPRINTF("Callback length: "); DPRINTLN(length);
+    DPRINTF("Notify callback - Data: ");
   #endif
 
   int i = 0;
@@ -229,9 +229,17 @@ static void notifyCallback(
   //  Ideally we would parse several and put then into a queue
   //  Another option is to load up the read_buffer but that is not a circular buffer today
 
-   if (length >= sizeof(buf))   // if length > buffer size will get a stack crash
+  if (length >= sizeof(buf))   // if length > buffer size will get a stack crash
     length = sizeof(buf) - 1;
 
+  #ifdef WATCH_BLE_SERIAL
+    for (i; i < length; i++) {   // Look at the whole buffer which seems to often have multiple responses 
+      DPRINT(pData[i], HEX);
+    }
+    DPRINTLNF("");
+  #endif
+
+  i = 0;
   for (i; i < length; i++) 
   {
     // DPRINT((char)pData[i]);     // Print character to uart
@@ -240,9 +248,9 @@ static void notifyCallback(
       DPRINTF(",");
     #endif
     
-    if (pData[0] != 0xFE) {   
-      break;
-    }
+    //if (pData[0] != 0xFE) {   
+    //  break;
+    //}
 
     if (pData[0] == 0xFE && pData[1] == 0xFE)
         buf[i] = pData[i];  // copy into main read buffer
@@ -282,6 +290,10 @@ static void notifyCallback(
       if (!BLE_buff_flag) {
         memcpy(r, buf, i+1);     // only move data into read_buffer if it has already been read by the main program.
         BLE_buff_flag = true;   // buffer reaady - consuming functions will reset this once it is read and won't waste time reading stale data
+        #ifdef WATCH_BLE_SERIAL
+          DPRINTLNF("End of Msg\n");
+        #endif
+        processCatMessages();
       }
 
       #ifdef WATCH_BLE_SERIAL
