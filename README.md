@@ -2,11 +2,13 @@
 
 Disclaimer: this is a work in progress!  
 
-Latest summary: As of Aug 30 - I received some new IO devices today, the EXT.IO2 V1.1 UNIT and the 4RELAY MODULE 13.2. v1.1.  Added support in the decoder code for input from the EXT.IO2 -OR- the 4IN8OUT (only 1 allowed) and outputs on either, or both, of the 4IN8OUT and 4RELAY modules. 
+Latest summary: As of Sept 1 - This now runs on the tiny M5AtomS3, M5StampS3 and M5StampC3U.  I have added more #define control for the various IO options and they can generally all run in parallel. Also when compiling on the M5AtomS3, the 0.85" color LCD is now formatted with the same info as the larger screen.  The screen doubles as a pushbutton so you can cycle through the XVTR bands without any attached IO hardware. Button press detection can use some improvement.
+
+I received some new IO devices today, the EXT.IO2 V1.1 UNIT and the 4RELAY MODULE 13.2. v1.1.  Added support in the decoder code for input from the EXT.IO2 -OR- the 4IN8OUT (only 1 allowed) and outputs on either, or both, of the 4IN8OUT and 4RELAY modules. 
 
 Added a new input pattern to band matching list in Decoder.h.  Now when a wired input or XVTR button is pressed, it searches the list for the first match.  Since there are only 3 inputs allocated for band input (4th is PTT from radio), you can select one of 3 bands, or use a custom or BCD pattern (defined in the decoder tables today) to get many more. In theory we can add a 2nd IO module for 8 inputs and 16 outputs, or more relay modules adding 4 more relays to that total, or use the EXT.IO2 GPIO extender plugged into Port A normally, and can rejigger them for more inputs.  The EXT.IO2 input voltage is limited to 3.3V.  The IC-705 has 5V open circuit so I elected to stick with the 4IN8OUT module for inputs since it has resistors that divide down the voltage well under 3.3V for a total current draw of only 0.85ma.
 
-In thsi code I set the wired inputs up to select only 2 XVTR bands, 903 and 2304MHz.  On the 4relay module, relay1 is 903 active, relay 2 is 903_PTT, relay 3 is 2304 band active, and relay 4 is 2304_PTT.  The 4IN8OUT module outputs are the same, in parallel today until a better means of config is created to differentiate then module types.  Modules may or may not be present complicating config rules, plus the final rules need to be read from SD card.
+In this code I set the wired inputs up to select only 2 XVTR bands, 903 and 2304MHz.  On the 4relay module, relay1 is 903 active, relay 2 is 903_PTT, relay 3 is 2304 band active, and relay 4 is 2304_PTT.  The 4IN8OUT module outputs are the same, in parallel today until a better means of config is created to differentiate then module types.  Modules may or may not be present complicating config rules, plus the final rules need to be read from SD card.
 
 Aug 26 - I have a version of the BLE decoder running on a M5StampC3U module. Very small, low cost, no screen or IO module but will fit into a very small box and tuck out of the way or fit inside another box such as one holding coax switches.
 
