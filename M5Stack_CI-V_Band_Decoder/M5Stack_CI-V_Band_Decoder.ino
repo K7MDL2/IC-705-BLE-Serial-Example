@@ -319,6 +319,7 @@ void setup() {
     M5.Power.begin();
     #ifdef ATOMS3
       Serial.println("ATOMS3 defined")
+      M5.Lcd.setBrightness(40);   // 0- 100
     #endif
     board_type = M5.getBoard();
     if (board_type == M5ATOMS3) {

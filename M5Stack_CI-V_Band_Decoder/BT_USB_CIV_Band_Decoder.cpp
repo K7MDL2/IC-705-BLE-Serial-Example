@@ -1126,8 +1126,11 @@ char *formatVFO(uint64_t vfo) {
   uint32_t MHz = (vfo / 1000000 % 1000000);
   uint16_t Hz = (vfo % 1000) / 10;
   uint16_t KHz = ((vfo % 1000000) - Hz) / 1000;
-  sprintf(vfo_str, "%lu.%03u.%02u", MHz, KHz, Hz);
-
+  if (board_type == M5ATOMS3) {
+    sprintf(vfo_str, "%lu.%03u.%01u", MHz, KHz, Hz);
+  } else {
+    sprintf(vfo_str, "%lu.%03u.%02u", MHz, KHz, Hz);
+  }
   ///sprintf(vfo_str, "%-13s", "012345.123.123");  // 999GHZ max  47G = 47000.000.000
   ///DPRINT("New VFO: ");DPRINTLN(vfo_str);
   return vfo_str;
@@ -1136,35 +1139,45 @@ char *formatVFO(uint64_t vfo) {
 void draw_new_screen(void) {
   int16_t x = 46;  // start position
   int16_t y = 16;
-  int16_t x1 = 300;  // end of a line
-  int16_t y1 = 10;
-  int16_t h = 20;
+  int16_t w = 319;  // end of a line
+  int16_t y1 = y + 13;
+  //int16_t h = 20;
   int16_t color = TFT_YELLOW;
   int16_t font_sz = 4;  // font size
   //DPRINTLNF("+++++++++draw new screen");
 
-  if (board_type == M5ATOMS3)
-   font_sz = 3;  // downsize for Atom
+  if (board_type == M5ATOMS3) {
+    font_sz = 3;  // downsize for Atom
+    x = 46;  // start position
+    y = 6;
+    w = 128;  // end of a line
+    y1 = 14;   // height of line
+    //h = 12;
+  }
+
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setTextColor(TFT_YELLOW, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
   M5.Lcd.setTextDatum(MC_DATUM);
   //M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width() / 2), y, font_sz);
   M5.Lcd.drawString(title, (int)(M5.Lcd.width() / 2), y, font_sz);
-  M5.Lcd.drawFastHLine(1, y + 13, 319, TFT_RED);  // separator below title
-  M5.Lcd.setTextDatum(MC_DATUM);
-  M5.Lcd.setTextColor(TFT_CYAN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-#if (defined(BT_CLASSIC) || defined(BLE)) && defined(USBHOST)
-  M5.Lcd.drawString("BT Mode       Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
-#elif (defined(BT_CLASSIC) || defined(BLE)) && !defined(USBHOST)
-  M5.Lcd.drawString("                Search          XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
-#elif defined(USBHOST)
-  M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
-#else
-  if (XVTR)
-    M5.Lcd.drawString("                Search         XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
-  else
-    M5.Lcd.drawString("                Search              ", (int)(M5.Lcd.width() / 2), 220, 2);
-#endif
+  M5.Lcd.drawFastHLine(1, y1, w, TFT_RED);  // separator below title
+
+  if (board_type != M5ATOMS3) {
+    M5.Lcd.setTextDatum(MC_DATUM);
+    M5.Lcd.setTextColor(TFT_CYAN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+  #if (defined(BT_CLASSIC) || defined(BLE)) && defined(USBHOST)
+    M5.Lcd.drawString("BT Mode       Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
+  #elif (defined(BT_CLASSIC) || defined(BLE)) && !defined(USBHOST)
+    M5.Lcd.drawString("                Search          XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
+  #elif defined(USBHOST)
+    M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
+  #else
+    if (XVTR)
+      M5.Lcd.drawString("                Search         XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
+    else
+      M5.Lcd.drawString("                Search              ", (int)(M5.Lcd.width() / 2), 220, 2);
+  #endif
+  }
   // write the Band and PTT icons
   display_Freq(frequency, true);
   display_PTT(PTT, true);
@@ -1186,8 +1199,13 @@ void display_Time(uint8_t _UTC, bool _force) {
     int font_sz = 4;
 
     M5.Lcd.setTextColor(TFT_LIGHTGREY, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    if (board_type == M5ATOMS3)
+    if (board_type == M5ATOMS3) {
       font_sz = 3;  // downsize for Atom
+      x = 1;
+      x1 = 127;
+      y = 25;
+      font_sz = 3;
+    }
     M5.Lcd.setTextDatum(ML_DATUM);  // x is left side
     sprintf(temp_t, "%02d/%02d/%02d", month(), day(), year());
     M5.Lcd.drawString(temp_t, x, y, font_sz);
@@ -1215,8 +1233,16 @@ void display_Xvtr(bool _band, bool _force) {
   if (_band != _prev_band || _force) {
     //DPRINTF("XVTR ON = "); DPRINTLN(_band);
     
-    if (board_type == M5ATOMS3)
+    if (board_type == M5ATOMS3) {
       font_sz = 3;  // downsize for Atom
+      x = 99;
+      y = 118;
+      x1 = x-16;
+      y1 = y-8; 
+      w = 20;
+      h = 14;
+      r = 4;
+    }
 
     if (_band) {
       M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_BLUE);
@@ -1245,8 +1271,16 @@ void display_PTT(bool _PTT_state, bool _force) {
   int r = 4;        // box radius corner size
 
   M5.Lcd.setTextDatum(MR_DATUM);
-  if (board_type == M5ATOMS3)
+  if (board_type == M5ATOMS3) {
     font_sz = 3;  // downsize for Atom
+    x = 124;
+    y = 118;
+    x1 = x-16;
+    y1 = y-8; 
+    w = 20;
+    h = 14;
+    r = 4;
+  }
   if (_PTT_state != _prev_PTT_state || _force) {
 #ifdef PRINT_PTT_TO_SERIAL
     Serial.print(F("*********************************************** PTT = "));
@@ -1278,8 +1312,10 @@ void display_Freq(uint64_t _freq, bool _force) {
     Serial.printf("VFOA: %13sMHz - Band: %s  Mode: %s  DataMode: %s  Filter: %s\n", formatVFO(_freq), bands[band].band_name, \
         modeList[bands[band].mode_idx].mode_label, ModeStr[bands[band].datamode], FilStr[bands[band].filt]);
 #endif
-    if (board_type == M5ATOMS3)
+    if (board_type == M5ATOMS3) {
       font_sz = 4;  // downsize for Atom
+      y = 54;
+    }
     //M5.Lcd.fillRect(x, y, x1, y1, background_color);
     M5.Lcd.setTextDatum(MC_DATUM);
     M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
@@ -1302,8 +1338,11 @@ void display_Band(uint8_t _band, bool _force) {
     Band_Decode_Output(band);
     //sendBand(band);   // change the IO pins to match band
     //Serial.printf("Band %s\n", bands[_band].band_name);
-    if (board_type == M5ATOMS3)
-      font_sz = 3;  // downsize for Atom
+    if (board_type == M5ATOMS3) {
+      font_sz = 4;  // downsize for Atom
+      x = 1;
+      y= 118;
+    }
     M5.Lcd.setTextDatum(ML_DATUM);
     M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
@@ -1331,14 +1370,23 @@ void display_Grid(char _grid[], bool _force) {
   int font_sz = 4;
   // call to convert the strings for Lat and long fronm CIV to floats and then caluclate grid
   if ((strcmp(_last_grid, _grid)) || _force) {
-    if (board_type == M5ATOMS3)
-      font_sz = 3;  // downsize for Atom
     //Serial.printf("Grid Square = %s\n",_grid);
-    M5.Lcd.setTextDatum(ML_DATUM);
-    M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString(_grid, x, y, font_sz);
-    M5.Lcd.setTextColor(TFT_GREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString(_grid, x, y, font_sz);
+
+    if (board_type == M5ATOMS3) {
+      font_sz = 4;  // downsize for Atom
+      y = 86;
+      M5.Lcd.setTextDatum(MC_DATUM);
+      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(_last_grid, (int)(M5.Lcd.width() / 2), y, font_sz);
+      M5.Lcd.setTextColor(TFT_DARKGREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(_grid, (int)(M5.Lcd.width() / 2), y, font_sz);
+    } else {
+      M5.Lcd.setTextDatum(ML_DATUM);
+      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(_last_grid, x, y, font_sz);
+      M5.Lcd.setTextColor(TFT_GREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(_grid, x, y, font_sz);
+    }   
     strcpy(_last_grid, _grid);
   }
 }
@@ -1633,13 +1681,17 @@ void app_loop(void) {
   static uint8_t decode_Band_temp_last = 0;
   uint8_t decode_in;
   static uint8_t xvtr_band_select = 0;  // rotate through a few transverter bands.  Temp until we get a select window
+  int btn_state = 0;
 
   M5.update();
 
-  int btn_state; //= M5.BtnA.wasHold() ? 1 : M5.BtnA.wasClicked() ? 2 : M5.BtnA.wasPressed() ? 3 : 0;
-  if (board_type == M5ATOMS3 && btn_state) {
-    BtnC_pressed = true;  // on Atoms3 translate to single screen button for Xvtr selection
-    btn_state = 0;
+  
+  if (board_type == M5ATOMS3) {
+    btn_state = M5.BtnA.wasClicked() ? 2 : M5.BtnA.wasPressed() ? 3 : 0;
+    if (btn_state) {
+      BtnC_pressed = true;  // on Atoms3 translate to single screen button for Xvtr selection
+      btn_state = 0;
+    }
   }
 
   if (BtnA_pressed) {
