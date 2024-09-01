@@ -99,7 +99,12 @@
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
 #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
+  #ifdef __M5GFX_M5ATOMDISPLAY__
+  #include <M5AtomS3.h>
+  #define ATOMS3
+  #else
   #include <M5CoreS3.h>
+  #endif
   static m5::touch_state_t prev_state;
   #define SD_SPI_SCK_PIN  36
   #define SD_SPI_MISO_PIN 35
@@ -149,10 +154,10 @@
 
 #define CMD_READ_FREQ 0x03  // Read operating frequency data
 
-#define POLL_PTT_DEFAULT 187  // poll the radio for PTT status odd numbers to stagger them a bit
+#define POLL_PTT_DEFAULT 287  // poll the radio for PTT status odd numbers to stagger them a bit
                              // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
                              // Also polls the wired inputs  Can go down to 25-45.  When using wired PTT set this slow.
-#define POLL_PTT_USBHOST 162  // Dynamically changes value based on detected radio address.
+#define POLL_PTT_USBHOST 262  // Dynamically changes value based on detected radio address.
                              // By observation, on USB, the radio only responds once every few seconds when the radio \
                              //   has not changed states.  It will immediately reply to a poll if the Tx state changed. \
                              //   Still have to poll fast for controlling external PTT, most requests will not be answered. \
@@ -161,23 +166,22 @@
                              //   Have not compared to a LAN connection.
 #define POLL_RADIO_FREQ 308  // poll the radio for frequency
 #define POLL_RADIO_UTC  998  // poll radio for time and location
-#define POLL_RADIO_MODE 1101 // poll radio for extended mode, filter and datamode
-#define POLL_RADIO_AGC  1203 // poll radio for AGC
-#define POLL_RADIO_ATTN 1305 // poll radio for atten status
-#define POLL_RADIO_PRE  1404 // poll radio for preamp status
+#define POLL_RADIO_MODE 2101 // poll radio for extended mode, filter and datamode
+#define POLL_RADIO_AGC  3203 // poll radio for AGC
+#define POLL_RADIO_ATTN 3505 // poll radio for atten status
+#define POLL_RADIO_PRE  3404 // poll radio for preamp status
 
 // Chose the combination needed.  Note that at least one service must be enabled.
-#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
+//#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
                     // BT Classic does not work on Core3.  It might on Core2 (untested)
-//#define BLE         // Core 3.  Maybe works on Core 2, TBD
+#define BLE         // Core 3.  Maybe works on Core 2, TBD
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
-#define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
+//#define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
 //#define EXT_IO2_UNIT  // EXT.IO2 UNIT GIO extender - plugs into Port A i2c Grove port on CPU module, adds 8 GPIO ports at 3.3V max.
-#define SD_CARD      // enable sd card features
+//#define SD_CARD      // enable sd card features
 //#define RELAY2_UNIT      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
 //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
-#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
-
+//#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
 
 //define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
@@ -266,5 +270,7 @@ extern bool restart_BT_flag;
 extern uint16_t background_color;
 extern uint64_t frequency;
 extern bool update_radio_settings_flag;
+#define M5ATOMS3 11
+extern uint8_t board_type;
 
 #endif

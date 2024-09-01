@@ -18,18 +18,20 @@
         standing by and able to use one, the other , or both.  Possible flipping both BT and USB around.
 
       For now this program does these main things:
-        1. Pass through in both direction Radio CI-V data if a PC is connect
+        1. Pass through in both direction Radio CI-V data if a PC is connect - Not finished
            This enables an optional USB PC connection for things like logging and WSJT-X).
         2. Monitor Radio Frequency (active VFO) and display it, adding any band offset the band decoder input or User Input selects
            This enables Transverter selection, enable a band specific amplifier, or change antenna relays, all per band.
         3. Monitor PTT and pass it through to a selected GPIO pin which in turn controls a port on the 4In/8Out M5Stack module.
            This enables PTT breakout per band
-        4. Optionally connect to the radio by USB Host or by BT Classic SPP (IC-705 only so far)
+        4. Optionally connect to the radio by USB Host or by BLE or BT Classic SPP (IC-705 only so far)
         5. Radios tested so far - IC-705 and IC-905
+        6. Tested on M5Stack Core Basic, Core2 and CoreS3. 
+        7. Can run with minor changes on M5StampC3U, M5StampS3, and M5AtomS3.
 
         Down the road, probably on BLE mesh, this could bridge a radio to a PC completely by BLE.
 
-        The code on ths page is almost cmplete the serial_host_bridge.ino example file.  
+        The code on ths page is almost complete the serial_host_bridge.ino example file.  
 
         I placed a hook into setup and loop for each architecture. I am only testing this on the M5Stack ESP32 models today 
           though it may be possble to run on other CPUs like the pico some day, so I left all that in place
@@ -150,7 +152,7 @@ void usbhost_rtos_task(void *param) {
  (void) param;
   while (1) {
     //Serial.print("+");
-    USBHost.task(2, false);
+    USBHost.task(10, false);
     //vTaskDelay(10);
      // test for stack size
     uint32_t stack_sz;
@@ -227,9 +229,10 @@ bool BtnA_pressed = false;
 bool BtnB_pressed = false;
 bool BtnC_pressed = false;
 uint64_t frequency = 0;
+uint8_t board_type = 0;
 
 void chk_btns(void) {
-  #if defined ( CONFIG_IDF_TARGET_ESP32S3 )
+  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) && !defined ( __M5GFX_M5ATOMDISPLAY__ )
     auto touchPoint = M5.Touch.getDetail(); 
     if (prev_state != touchPoint.state) {
         prev_state = touchPoint.state;
@@ -314,13 +317,22 @@ void setup() {
     auto cfg = M5.config();
     M5.begin(cfg);
     M5.Power.begin();
-    Wire.begin(12,11);
+    #ifdef ATOMS3
+      Serial.println("ATOMS3 defined")
+    #endif
+    board_type = M5.getBoard();
+    if (board_type == M5ATOMS3) {
+      Serial.println("AtomS3 ext i2c pins defined");
+      Wire.begin(2,1);   // M5AtomS3 external i2c
+    } else {
+      Serial.println("CoreS3 or CoreS3SE ext i2C pins defined");
+      Wire.begin(12,11);   // CoreS3 and ?StampC3U?
+    }
     //M5.Touch.begin();
     auto ms = millis();
     if (M5.Touch.isEnabled())
       M5.Touch.update(ms);
     //M5.Power.setExtOutput(true);  // .powerModeSet(POWER_MODE_USB_IN_BUS_OUT);
-    Serial.println("CoreS3 and CoreS3SE defined");
     //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
 
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
@@ -418,8 +430,8 @@ void loop() {
   
   M5.update();
 
-  #ifdef USE_FREERTOS
-    USBHost.task(10,false);
+  #ifndef USE_FREERTOS
+    //USBHost.task(10,false);
     //USBHost.task();
   #endif
 
