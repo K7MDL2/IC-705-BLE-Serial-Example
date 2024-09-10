@@ -53,18 +53,17 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_LSB_D1_F2_SEND,  {5,0x26,0x00,0x00,0x01,0x02}},  // selected VFO; mod USB; Data ON;  RX_filter F2;
     {CIV_C_FM_D1_F1_SEND,   {5,0x26,0x00,0x05,0x01,0x01}},  // selected VFO; mod USB; Data ON;  RX_filter F2;
     
-    {CIV_C_ATTN_READ,   	  {1,0x11}},                  	// Attn read state
+    {CIV_C_ATTN_READ,   	  {1,0x11}},                  	  // Attn read state
     {CIV_C_ATTN_OFF,   		  {2,0x11,0x00}},                 // Attn OFF
     {CIV_C_ATTN_ON,    		  {2,0x11,0x10}},                 // Attn 10dB (144, 432, 1200 bands only)
-    {CIV_C_SPLIT_OFF_READ,  {2,0x0F,0x00}},                 // read Split OFF
-    {CIV_C_SPLIT_ON_READ,   {2,0x0F,0x01}},                 // read split ON
-    {CIV_C_SPLIT_OFF_SEND,  {2,0x0F,0x01}},                 // set split OFF
+    {CIV_C_SPLIT_READ,      {1,0x0F}},                      // read Split OFF
+    {CIV_C_SPLIT_OFF_SEND,  {2,0x0F,0x00}},                 // set split OFF
     {CIV_C_SPLIT_ON_SEND,   {2,0x0F,0x01}},                 // Set split ON
     {CIV_C_RFGAIN,          {2,0x14,0x02}},                 // send/read RF Gain
     {CIV_C_AFGAIN,          {2,0x14,0x01}},                 // send/read AF Gain
     {CIV_C_RFPOWER,         {2,0x14,0x0A}},                 // send/read selected bands RF power
     {CIV_C_S_MTR_LVL,       {2,0x15,0x02}},                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
-    {CIV_C_PREAMP_READ,     {2,0x16,0x02}},             	// read preamp state
+    {CIV_C_PREAMP_READ,     {2,0x16,0x02}},             	  // read preamp state
     {CIV_C_PREAMP_OFF,      {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
     {CIV_C_PREAMP_ON,       {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
     {CIV_C_PREAMP_ON2,      {3,0x16,0x02,0x02}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON - not on 905
@@ -340,6 +339,14 @@ void SetAGC(uint8_t  _band) {
 }
 
 // set attenuaor on radio
+void SetSplit(uint8_t  _band) {
+  if (bands[_band].split)
+    sendCatRequest(CIV_C_SPLIT_ON_SEND, 0, 0);
+  else
+    sendCatRequest(CIV_C_SPLIT_OFF_SEND, 0, 0);
+}
+
+// set attenuaor on radio
 void SetAttn(uint8_t  _band) {
   if (bands[_band].atten)
     sendCatRequest(CIV_C_ATTN_ON, 0, 0);
@@ -453,7 +460,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         //  }
         //}
         // This command info lacks data mode status so have to use it to trigger extended mode info
-        sendCatRequest(CIV_C_F26A, 0, 0);  // Get extended info -  mode, filter, and datamode status
+        //sendCatRequest(CIV_C_F26A, 0, 0);  // Get extended info -  mode, filter, and datamode status
         
         DPRINTF("CIV_Action: CI-V Returned Mode: "); DPRINT(modeList[i].mode_label);  
         DPRINTF("  Mode Index: "); DPRINT(i); 
@@ -631,6 +638,24 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         if (_val == 0)
         {
             bands[band].preamp = PREAMP_OFF;
+        }
+        //displayAttn();
+        //displayPreamp();
+        break;
+    }
+    
+    case CIV_C_SPLIT_READ: {
+        uint8_t _val = rd_buffer[data_start_idx];
+
+        //DPRINTF("CIV_Action:  CI-V Returned Preamp status: "); DPRINTLN(_val);
+        if (_val > 0)
+        {
+            //bands[band].atten = ATTN_OFF;
+            bands[band].split = 1;              
+        }
+        if (_val == 0)
+        {
+            bands[band].split = 0;
         }
         //displayAttn();
         //displayPreamp();

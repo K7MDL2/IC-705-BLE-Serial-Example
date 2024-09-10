@@ -39,39 +39,40 @@ struct Bands {
   uint8_t agc;            // store last agc.  Some radio/band/mode combos only have 1.
   uint8_t preamp;         // some bands there is no preamp (2.4G+ on 905).  Some radios/bands/modes combos have 1 preamp level, others have 2 levels.
   uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
+  uint8_t split;          // Split mode on or off
   uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
 };
 */
 
 struct Bands bands[NUM_OF_BANDS] = {
-  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BANDAM },                        // AM
-  { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
-  { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
-  { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
-  { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
-  { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
-  { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
-  { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
-  { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
-  { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
-  { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
-  { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
-  { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, DECODE_INPUT_BANDFM },                  // FM
-  { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
-  { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND144 },                // 2m
-  { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND222 },     // 222
-  { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
-  { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND902 },      // 902
-  { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
-  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
-  { "9cm", 3300000000, 3500000000, 0, 3301000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
-  { "6cm", 5650000000, 5925000000, 0, 5760100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
-  { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
-  { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
-  { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
-  { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
-  { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
-  { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
+  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
+  { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
+  { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
+  { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
+  { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
+  { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
+  { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
+  { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
+  { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
+  { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
+  { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
+  { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
+  { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
+  { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
+  { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
+  { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222
+  { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
+  { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
+  { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
+  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
+  { "9cm", 3300000000, 3500000000, 0, 3301000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
+  { "6cm", 5650000000, 5925000000, 0, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
+  { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
+  { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
+  { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
+  { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
+  { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
+  { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
 };
 
 char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
@@ -768,6 +769,7 @@ void poll_radio(void) {
   static uint32_t time_last_mode = millis();
   static uint32_t time_last_attn = millis();
   static uint32_t time_last_pre = millis();
+  static uint32_t time_last_split = millis();
 
   if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0) {
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
@@ -816,6 +818,14 @@ void poll_radio(void) {
       vTaskDelay(2);
       processCatMessages();
       time_last_pre = millis();
+    }
+
+    if (millis() >= time_last_split + POLL_RADIO_SPLIT)  // poll every X ms
+    {
+      sendCatRequest(CIV_C_SPLIT_READ, 0, 0);  // Get mode, filter, and datamode status
+      vTaskDelay(2);
+      processCatMessages();
+      time_last_split = millis();
     }
 
     if (millis() >= time_last_UTC + POLL_RADIO_UTC)  // poll every X ms
@@ -1469,6 +1479,8 @@ void band_Selector(uint8_t _band_input_pattern) {
       vTaskDelay(10);
       SetAttn(XVTR_Band);
       vTaskDelay(10);
+      SetSplit(XVTR_Band);
+      vTaskDelay(10);
       SetAGC(XVTR_Band);
       vTaskDelay(10);
       SetFreq(bands[XVTR_Band].VFO_last);  // This value always has Xvtr offset applied
@@ -1483,6 +1495,8 @@ void band_Selector(uint8_t _band_input_pattern) {
       SetPre(XVTR_band_before);
       vTaskDelay(10);
       SetAttn(XVTR_band_before);
+      vTaskDelay(10);
+      SetSplit(XVTR_band_before);
       vTaskDelay(10);
       SetAGC(XVTR_band_before);
       vTaskDelay(10);
@@ -1559,6 +1573,33 @@ void SetFreq(uint64_t Freq) {
   uint8_t len = formatFreq(Freq, vfo_dec);  // Convert to BCD string
   //Serial.printf("SetFreq: Radio Freq = %llu  To radio (5 or 6 bytes) in BCD: %02X %02X %02X %02X %02X (%02X)\n", Freq, vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
   sendCatRequest(CIV_C_F1_SEND, vfo_dec, len);
+}
+
+void pass_PC_to_radio(void)
+{
+  #if defined(PC_PASSTHROUGH)
+    uint8_t buf[64];
+    // Serial -> SerialHost
+    if (Serial.available()) {
+      size_t count = Serial.read(buf, sizeof(buf));
+
+      if (buf[0] == 0xFE && buf[1] == 0xFE && ( (buf[4] == 0x00 || buf[4] == 0x05 || buf[4] == 0x03) || (buf[4] == 0x25 && buf[5] == 0x00) )) {
+          read_Frequency(5);  // add XVTR offset if enabled.
+          SetFreq(frequency);
+      } else {
+      #if defined ( BTCLASSIC )
+        if (btConnected && SerialBT.connected()) {
+          SerialBT.write(buf, count);
+          //SerialBT.flush();
+        }
+      #elif defined ( BLE )
+        if (BLE_connected) {
+          SendMessage(buf, count);
+        }
+      #endif
+      }
+    }
+  #endif
 }
 
 void refesh_display(void) {
@@ -1687,7 +1728,8 @@ void app_loop(void) {
 
   
   if (board_type == M5ATOMS3) {
-    btn_state = M5.BtnA.wasClicked() ? 2 : M5.BtnA.wasPressed() ? 3 : 0;
+    //btn_state = M5.BtnA.wasClicked() ? 2 : M5.BtnA.wasPressed() ? 3 : 0;
+    btn_state = M5.BtnA.wasPressed() ? 3 : 0;
     if (btn_state) {
       BtnC_pressed = true;  // on Atoms3 translate to single screen button for Xvtr selection
       btn_state = 0;
@@ -1742,30 +1784,8 @@ void app_loop(void) {
 
   Get_Radio_address();  // can autodiscover CI-V address if not predefined.
 
-  #if defined(PC_PASSTHROUGH)
-    uint8_t buf[64];
-    // Serial -> SerialHost
-    if (Serial.available()) {
-      size_t count = Serial.read(buf, sizeof(buf));
-
-      if (buf[0] == 0xFE && buf[1] == 0xFE && ( (buf[4] == 0x00 || buf[4] == 0x05 || buf[4] == 0x03) || (buf[4] == 0x25 && buf[5] == 0x00) )) {
-          read_Frequency(5);  // add XVTR offset if enabled.
-          SetFreq(frequency);
-      } else {
-      #if defined ( BTCLASSIC )
-        if (btConnected && SerialBT.connected()) {
-          SerialBT.write(buf, count);
-          //SerialBT.flush();
-        }
-      #elif defined ( BLE )
-        if (BLE_connected) {
-          SendMessage(buf, count);
-        }
-      #endif
-      }
-    }
-  #endif
-
+  pass_PC_to_radio();
+  
   poll_radio();  // do not send stuff to radio when a PC app is doing the same
 
   #ifdef USBHOST
@@ -1793,16 +1813,16 @@ void app_loop(void) {
       // Process the band input and PTT input pins
 
       #if defined ( IO_MODULE )
-        decode_in = Module_4in_8out_Input_scan();
+        decode_in = Module_4in_8out_Input_scan();  // Has 4 digital inputs, using for PTT and band input
       #elif defined ( EXT_IO2_UNIT )
-        decode_in = Unit_EXTIO2_Input_scan();
+        decode_in = Unit_EXTIO2_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
       #endif
 
       decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit
       decode_Band_temp = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
       
       // 4th pin is wired PTT from radio.
-      // extract the 4rh input to pass on PTT through slected bands IO pin.
+      // extract the 4th input to pass on PTT through selected band's IO pin.
       if ((decode_PTT_temp != decode_PTT_temp_last) && use_wired_PTT)  // only call when the state changes
       {
         PTT_Output(band, decode_PTT_temp);  // should add debounce but cpu in the IO module seems to be doing that already well enough

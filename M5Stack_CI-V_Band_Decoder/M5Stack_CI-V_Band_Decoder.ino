@@ -319,13 +319,13 @@ void setup() {
     M5.Power.begin();
     #ifdef ATOMS3
       Serial.println("ATOMS3 defined")
-      M5.Lcd.setBrightness(30);   // 0- 255
     #endif
     board_type = M5.getBoard();
     if (board_type == M5ATOMS3) {
       Serial.println("AtomS3 ext i2c pins defined");
       Wire.begin(2,1);   // M5AtomS3 external i2c
-      M5.Lcd.setRotation(1);  // 0 to 3 rotate, 4 to 7 reverse and rotate.
+      M5.Lcd.setRotation(3);  // 0 to 3 rotate, 4 to 7 reverse and rotate.
+      M5.Lcd.setBrightness(30);   // 0- 255
     } else {
       Serial.println("CoreS3 or CoreS3SE ext i2C pins defined");
       Wire.begin(12,11);   // CoreS3 and ?StampC3U?
