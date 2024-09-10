@@ -7,8 +7,45 @@
 #include "MODULE_4IN8OUT.h"
 #include <Wire.h>
 #include "DebugPrint.h"
+#include "M5Stamp_Decoder.h"
 
-//MODULE_4IN8OUT module;
+#ifdef IO_MODULE
+MODULE_4IN8OUT module;
+#endif
+
+#ifdef RELAY2
+  #if defined ( CORE3 )   // Use Port A OK
+    // Core 3 Port A
+    #define pinR1 2   // 32 P.a  works on core 2, PB 26 works on M5Core
+    #define pinR2 1   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+    // Core 3 Port B
+    //#define pinR1 9   // 32 P.a  works on core 2, PB 26 works on M5Core
+    //#define pinR2 8   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+    // Core 3 Port C
+    //#define pinR1 18   // 32 P.a  works on core 2, PB 26 works on M5Core
+    //#define pinR2 17   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+
+    #elif defined ( CORE2 )
+    // Core 2 Port A
+    #define pinR1 32   // 32 P.a  works on core 2, PB 26 works on M5Core
+    #define pinR2 33   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+    // Core 2 Port B
+    //#define pinR1 26   // 32 P.a  works on core 2, PB 26 works on M5Core
+    //#define pinR2 36   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+    // Core 2 Port C
+    //#define pinR1 13   // 32 P.a  works on core 2, PB 26 works on M5Core
+    //#define pinR2 14   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+
+    #else 
+    // Use Port C preferred
+    // Core basic Port Be
+    //#define pinR1 26   // 32 P.a  works on core 2, PB 26 works on M5Core
+    //#define pinR2 36   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+    // Core basic Port C
+    #define pinR1 16   // 32 P.a  works on core 2, PB 26 works on M5Core
+    #define pinR2 17   // 33 P.a  works on Core2.  Pb 36 does not work in M5Core
+  #endif // CPU type
+#endif // relay2
 
 // Very basic - outputs a set pattern for each band.  Follows the Elecraft K3 patther for combined HF and VHF used for transverters and antenna switching
 // This may control a external band decoder that accept wired inputs.  Other decoder outpout can be serial or ethernet
@@ -67,6 +104,18 @@ void GPIO_Out(uint8_t pattern)
     //  DPRINTLNF("GPIO_Out: IO_MODULE **NOT** enabled");
       //return;
     //#endif
+
+    // Enabled relay when any XVTR band active - test for now with 2 channel relay module
+    #if defined ( RELAY2 )
+      if (pattern) {
+        digitalWrite(pinR2, HIGH); 
+        DPRINTLNF("Relay+++++++++XVTR_ON");  
+      }
+      else {
+        digitalWrite(pinR2, LOW);
+        DPRINTLNF("Relay---------XVTR_OFF");  
+      }
+    #endif
 
     //pattern = !pattern;
 
@@ -136,6 +185,23 @@ void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
       //return;
     //#endif
 
+    // Operate a relay anytime PT is high. Probably not useful if have more than 1 PTT but is here for a test
+    // This is a M5Stack 1 rleay Unit.  The 1 and 2 relay units oeprate on a grove port (B or C) with simple digital IO.  
+    // On a Care, Port A is the same pins as the rest of the internal i2c, operating a relay on them would screw up I2C likely.
+    // The 4 relay unit is i2c addressed and normally plugs into Port A on the Corexx itself. 
+    // I2C on Port B is a separate IC2 port for the Core2 and Core3
+
+    #if defined ( RELAY2 )
+      if (PTT_state && pattern) {
+        digitalWrite(pinR1, HIGH); 
+        DPRINTLNF("Relay+++++++++PTT");
+      }
+      else {
+        digitalWrite(pinR1, LOW);
+        DPRINTLNF("Relay---------PTT");
+      }
+    #endif
+
     //PTT_state = !PTT_state;  // Invert  PTT 1 = TX, IO needs 0 to gnd for TX.
     
     //Serial.println((pattern & 0x10 & PTT_state) ? 0 : 1);
@@ -188,6 +254,14 @@ void Decoder_GPIO_Pin_Setup(void)
 //MODULE_4IN8OUT module;  // done in main ino.   Be sure toi run Wire(21,22); before this in setup(0)
 void  Module_4in_8out_setup()
 {
+  
+    #if defined ( RELAY2 )
+      // For the 1 or 2-Relay modules if used.  Plug into Port C.  Port B only 1 pin 26 worked con the Core Basic.  
+      // Port A pins are internal i2c and would conflict with relay usage
+      pinMode(pinR1, OUTPUT);  // Set pin to output mode.
+      pinMode(pinR2, OUTPUT);  // Set pin to output mode.
+    #endif
+
     #ifdef IO_MODULE
     uint8_t counter = 0;
     #ifdef CONFIG_IDF_TARGET_ESP32S3
@@ -221,7 +295,7 @@ uint8_t Module_4in_8out_Input_scan(void)
     pattern |= module.getInput(1) << 1;
     pattern |= module.getInput(2) << 2;
     pattern |= module.getInput(3) << 3;
-    return pattern;
+    return pattern & 0x0F;
   #else
     return 0;
   #endif
