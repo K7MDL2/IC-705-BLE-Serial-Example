@@ -4,7 +4,10 @@ Disclaimer: this is a work in progress!
 
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
-Latest summary: As of Sept 1 - This now runs on the tiny M5AtomS3, M5StampS3 and M5StampC3U.  I have added more #define control for the various IO options and they can generally all run in parallel. Also when compiling on the M5AtomS3, the 0.85" color LCD is now formatted with the same info as the larger screen.  The screen doubles as a pushbutton so you can cycle through the XVTR bands without any attached IO hardware. Button press detection can use some improvement.
+Latest summary: As of Sept 10 - Now save and restore Split mode.  Split is often turned on when using WSJT-X on a band, and needs to be off for SSB/CW usually.  Like the other saved parameters, it simply saves and restores what is found at band change. 
+ Also, a small change that fixed a crash, in BLE mode at least - when a standard Mode message is received (which has no info about Datamode), which occurs for radio side band changes, I no longer immediately request extended mode info. That info is polled every 1-2 seconds already so there is no pressing need to get faster extended info back.  I was testing a HF-6M amp this week and used the 4Relay module for PTT.  Changed the GPIO PTT output pattern defines to actuate the 4th relay, and it worked as expected for all bands.  Most testing to date has been on XVTR band switching.  This is in addition to the 4IN/8OUT module which the lower 4 outputs are in (logical) parallel with the Relay module.  Last, I have added rotation and lowered the screen brightness for the M3AtomS3 so the USB cord (used for power and programming/debugging only) exits the side, not the bottom, for easier attachment to a horizontal surface.
+
+This now runs on the tiny M5AtomS3, M5StampS3 and M5StampC3U.  I have added more #define control for the various IO options and they can generally all run in parallel. Also when compiling on the M5AtomS3, the 0.85" color LCD is now formatted with the same info as the larger screen.  The screen doubles as a pushbutton so you can cycle through the XVTR bands without any attached IO hardware. Button press detection can use some improvement.
 
 ![M5AtomS3 rotated](https://github.com/user-attachments/assets/372bd252-4766-4452-b056-82d447edbdbb)
 
