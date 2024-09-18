@@ -2,6 +2,8 @@
 
 Disclaimer: this is a work in progress!  
 
+Be sure to check out the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
+
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
 Latest summary: As of Sept 10 - Now save and restore Split mode.  Split is often turned on when using WSJT-X on a band, and needs to be off for SSB/CW usually.  Like the other saved parameters, it simply saves and restores what is found at band change. 
