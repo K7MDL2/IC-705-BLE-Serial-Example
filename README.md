@@ -4,6 +4,8 @@ Disclaimer: this is a work in progress!
 
 Be sure to check out the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
 
+SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/SD-Card-Usage
+
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
 Latest summary: As of Sept 10 - Now save and restore Split mode.  Split is often turned on when using WSJT-X on a band, and needs to be off for SSB/CW usually.  Like the other saved parameters, it simply saves and restores what is found at band change. 
@@ -33,13 +35,6 @@ For the 4IN8OUT module to work on i2c on the CoreS3, it required &Wire1, vs. &Wi
 
 This was good news, it means I could proceeed to add BLE to the code, now that IO works, which I consider a necessity. USB Host is still a problem.  I updated the BLE_Decoder_Simple.ino.
 
-Can now open config.ini on the SD card and update the BT address to match your rig. Also, if an update.bin file (new firmware image binary) is found, it will upload it, replacing the old program, then delete the update file from the SD card. To try this, first upload the latest here which has this capability, then find the .bin file in your temp sketch folder (path visible in the output section).  Rename it to update.bin, copy it to the root of a SD card.  Insert, reset the CPU.  Update status is on screen, goes fast.  
-
-For the config file: Create an empty config.ini file in the root folder on a FAT formatted SD card.  Create 1 line with with your address following the sample below:
-
-      bd_address = 30:31:7d:BA:44:F9
-
-You may have other lines starting with a ';' to ignore them.
 
 
 As of Aug 17, 2024, on a M5Stack Core Basic and Core2, BT Classic connection to the 705 runs reliably, and the 4-In/8-Out module works.  That is not the case yet for USBHost (works sometimes, then it does not for seemingly unrelated reasons, or no reason at all.  The first fully working version has been given to a field tester along with the radio I borrowed from him.  It is simply routing PTT between 2 transverters.  Can use the radio's Polled TX state or the wired PTT input as the PTT source so there is the option of no wired connection to the radio.  
@@ -51,9 +46,10 @@ The IO module uses a 4.7K resistor to 3.37VDC.  Draws 0.8ma when grounded.  Outp
 
 _________________________________________________________________________________
 
-Demonstrates how to connect to the Icom IC-705 using 1 of 3 methods.  Most BT connections to the IC-705 to date (Aug 2024) have been made using BT classic SPP. With the newer MStack Core3, which uses an ESP32-S3, it does not support BT classic SPP, only has WiFi and BT5 compatible BLE.
 
 ### Connection methods:
+
+The IC-705 uses 1 of 4 connection methods for CI-V data - WiFi (WAN), BT Classic, BLE and USB Host mode.  The newer MStack CoreS3, which uses an ESP32-S3, only supports BLE and not BT Classic.  The Core2 supports both.  Core Basic is BT Classic only.  All models support WiFi but I am not using WiFi today.
 
 1. Bluetooth Low Energy (BLE) Serial Port Profile for CI-V control.  This is a modified version of work done in 2018 a https://github.com/ThingEngineer/ESP32_BLE_client_uart with changes from a scanner example to (re) discover and reconnect continuously. The ESP32-S3 does not have BT Classic SPP so BLE or USB Host is necessary. The IC-705 BT CI-V connect sequence appears to be undocumented but a precious few clues were found online combined with lots of test observations to get a working setup on BLE.  This build seems to be stable now but it is still early days with an undocumented interface. Please raise issues with test scenario when a problem is observed.  I tested this on a M5Stack Core3 SE which is based on a ESP32-S3.
 
@@ -102,23 +98,11 @@ On my Teensy projects I run up to 3 virtual serial ports on both the Device and 
 
 ### To Use this with an IC-705:
 
-I set the default radio CI-V address to 0. It will autodetect the radio address on startup when it sees the first messages. Turn the VFO dial to accelerate this. In the software, you can set the radio_address.  For example, 0xA4 for the IC-705, 0xAC for the IC-905. I plan to make this an SD card config file choice later, or a menu button.  Same for swapping between BT and USB Host ports modes.  Today tye SD card config file contains only the BT Classic target radio BT address.  For BT Classic mode, you can set your radio's BT address in the top of the main file as the default address and not require a SD Card config file.  Not required for BLE.  If using multiple BLE devices, alter the UUID number slightly to differentiate them.  For both you may want to change the name so they display on the 705 uniquely.  The name must be 16 characters exactly.   
+I set the default radio CI-V address to 0. It will autodetect the radio address on startup when it sees the first messages. Turn the VFO dial to accelerate this. In the software, you can set the radio_address.  For example, 0xA4 for the IC-705, 0xAC for the IC-905. I plan to make this an SD card config file choice later, or a menu button.  Same for swapping between BT and USB Host ports modes.  Today the SD card config file contains only the BT Classic target radio BT address.  For BT Classic mode, you can set your radio's BT address in the top of the main file as the default address and not require a SD Card config file.  Not required for BLE.  If using multiple BLE devices, alter the UUID number slightly to differentiate them.  For both you may want to change the name so they display on the 705 uniquely.  The name must be 16 characters exactly.   
 
-The SD card, if present, is used to store the radio parameters for all the repdefined bands low HF up to 122Ghz.  It starts with defaults then is updated with observed (polled) parameters as each band may be sleectged at the radio.  That data is primarily used for bands that have a Xvtr Offset and the last non-Xvtr band used before switching into XVtr mode.  The idea is to resatore the radio back to the way it was before being used as an IF rig.
+See the Wiki page for pairing to the radio at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Pairing-the-Radio
 
-Pairing is simple and silent, and will auto-reconnect as long you you do not delete the Pairing from the radio.
-
-To use it, go to the IC-705 Pairing Reception menu, then reset the M5Stack CPU module. On boot up it will pair with the radio. The Pairing Reception menu will close quickly.  For BT classic you will see a confirmation code request dialog on the radio side. The device name (such as BT705 CIV Decoder) will show as connected in the Pairing/Connect menu.  To delete the device, touch the device name, disconnect, then long touch the device name, delete the pairing.
-
-The radio specs says the 705 is using BT4.2 so requires the ESP32 be in compatibility mode to support both BT classic and BLE, which the 705 does.  BT5 is not the same as BT4.2 and earlier.  Will be interesting to try with BLE dongles on my IC-905 and other radios like the 9700.
-
-On 8/8/2024 I tried to auto-switch between BT and USB Host.  It gets tricky.  You can configure BT to start up but can do so only after the USB Host has been run through a bit, else the USB host task hangs, usually causing an OS watchdog timeout and reboot, but often not. Also you only get 1 plug and unplug cycle, else timeout.  In this case a reboot is faster and easy way to work around this for now. The USB disconnect event calls ESP.restart().  
-
-Instead of auto-failover, I now have 2 buttons that switch between modes. No reboot required. A (Left button) is BT mode, C (right button) is USB mode.  Hold the A (BT) button until you see the screen change to "Connecting to BT". Hold USB C button until you see it change.  BT goes into a blocking discovery loop so reading buttons without interrupts is not easy o break out of a loop of that. Maybe make it a one shot per button. You can use CI-V auto-address discovery which works beter if you roate the dial.  I can swap between 2 radios this way, one on BT and one on USB.
-
-I tried to configure the USB Host and Peripheral (main) ports for 2 virtual serial channels. So far have not got it to work. It requires changing a config file setting. The Arduino library is preconfigured so wont pick up some edits.  They use a KConfig file approach with Cmake and have you to run esp idf.py menuconfig (once you loaded the TinyUSB component) in your project directory 'main' folder which is not set up like Arduino. the menuconfig writes out the KConfig file where the library will look for it and override the default. CFG_TUD_COUNT 2 is the key. The ESP32-S3, maybe all ESPs, did not support this until a few months ago. There is one example file cdc-multi, but requires the above process to work.  Big learning curve here.
-
-I studied the timing of sent vs reply messages between BT and USB. The radio sends out new frequwncy values when you turn the VFO very fast and I get all of those. For a while every 4th reply was missing the first bytes. I reboooted the radio and never saw it again. That was on USB only. I also experienced replies taking 5 seconds over USB for quite a while.  Eventually this went away as I retructured control flags for the buttons so it was something in my code. BT however was very fast during that time and every TX is answered immediately, within a few milliseconds if not the same.
+The SD card, if present, is used to store the radio parameters for all the predefined bands, low HF up to 122Ghz.  It starts with defaults then is updated with observed (polled) parameters as each band may be selected at the radio.  That data is primarily used for bands that have a Xvtr Offset and the last non-Xvtr band used before switching into XVtr mode.  The idea is to restore the radio back to the way it was before being used as an IF rig.
 
 Technical details including the BT/BLE CI-V connection protocol are in Wiki pages
 https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Technical-Details
