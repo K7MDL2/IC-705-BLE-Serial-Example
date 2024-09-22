@@ -82,8 +82,9 @@ Old and New models posing for a family picture.  The Core3-SE has 4-In/8-Out, HM
 
 3. M5Stack_Core_Basic_CI-V_Band_Decoder. This is BT Classic SPP and BT Low Energy (BLE) depending on the CPU capability.  USB Host support is there but is not stable. It supports several IO/Relay moduels and Units such as the  4In/8out module and 4-Relay module, plus a DIN or PLC base so I can mount it.  The IO can be used for PTT breakout per band and for automated transverter and/or antenna selection.  UI has Frequency, band, PTT, Xvtr, Time, date, grid square and menu buttons. It supports all bands (some may be transverter bands) up to 122GHz, setting key radio parameters such as Frequency, Mode, Filter, Preamp, Atten, AGC, Xvtr offset, and Split for each band and restores the original (last) non-Xvtr band paramaters. This program is full featured where the 2 above are built as breif examples. 
 
-There is a function in use now that auto-discovers the model's CI-V address.  This code is set up to make changing between USB and BT easily done by the UI.  You can define a CI-V address as well.  A button will force a search for a new address.
+4. Other folders:  There are other folders here storing some modified works for some CPU modules such as the M5StampC3U.  In general I am adding #defines into the CI-V Band Decoder files to account for CPU models rather than split off code and attempt to maintain the overlapping code between them.  
 
+There is a function in use now that auto-discovers the model's CI-V address.  This code is set up to make changing between USB and BT easily done by the UI.  You can define a CI-V address as well.  A button will force a search for a new address.
 
 ### Hardware options:
 
