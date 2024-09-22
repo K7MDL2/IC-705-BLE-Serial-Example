@@ -1,6 +1,6 @@
 # IC-705-BLE, BT Classic, and USB Host Serial Examples
 
-Disclaimer: this is a work in progress!  
+Disclaimer: this is a work in progress!    on Sept 22, 2024, I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
 
 Be sure to check out the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
 
