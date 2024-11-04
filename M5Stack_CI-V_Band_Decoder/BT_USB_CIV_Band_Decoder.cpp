@@ -345,14 +345,14 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 
   //#define SEE_RAW_TX  // an also be set at top of file
   #ifdef SEE_RAW_TX
-  Serial.print(F("--> Tx Raw Msg: "));
+  DPRINTF("--> Tx Raw Msg: ");
   for (uint8_t k = 0; k <= msg_len; k++) {
-    Serial.print(req[k], HEX);
-    Serial.print(F(","));
+    DPRINT(req[k], HEX);
+    DPRINTF(","));
   }
-  Serial.print(F(" msg_len = "));
-  Serial.print(msg_len + 1);
-  Serial.println(F(" END"));
+  DPRINTF(" msg_len = ");
+  DPRINT(msg_len + 1);
+  DPRINTLNF(" END"));
   #endif
 
   //#define RAWT  // for a more detailed look
@@ -369,7 +369,7 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   #else
       for (uint8_t i = 0; i <= msg_len; i++) {
   #ifdef SEE_RAWT
-        Serial.print(req[i], HEX);
+        DPRINT(req[i], HEX);
   #endif
 
   #if defined(USBHOST)
@@ -1319,8 +1319,8 @@ void display_Freq(uint64_t _freq, bool _force) {
 
   if ((_freq != _prev_freq && _freq != 0) || _force) {
 #ifdef PRINT_VFO_TO_SERIAL
-    Serial.printf("VFOA: %13sMHz - Band: %s  Mode: %s  DataMode: %s  Filter: %s\n", formatVFO(_freq), bands[band].band_name, \
-        modeList[bands[band].mode_idx].mode_label, ModeStr[bands[band].datamode], FilStr[bands[band].filt]);
+    Serial.printf("VFOA: %13sMHz - Band: %s  Mode: %s  DataMode: %s  Filter: %s  Source: BLE %d, USBHost %d, BTClassic %d\n", formatVFO(_freq), bands[band].band_name, \
+        modeList[bands[band].mode_idx].mode_label, ModeStr[bands[band].datamode], FilStr[bands[band].filt], BLE_connected, USBH_connected, btConnected);
 #endif
     if (board_type == M5ATOMS3) {
       font_sz = 4;  // downsize for Atom
@@ -1560,7 +1560,7 @@ uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]) {
 }
 
 // Send new frequency to radio, radio will change bands as needed.
-// ToDo:  Radio mode and other settings are not tocuhed so stay the same as the last band used.  We are only changing the frequency, nothing else.
+// ToDo:  Radio mode and other settings are not touched so stay the same as the last band used.  We are only changing the frequency, nothing else.
 //        Need to save mode, filter and other stuff to return each band to the last way it was used.
 void SetFreq(uint64_t Freq) {
   uint8_t vfo_dec[7] = {};
@@ -1572,21 +1572,32 @@ void SetFreq(uint64_t Freq) {
 
   uint8_t len = formatFreq(Freq, vfo_dec);  // Convert to BCD string
   //Serial.printf("SetFreq: Radio Freq = %llu  To radio (5 or 6 bytes) in BCD: %02X %02X %02X %02X %02X (%02X)\n", Freq, vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
-  sendCatRequest(CIV_C_F1_SEND, vfo_dec, len);
+  #ifndef PC_PASSTHROUGH
+    sendCatRequest(CIV_C_F1_SEND, vfo_dec, len);
+  #endif
 }
 
+//  Radio to PC relay done in readline()
 void pass_PC_to_radio(void)
 {
+  size_t count;
+
   #if defined(PC_PASSTHROUGH)
     uint8_t buf[64];
-    // Serial -> SerialHost
+    // PC Serial -> Radio Serial
     if (Serial.available()) {
-      size_t count = Serial.read(buf, sizeof(buf));
+      count = Serial.read(buf, sizeof(buf));
 
+      //   update our display with monitored frequency message value
       if (buf[0] == 0xFE && buf[1] == 0xFE && ( (buf[4] == 0x00 || buf[4] == 0x05 || buf[4] == 0x03) || (buf[4] == 0x25 && buf[5] == 0x00) )) {
-          read_Frequency(5);  // add XVTR offset if enabled.
+          if (RADIO_ADDR == IC905)
+            read_Frequency(5,13);  // adds XVTR offset if enabled.
+          else
+            read_Frequency(5,11);  // adds XVTR offset if enabled.
           SetFreq(frequency);
-      } else {
+          processCatMessages();
+      }
+
       #if defined ( BTCLASSIC )
         if (btConnected && SerialBT.connected()) {
           SerialBT.write(buf, count);
@@ -1597,7 +1608,7 @@ void pass_PC_to_radio(void)
           SendMessage(buf, count);
         }
       #endif
-      }
+      processCatMessages();
     }
   #endif
 }
@@ -1738,9 +1749,9 @@ void app_loop(void) {
 
   if (BtnA_pressed) {
     BtnA_pressed = false;
-    Serial.println(F("BtnA pressed - Switch to BT mode"));
+    DPRINTLNF("BtnA pressed - Switch to BT mode");
     #ifdef BTCLASSIC
-      Serial.println(F("Switch to BT mode"));
+      DPRINTLNF("Switch to BT mode");
       BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
       restart_BT_flag = true;
     #endif
@@ -1749,7 +1760,7 @@ void app_loop(void) {
   if (BtnB_pressed) {
     BtnB_pressed = false;
     radio_address = 0;
-    Serial.print(F("BtnB pressed: Scan for new radio address"));
+    DPRINTLNF("BtnB pressed: Scan for new radio address");
     get_new_address_flag = true;
   }
 
@@ -1758,14 +1769,14 @@ void app_loop(void) {
 
 // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
     #ifdef USBHOST
-      Serial.print(F("BtnC pressed - Switch to USB Host mode"));
+      DPRINTLNF("BtnC pressed - Switch to USB Host mode");
       restart_USBH_flag = true;
     #else
       if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
       {
         xvtr_band_select++;
-        Serial.print(F("BtnC pressed - Select a Xvtr band - index = "));
-        Serial.println(xvtr_band_select);
+        DPRINTLNF("BtnC pressed - Select a Xvtr band - index = ");
+        DPRINTLN(xvtr_band_select);
         switch (xvtr_band_select)  // index our way through a curated list.
         {
           case 1: band_Selector(1); break;
@@ -1786,7 +1797,9 @@ void app_loop(void) {
 
   pass_PC_to_radio();
   
-  poll_radio();  // do not send stuff to radio when a PC app is doing the same
+  #ifndef PC_PASSTHROUGH
+     poll_radio();  // do not send stuff to radio when a PC app is doing the same
+  #endif
 
   #ifdef USBHOST
     if (restart_USBH_flag) {

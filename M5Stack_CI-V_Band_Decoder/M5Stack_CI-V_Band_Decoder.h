@@ -103,7 +103,8 @@
   #include <M5AtomS3.h>
   #define ATOMS3
   #else
-  #include <M5CoreS3.h>
+  //#include <M5CoreS3.h>   // Mov 2024 latest M5Unified now supports M5CoreS3
+  #include <M5Unified.h>  // kills off USB Host
   #endif
   static m5::touch_state_t prev_state;
   #define SD_SPI_SCK_PIN  36
@@ -143,6 +144,8 @@
 #define IC705 0xA4
 #define IC905 0xAC
 #define RADIO_ADDR IC705
+
+#define NO_SEND 0  // block changes to radio from controiller - used for PC pass thru
 
 // NOTE: With a single USB virtual Serial port to the PC, ANY debug on Serial will interfere with a program like WSJT-X passing through to teh radio.
 
@@ -184,9 +187,9 @@
 //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
 #define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
 
-//define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
+#define PC_PASSTHROUGH 0  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
-#ifndef PC_PASSTHROUGH        // shut off by default when PASSTHRU MODE is on
+#if (PC_PASSTHROUGH == 0)        // shut off by default when PASSTHRU MODE is on
   #define PRINT_VFO_TO_SERIAL // uncomment to visually see VFO updates from the radio on Serial
   #define PRINT_PTT_TO_SERIAL // uncomment to visually see PTT updates from the radio on Serial
 #endif 

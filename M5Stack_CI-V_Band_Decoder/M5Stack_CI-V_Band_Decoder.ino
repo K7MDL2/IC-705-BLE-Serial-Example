@@ -242,17 +242,17 @@ void chk_btns(void) {
         touchPoint.state == m5::touch_state_t::touch_begin) {
         if (M5.Display.width() / 3 > touchPoint.x && touchPoint.x > 0){
             BtnA_pressed = true;
-            Serial.println("3A");
+            DPRINTLNF("3A");
         }
         if ((M5.Display.width() / 3) * 2 > touchPoint.x &&
             touchPoint.x > M5.Display.width() / 3) {
             BtnB_pressed = true;
-            Serial.println("3B");
+            DPRINTLNF("3B");
         }
         if (M5.Display.width() > touchPoint.x &&
             touchPoint.x > (M5.Display.width() / 3) * 2) {
             BtnC_pressed = true;
-            Serial.println("3C");
+            DPRINTLNF("3C");
         }
     }   
 
@@ -265,7 +265,7 @@ void chk_btns(void) {
             : 0;
     if (state == 3 && !BtnA_pressed) {  // Only process once the main loop is done
       BtnA_pressed = true;
-      Serial.print("2A, state = "); Serial.println(state);
+      DPRINTF("2A, state = "); DPRINTLN(state);
     }
     
     state = M5.BtnB.wasHold() ? 1
@@ -276,7 +276,7 @@ void chk_btns(void) {
           : 0;
     if (state == 3 && !BtnB_pressed) {
       BtnB_pressed = true;
-      Serial.print("2B, state = "); Serial.println(state);
+      DPRINTF("2B, state = "); DPRINTLN(state);
     }
 
     state = M5.BtnC.wasHold() ? 1
@@ -287,22 +287,22 @@ void chk_btns(void) {
           : 0;
     if (state == 3 & !BtnC_pressed) {
       BtnC_pressed = true;
-      Serial.print("2C, state = "); Serial.println(state);
+      DPRINTF("2C, state = "); DPRINTLN(state);
     }
    
   #else
     if (//M5.BtnA.wasReleased() ||
      M5.BtnA.pressedFor(100, 3000)) {
         BtnA_pressed = true;
-        Serial.println("A");
+        DPRINTLNF("A");
     } else if (//M5.BtnB.wasReleased() || 
     M5.BtnB.pressedFor(100, 3000)) {
         BtnB_pressed = true;
-        Serial.println("B");
+        DPRINTLNF("B");
     } else if (//M5.BtnC.wasReleased() || 
     M5.BtnC.pressedFor(100, 3000)) {
         BtnC_pressed = true;
-        Serial.println("C");
+        DPRINTLNF("C");
     }
   #endif
   }
@@ -318,16 +318,16 @@ void setup() {
     M5.begin(cfg);
     M5.Power.begin();
     #ifdef ATOMS3
-      Serial.println("ATOMS3 defined")
+      DPRINTLNF("ATOMS3 defined")
     #endif
     board_type = M5.getBoard();
     if (board_type == M5ATOMS3) {
-      Serial.println("AtomS3 ext i2c pins defined");
+      DPRINTLNF("AtomS3 ext i2c pins defined");
       Wire.begin(2,1);   // M5AtomS3 external i2c
       M5.Lcd.setRotation(3);  // 0 to 3 rotate, 4 to 7 reverse and rotate.
       M5.Lcd.setBrightness(30);   // 0- 255
     } else {
-      Serial.println("CoreS3 or CoreS3SE ext i2C pins defined");
+      DPRINTLNF("CoreS3 or CoreS3SE ext i2C pins defined");
       Wire.begin(12,11);   // CoreS3 and ?StampC3U?
     }
     //M5.Touch.begin();
@@ -338,7 +338,7 @@ void setup() {
     //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
 
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-    Serial.println("Core2 defined");
+    DPRINTLNF("Core2 defined");
     Wire.begin(21,22);
     //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
     
@@ -346,7 +346,7 @@ void setup() {
     // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
     M5.begin();
     M5.Axp.begin();
-    Serial.print("Power Status 0=external, 1=internal 2=max  "); Serial.println(M5.Axp.isACIN() ? 0 : 1);
+    DPRINTF("Power Status 0=external, 1=internal 2=max  "); DPRINTLN(M5.Axp.isACIN() ? 0 : 1);
     M5.Touch.begin();
     //if (M5.Touch.isEnabled())
     M5.Touch.update();
@@ -362,7 +362,7 @@ void setup() {
     #endif
 
   #else
-    Serial.println("Core Basic defined");
+    DPRINTLNF("Core Basic defined");
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
     Wire.begin(21,22);
     //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
@@ -381,14 +381,15 @@ void setup() {
   #ifdef USE_FREERTOS
     #ifdef USBHOST
       // Create a task to run USBHost.task() in background
-      xTaskCreatePinnedToCore(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 4, NULL, 0);
+      //xTaskCreatePinnedToCore(usbhost_rtos_task, "usbh", USBH_STACK_SZ, NULL, 4, NULL, 0);
+      xTaskCreate(usbhost_rtos_task, "usbh", 8000, NULL, 3, NULL); 
       
       Serial.printf("USB pre-start status = %d\n", USBHost_ready);
       Serial.printf("   USBH_connected = %d\n",USBH_connected);
       int count = 0;
         while (USBHost_ready == 2 && count < 200)  // 0 of nothing, 1 for device connected. value started at 2 so we know init is done.
         {
-          delay(10);
+          delay(40);
           Serial.print(count);
           count++;
         }
@@ -412,7 +413,7 @@ void setup() {
     Scan_BLE_Servers();
   #endif
 
-  Serial.println("TinyUSB Host Serial Setup Done");
+  DPRINTLNF("TinyUSB Host Serial Setup Done");
 }
 
 //*****************************************************************************
