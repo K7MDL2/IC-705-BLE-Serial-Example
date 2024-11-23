@@ -94,7 +94,7 @@ bool auto_address = false;           // If true, detects new radio address on co
                                      // If false, then the last used address, or the preset address is used.
                                      // If Search for Radio button pushed, then ignores this and looks for new address
                                      //   then follows rules above when switch connections
-bool use_wired_PTT = false;           // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
+bool use_wired_PTT = WIRED_PTT;           // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
 bool XVTR = true;                    // Enables Xvtr support
   // Edit the bands table farther down the page to enter the fixed LO offset (in Hz) to add to radio dial
   // frequency for the transverter band of interest. Only 1 band supported at this point

@@ -155,6 +155,8 @@
 
 #define CMD_READ_FREQ 0x03    // Read operating frequency data
 
+#define WIRED_PTT   1         // 1 = use ther wired input for fastest PTT
+                              // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 #define POLL_PTT_DEFAULT 287  // poll the radio for PTT status odd numbers to stagger them a bit
                               // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
                               // Also polls the wired inputs  Can go down to 25-45.  When using wired PTT set this slow.
