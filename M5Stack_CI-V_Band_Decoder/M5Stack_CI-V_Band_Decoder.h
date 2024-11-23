@@ -145,8 +145,6 @@
 #define IC905 0xAC
 #define RADIO_ADDR IC705
 
-#define NO_SEND 0  // block changes to radio from controiller - used for PC pass thru
-
 // NOTE: With a single USB virtual Serial port to the PC, ANY debug on Serial will interfere with a program like WSJT-X passing through to teh radio.
 
 #define CONTROLLER_ADDRESS 0xE0  //Controller address
@@ -187,12 +185,15 @@
 //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
 #define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
 
-#define PC_PASSTHROUGH 0  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
+//#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
-#if (PC_PASSTHROUGH == 0)        // shut off by default when PASSTHRU MODE is on
+#ifndef PC_PASSTHROUGH        // shut off by default when PASSTHRU MODE is on
   #define PRINT_VFO_TO_SERIAL // uncomment to visually see VFO updates from the radio on Serial
   #define PRINT_PTT_TO_SERIAL // uncomment to visually see PTT updates from the radio on Serial
-#endif 
+  #define NO_SEND  // block changes to radio from controller - used for PC pass thru
+#else
+  #undef NO_SEND  // block changes to radio from controller - used for PC pass thru
+#endif
 
 //--------------------------------------      END OF USER CONFIG    ---------------------------------------------------------------
 
@@ -244,6 +245,7 @@ void display_PTT(bool _PTT_state, bool _force);
 void display_Band(uint8_t _band, bool _force);
 void display_Grid(char _grid[], bool _force);
 void SetFreq(uint64_t Freq);
+uint8_t pass_PC_to_radio(void);
 
 //const uint64_t decMulti[] = { 100000000000, 10000000000, 1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1 };
 

@@ -88,16 +88,16 @@ enum band_idx { BAND_AM,
 // If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
 #define BAND_DECODE_INPUT_0        GPIO_MOD_I_PIN_0      // bit 0
 #define BAND_DECODE_INPUT_1        GPIO_MOD_I_PIN_1      // bit 1
-#define BAND_DECODE_INPUT_2        GPIO_PIN_NOT_USED      // bit 2
-#define BAND_DECODE_INPUT_3        GPIO_PIN_NOT_USED     // bit 3
+#define BAND_DECODE_INPUT_2        GPIO_MOD_I_PIN_2      // bit 2
+#define BAND_DECODE_INPUT_3        GPIO_MOD_I_PIN_3     // bit 3
 
 // BAND DECODE OUTPUT PINS
 // Assign your pins of choice.  Use a number or one of the existing #define number names
 // Make sure they are not monitored by the code as a button or other use like an encoder.
 // If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
-#define BAND_DECODE_OUTPUT_0        GPIO_MOD_RY_PIN_0       // bit 0
+#define BAND_DECODE_OUTPUT_0        GPIO_PIN_NOT_USED       // bit 0
 #define BAND_DECODE_OUTPUT_1        GPIO_PIN_NOT_USED      // bit 1
-#define BAND_DECODE_OUTPUT_2        GPIO_MOD_RY_PIN_2      // bit 2
+#define BAND_DECODE_OUTPUT_2        GPIO_PIN_NOT_USED      // bit 2
 #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED      // bit 3
 #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED      // bit 4
 #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED      // bit 5
@@ -108,9 +108,9 @@ enum band_idx { BAND_AM,
 // Assign your pins of choice.  Use a number or one of the existing #define number names
 // Make sure they are not monitored by the code as a button or other use like an encoder.
 // If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
-#define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED     // bit 0
+#define BAND_DECODE_PTT_OUTPUT_0    GPIO_MOD_RY_PIN_0     // bit 0
 #define BAND_DECODE_PTT_OUTPUT_1    GPIO_MOD_RY_PIN_1     // bit 1
-#define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED     // bit 2
+#define BAND_DECODE_PTT_OUTPUT_2    GPIO_MOD_RY_PIN_2     // bit 2
 #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD_RY_PIN_3     // bit 3
 #define BAND_DECODE_PTT_OUTPUT_4    GPIO_PIN_NOT_USED     // bit 4
 #define BAND_DECODE_PTT_OUTPUT_5    GPIO_PIN_NOT_USED     // bit 5
@@ -147,8 +147,8 @@ enum band_idx { BAND_AM,
 #define DECODE_INPUT_BAND902      (0x01)    //902
 #define DECODE_INPUT_BAND1296     (0xFF)    //1296
 #define DECODE_INPUT_BAND2400     (0x02)    //2400
-#define DECODE_INPUT_BAND3300     (0xFF)    //3400
-#define DECODE_INPUT_BAND5760     (0xFF)    //5760M
+#define DECODE_INPUT_BAND3300     (0x04)    //3400
+#define DECODE_INPUT_BAND5760     (0x08)    //5760M
 #define DECODE_INPUT_BAND10G      (0xFF)    //10.368.1G
 #define DECODE_INPUT_BAND24G      (0xFF)    //24.192G
 #define DECODE_INPUT_BAND47G      (0xFF)    //47.1G
@@ -176,9 +176,9 @@ enum band_idx { BAND_AM,
 #define DECODE_BAND144      (0x00)    //2M
 #define DECODE_BAND222      (0x00)    //222
 #define DECODE_BAND432      (0x00)    //432
-#define DECODE_BAND902      (0x01)    //902
+#define DECODE_BAND902      (0x00)    //902
 #define DECODE_BAND1296     (0x00)    //1296
-#define DECODE_BAND2400     (0x04)    //2400
+#define DECODE_BAND2400     (0x00)    //2400
 #define DECODE_BAND3300     (0x00)    //3400
 #define DECODE_BAND5760     (0x00)    //5760M
 #define DECODE_BAND10G      (0x00)    //10.368.1G
@@ -211,11 +211,11 @@ enum band_idx { BAND_AM,
 #define DECODE_BAND144_PTT      (0x00)    //2M_PTT
 #define DECODE_BAND222_PTT      (0x00)    //222_PTT
 #define DECODE_BAND432_PTT      (0x00)    //432_PTT
-#define DECODE_BAND902_PTT      (0x02)    //902_PTT
+#define DECODE_BAND902_PTT      (0x01)    //902_PTT
 #define DECODE_BAND1296_PTT     (0x00)    //1296_PTT
-#define DECODE_BAND2400_PTT     (0x08)    //2400_PTT
-#define DECODE_BAND3300_PTT     (0x00)    //3400_PTT
-#define DECODE_BAND5760_PTT     (0x00)    //5760_PTT
+#define DECODE_BAND2400_PTT     (0x02)    //2400_PTT
+#define DECODE_BAND3300_PTT     (0x04)    //3400_PTT
+#define DECODE_BAND5760_PTT     (0x08)    //5760_PTT
 #define DECODE_BAND10G_PTT      (0x00)    //10.368.1G_PTT
 #define DECODE_BAND24G_PTT      (0x00)    //24.192G_PTT
 #define DECODE_BAND47G_PTT      (0x00)    //47.1G_PTT

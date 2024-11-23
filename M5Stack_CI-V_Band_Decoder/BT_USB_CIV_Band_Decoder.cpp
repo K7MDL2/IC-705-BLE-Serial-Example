@@ -23,6 +23,7 @@ void UpdateFromFS(fs::FS &fs);
 void printDirectory(File dir, int numTabs);
 extern struct cmdList cmd_List[];
 extern struct Modes_List modeList[];
+uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]);
 
 /*  copy of struct here from header file for easy reference.
 struct Bands {
@@ -65,8 +66,8 @@ struct Bands bands[NUM_OF_BANDS] = {
   { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
   { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
   { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
-  { "9cm", 3300000000, 3500000000, 0, 3301000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
-  { "6cm", 5650000000, 5925000000, 0, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
+  { "9cm",  3400000000, 3410000000, 3256000000, 3400100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
+  { "6cm",  5650000000, 5925000000, 5328000000, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
   { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
   { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
   { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
@@ -93,7 +94,7 @@ bool auto_address = false;           // If true, detects new radio address on co
                                      // If false, then the last used address, or the preset address is used.
                                      // If Search for Radio button pushed, then ignores this and looks for new address
                                      //   then follows rules above when switch connections
-bool use_wired_PTT = true;           // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
+bool use_wired_PTT = false;           // Selects source of PTT, wired input or polled state from radio.  Wired is preferred, faster.
 bool XVTR = true;                    // Enables Xvtr support
   // Edit the bands table farther down the page to enter the fixed LO offset (in Hz) to add to radio dial
   // frequency for the transverter band of interest. Only 1 band supported at this point
@@ -225,6 +226,7 @@ uint8_t readLine(void) {
   uint8_t byte;
   uint8_t counter = 0;
   uint32_t ed = readtimeout;  // not initialized!
+  uint8_t vfo_dec[7] = {};
 
   if (BT_enabled) {
     #ifdef BTCLASSIC
@@ -272,16 +274,59 @@ uint8_t readLine(void) {
   }  // usb host
 
   #ifdef PC_PASSTHROUGH
-  // SerialHost or SerialBT -> Serial
-  if (counter) {
-    Serial.write(read_buffer, counter);
+  // SerialHost or SerialBT -> PC side Serial
+  if (counter) 
+  {
+    //if (XVTR_enabled && (read_buffer[4] == 0x00 || read_buffer[4] == 0x05 || read_buffer[4] == 0x03 || read_buffer[4] == 0x25 || read_buffer[4] == 0x26)) {
+    if (0)
+    //if (XVTR_enabled && (read_buffer[4] == 0x25 && read_buffer[5] == 0x00)) 
+    //if ((read_buffer[4] == 0x25 && read_buffer[5] == 0x00)) 
+    {
+      // convert the radio reported frequency CI-V message to transverter frequency 
+      frequency += bands[XVTR_Band].Xvtr_offset;
+      //uint64_t ff = 903174000;
+      uint8_t len = formatFreq(frequency, vfo_dec);  // Convert to BCD string
+      //uint8_t len = formatFreq(ff, vfo_dec);  // Convert to BCD string
+      uint8_t send_freq[15] = {};
+      send_freq[0] = 0xFE;
+      send_freq[1] = 0xFE;
+      send_freq[2] = 0xE0;
+      send_freq[3] = radio_address;
+      send_freq[4] = 0x25;
+      send_freq[5] = 0x00;
+      send_freq[6] = vfo_dec[0];
+      send_freq[7] = vfo_dec[1];
+      send_freq[8] = vfo_dec[2];
+      send_freq[9] = vfo_dec[3];
+      send_freq[10] = vfo_dec[4];
+
+      // copy in frequency with xvtr offset appied, if any      
+      //memcpy(&send_freq[5], vfo_dec, len);
+
+      uint8_t f_len;
+      // Adjust for freq value length of 5bytes, or 6bytes for IC905
+      if (radio_address == IC905) {
+        send_freq[11] = vfo_dec[5];
+        send_freq[12] = 0xFD;
+        send_freq[13] = 0x00;
+        f_len = 13;
+      }
+      else {
+        send_freq[11] = 0xFD;
+        send_freq[12] = 0x00;
+        f_len = 12;
+      }      
+      Serial.write(send_freq, f_len);
+    }
+    else
+      Serial.write(read_buffer, counter);
+
     Serial.flush();
   }
   #endif
-
+ 
   return counter;
 }
-
 
 // ----------------------------------------
 //       Get address of transceiver
@@ -1531,7 +1576,7 @@ void band_Selector(uint8_t _band_input_pattern) {
   }
 }
 
-// Length is 5 or 6 depending if < 10GHz band  folowded by 5 or 6 BCD encoded frequency bytes
+// Length is 5 or 6 depending if < 10GHz band  followed by 5 or 6 BCD encoded frequency bytes
 // vfo_dec[] holds the frequency result to send out
 // returns length;
 uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]) {
@@ -1554,7 +1599,7 @@ uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]) {
       vfo_dec[i] = bcdByteEncode(static_cast<uint8_t>(x));
       vfo = vfo / 100;
     }
-    //Serial.printf(" VFO: > 10G Bands = Reversed hex to DEC byte %02X %02X %02X %02X %02X %02X %02X\n", vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5], vfo_dec[6]);
+    //Serial.printf(" VFO: > 10G Bands = Reversed hex to DEC byte %02X %02X %02Xpass_PC_to_radio %02X %02X %02X %02X\n", vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5], vfo_dec[6]);
   }
   return len;  // 5 or 6
 }
@@ -1572,45 +1617,84 @@ void SetFreq(uint64_t Freq) {
 
   uint8_t len = formatFreq(Freq, vfo_dec);  // Convert to BCD string
   //Serial.printf("SetFreq: Radio Freq = %llu  To radio (5 or 6 bytes) in BCD: %02X %02X %02X %02X %02X (%02X)\n", Freq, vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
-  #ifndef PC_PASSTHROUGH
+  //#ifndef PC_PASSTHROUGH
     sendCatRequest(CIV_C_F1_SEND, vfo_dec, len);
-  #endif
+  //#endif
 }
 
-//  Radio to PC relay done in readline()
-void pass_PC_to_radio(void)
-{
-  size_t count;
+// ----------------------------------------
+//    Read incoming line from bluetooth
+// ----------------------------------------
+uint8_t pass_PC_to_radio(void) {
+  uint8_t counter = 0;
 
-  #if defined(PC_PASSTHROUGH)
-    uint8_t buf[64];
-    // PC Serial -> Radio Serial
-    if (Serial.available()) {
-      count = Serial.read(buf, sizeof(buf));
-
-      //   update our display with monitored frequency message value
-      if (buf[0] == 0xFE && buf[1] == 0xFE && ( (buf[4] == 0x00 || buf[4] == 0x05 || buf[4] == 0x03) || (buf[4] == 0x25 && buf[5] == 0x00) )) {
-          if (RADIO_ADDR == IC905)
-            read_Frequency(5,13);  // adds XVTR offset if enabled.
-          else
-            read_Frequency(5,11);  // adds XVTR offset if enabled.
-          SetFreq(frequency);
-          processCatMessages();
+  #ifdef PC_PASSTHROUGH
+    uint8_t byte;
+    uint8_t data_len;
+    uint32_t ed = readtimeout;  // not initialized!
+    static uint8_t r_buffer[64];  //Read buffer
+    
+    while (1) {
+      while (!Serial.available()) {
+        if (--ed == 0) return 0;  // leave the loop if BT connection is lost
       }
+      ed = readtimeout;
+      byte = Serial.read();
+      if (byte == 0xFF) continue;  //TODO skip to start byte instead
 
+      r_buffer[counter++] = byte;
+      if (STOP_BYTE == byte) break;
+
+      if (counter >= sizeof(r_buffer)) return 0;
+    }
+
+    //if (0) {
+    //if (STOP_BYTE == byte) {    
+      uint64_t f;
+      uint64_t mul;
+      uint8_t k;
+      
+      //if (0)
+      if ( counter && (r_buffer[0] == 0xFE && r_buffer[1] == 0xFE) && (r_buffer[4] == 0x09 || r_buffer[4] == 0x00 || r_buffer[4] == 0x05 || (r_buffer[4] == 0x25 && r_buffer[5] == 0x00)) )  
+      {
+        mul = 1;
+        f = 0;
+        k = 0;
+        
+        if (r_buffer[4] == 0x25 && r_buffer[5] == 0x00)
+          k=1; // data is 1 byte further down the msg - byte 5 is VFO , 0 is A, 1 is B
+        
+        data_len = counter - 6+k;   // subtract total msg length bytes for constant bytes fe fe e0 ac cmd xxxxxx fd  
+        
+        for (uint8_t i = 5+k; i < 5+k + data_len; i++) {
+          if (r_buffer[i] == 0xFD) continue;  //spike
+          f += (r_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
+          f += (r_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
+        }
+                     
+        read_Frequency(f, data_len);  // pick off frequency, translate for Xvtr if needed.
+        //SetFreq(frequency);   //Send on to the radio the translated frequency.  The reply for theradio also needs to be translated to PC to work right.
+        //processCatMessages();
+      }
+    //}
+    //else 
+    //if (1)
+    //{
       #if defined ( BTCLASSIC )
         if (btConnected && SerialBT.connected()) {
-          SerialBT.write(buf, count);
-          //SerialBT.flush();
+          SerialBT.write(r_buffer, counter);    
+          SerialBT.flush();
         }
       #elif defined ( BLE )
         if (BLE_connected) {
-          SendMessage(buf, count);
+          SendMessage(r_buffer, counter);
         }
       #endif
-      processCatMessages();
-    }
+      //Serial.flush();
+    //}
   #endif
+ 
+  return counter;
 }
 
 void refesh_display(void) {
@@ -1782,7 +1866,8 @@ void app_loop(void) {
           case 1: band_Selector(1); break;
           case 2: band_Selector(2); break;
           case 3: band_Selector(4); break;
-          case 4: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
+          case 4: band_Selector(8); break;
+          case 5: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
           default: xvtr_band_select = 0; break;
         }
       }
@@ -1794,9 +1879,7 @@ void app_loop(void) {
   refesh_display();
 
   Get_Radio_address();  // can autodiscover CI-V address if not predefined.
-
-  pass_PC_to_radio();
-  
+ 
   #ifndef PC_PASSTHROUGH
      poll_radio();  // do not send stuff to radio when a PC app is doing the same
   #endif

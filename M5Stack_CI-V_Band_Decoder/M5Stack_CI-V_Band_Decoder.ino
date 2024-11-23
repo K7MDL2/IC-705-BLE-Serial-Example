@@ -445,6 +445,8 @@ void loop() {
     forward_serial();
   #endif
   
+  pass_PC_to_radio();
+  
   //Serial.print(".");   causes crashes on PC due to too high data rate
   
   #ifdef BLE
