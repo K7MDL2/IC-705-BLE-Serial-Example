@@ -94,7 +94,7 @@
 #ifndef _M5_BT_USB_
 #define _M5_BT_USB_
 
-//#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
+#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
