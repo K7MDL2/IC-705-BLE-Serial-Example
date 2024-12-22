@@ -8,26 +8,35 @@
 #include "DebugPrint.h"
 #include "M5Stack_CI-V_Band_Decoder.h"
 
+#ifdef M5STAMPC3U
+  #include <Adafruit_MCP23X08.h>
+  #include <Adafruit_MCP23X17.h>
+  Adafruit_MCP23X17 mcp0;  // 1 of 2 modules, addr = 0x20  (A0, A1, A2 jumpers shorted)
+  Adafruit_MCP23X17 mcp1;  // 2 of 2 modules, addr = 0x21 (A0 open, A1 and A2 jumpers shorted)
+  // uses i2c on I/O pins 0 and 1 (Port A on C3U) set up at init time.
+  extern Adafruit_NeoPixel pixel;
+#endif // M5STAMPC3U
+
 #ifdef IO_MODULE
-#include "MODULE_4IN8OUT.h"
-MODULE_4IN8OUT module;
-#endif
+  #include "MODULE_4IN8OUT.h"
+  MODULE_4IN8OUT module;
+#endif // IO_MODULE
 
 #ifdef MODULE_4RELAY_13_2
-#include "Module_4RELAY.h"
-MODULE_4RELAY RELAY;
-#endif
+  #include "Module_4RELAY.h"
+  MODULE_4RELAY RELAY;
+#endif // MODULE_4RELAY_13_2
 
 #ifdef EXT_IO2_UNIT
-#include "M5_EXTIO2.h"
-M5_EXTIO2 extio; //EXT.IO2 8 port GPIO extender unit
-extio_io_mode_t mode = DIGITAL_INPUT_MODE;
-#endif
+  #include "M5_EXTIO2.h"
+  M5_EXTIO2 extio; //EXT.IO2 8 port GPIO extender unit
+  extio_io_mode_t mode = DIGITAL_INPUT_MODE;
+#endif // EXT_IO2_UNIT
 
 #ifdef RELAY4_UNIT
-#include "Unit_4RELAY.h"
-UNIT_4RELAY relay;
-#endif
+  #include "Unit_4RELAY.h"
+  UNIT_4RELAY relay;
+#endif // RELAY4_UNIT
 
 #ifdef RELAY2_UNIT
   #if defined ( CORE3 )   // Use Port A OK
@@ -63,8 +72,8 @@ UNIT_4RELAY relay;
   #endif // CPU type
 #endif // relay2
 
-// Very basic - outputs a set pattern for each band.  Follows the Elecraft K3 patther for combined HF and VHF used for transverters and antenna switching
-// This may control a external band decoder that accept wired inputs.  Other decoder outpout can be serial or ethernet
+// Very basic - outputs a set pattern for each band.  Follows the Elecraft K3 pattern for combined HF and VHF used for transverters and antenna switching
+// This may control an external band decoder that accepts wired inputs.  Other decoder outputs can be serial or ethernet
 void Band_Decode_Output(uint8_t band)
 {
     // Convert frequency band to a parallel wire GPIO output pattern.
@@ -73,11 +82,12 @@ void Band_Decode_Output(uint8_t band)
     // Set your desired patterns in RadioConfig.h
     // ToDo: Eventually create a local UI screen to edit and monitor pin states
 
-    DPRINTF("Band_Decode_Output: Band: "); DPRINTLN(band);
+    DPRINTF("Band_Decode_Output: Band "); DPRINTLN(band);
 
     switch (band)
-    {
-        case  BAND_AM   : GPIO_Out(DECODE_BANDAM);   break;   //160M 
+    {   
+        case  DUMMY     : GPIO_Out(0);   break;   //Dummy Band
+        case  BAND_AM   : GPIO_Out(DECODE_BANDAM);   break;   //AM
         case  BAND_160M : GPIO_Out(DECODE_BAND160M); break;   //160M 
         case  BAND_80M  : GPIO_Out(DECODE_BAND80M);  break;   //80M
         case  BAND_60M  : GPIO_Out(DECODE_BAND60M);  break;   //60M
@@ -92,7 +102,7 @@ void Band_Decode_Output(uint8_t band)
         case  BAND_FM   : GPIO_Out(DECODE_BANDFM);   break;   //6M
         case  BAND_AIR  : GPIO_Out(DECODE_BANDAIR);  break;   //6M
         
-        //case BAND70   : GPIO_Out(0x01); break;   //6M
+        //case BAND70   : GPIO_Out(0x01); break;   //4M
         case  BAND_2M   : GPIO_Out(DECODE_BAND144);  break;   //2M
         case  BAND_1_25M: GPIO_Out(DECODE_BAND222);  break;   //222
         case  BAND_70cm : GPIO_Out(DECODE_BAND432);  break;   //432
@@ -110,7 +120,7 @@ void Band_Decode_Output(uint8_t band)
     }
 }
 
-void GPIO_Out(uint8_t pattern)
+void GPIO_Out(uint16_t pattern)
 {
     DPRINTF("GPIO_Out: pattern:  DEC "); DPRINT(pattern);
     DPRINTF("  HEX "); DPRINT(pattern, HEX);
@@ -122,7 +132,7 @@ void GPIO_Out(uint8_t pattern)
     //#endif
 
     // Enabled relay when any XVTR band active - test for now with 2 channel relay module
-    #if defined ( RELAY2_UNIT )
+    #ifdef RELAY2_UNIT
       if (pattern) {
         digitalWrite(pinR2, HIGH); 
         DPRINTLNF("Relay+++++++++XVTR_ON");  
@@ -134,51 +144,105 @@ void GPIO_Out(uint8_t pattern)
     #endif
 
     #ifdef IO_MODULE
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_0, (pattern & 0x01) ? 1 : 0);  // bit 0
-    if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_1, (pattern & 0x02) ? 1 : 0);  // bit 1
-    if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_2, (pattern & 0x04) ? 1 : 0);  // bit 2
-    if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_3, (pattern & 0x08) ? 1 : 0);  // bit 3
-    if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);  // bit 4
-    if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);  // bit 5
-    if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);  // bit 6
-    if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_0, (pattern & 0x0001) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_1, (pattern & 0x0002) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_2, (pattern & 0x0004) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_3, (pattern & 0x0008) ? 1 : 0);  // bit 3
+      if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_4, (pattern & 0x0010) ? 1 : 0);  // bit 4
+      if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_5, (pattern & 0x0020) ? 1 : 0);  // bit 5
+      if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_6, (pattern & 0x0040) ? 1 : 0);  // bit 6
+      if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_7, (pattern & 0x0080) ? 1 : 0);  // bit 7
     #endif
 
     #ifdef MODULE_4RELAY_13_2
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_0, (pattern & 0x01) ? 1 : 0);  // bit 0
-    if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_1, (pattern & 0x02) ? 1 : 0);  // bit 1
-    if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_2, (pattern & 0x04) ? 1 : 0);  // bit 2
-    if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_3, (pattern & 0x08) ? 1 : 0);  // bit 3
-    if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);  // bit 4
-    if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);  // bit 5
-    if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);  // bit 6
-    if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_0, (pattern & 0x0001) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_1, (pattern & 0x0002) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_2, (pattern & 0x0004) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_3, (pattern & 0x0008) ? 1 : 0);  // bit 3
+      if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_4, (pattern & 0x0010) ? 1 : 0);  // bit 4
+      if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_5, (pattern & 0x0020) ? 1 : 0);  // bit 5
+      if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_6, (pattern & 0x0040) ? 1 : 0);  // bit 6
+      if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) RELAY.setRelay(BAND_DECODE_OUTPUT_7, (pattern & 0x0080) ? 1 : 0);  // bit 7
     #endif
     
     #ifdef EXT_IO2_UNIT
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    //if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01) ? 1 : 0);}  // bit 0
-    //if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02) ? 1 : 0);}  // bit 1
-    //if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04) ? 1 : 0);}  // bit 2
-    //if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08) ? 1 : 0);}  // bit 3
-    if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);}  // bit 4
-    if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);}  // bit 5
-    if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);}  // bit 6
-    if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);}  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      //if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x0001) ? 1 : 0);}  // bit 0
+      //if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x0002) ? 1 : 0);}  // bit 1
+      //if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x0004) ? 1 : 0);}  // bit 2
+      //if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x0008) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_4, (pattern & 0x0010) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_5, (pattern & 0x0020) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_6, (pattern & 0x0040) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_OUTPUT_7, (pattern & 0x0080) ? 1 : 0);}  // bit 7
     #endif
 
     #ifdef RELAY4_UNIT
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_0, (pattern & 0x01) ? 1 : 0);  // bit 0
-    if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_1, (pattern & 0x02) ? 1 : 0);  // bit 1
-    if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_2, (pattern & 0x04) ? 1 : 0);  // bit 2
-    if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_3, (pattern & 0x08) ? 1 : 0);  // bit 3
-    //if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);  // bit 4
-    //if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);  // bit 5
-    //if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);  // bit 6
-    //if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_0, (pattern & 0x0001) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_1, (pattern & 0x0002) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_2, (pattern & 0x0004) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_3, (pattern & 0x0008) ? 1 : 0);  // bit 3
+      //if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_4, (pattern & 0x0010) ? 1 : 0);  // bit 4
+      //if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_5, (pattern & 0x0020) ? 1 : 0);  // bit 5
+      //if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_6, (pattern & 0x0040) ? 1 : 0);  // bit 6
+      //if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_7, (pattern & 0x0080) ? 1 : 0);  // bit 7
+    #endif
+
+    #ifdef M5STAMPC3U
+      //
+      // mask each bit and apply the 1 or 0 to the assigned pin
+
+      // 24 outputs available - 8 are inputs, 8 are PTT outputs, 16 are control lines
+      
+      // PA0-7 on 1st module are buffered inputs
+      //   pin 0-2  - 3 Band select data inputs
+      //   pin 3    - 1 PTT input
+      //   pin 4-7  - 4 spare inputs
+      //   pin 8    - 1 GND
+
+      // PB0-7 on 1st module are unbuffered TTL outputs
+      //   pin 0-2 - 3 IF solid state SP6T switch 0=A 1=B 2=C
+      //   pin 3   - 222 Xvtr PTT
+      //   pin 4   - 903 Xvtr PTT
+      //   pin 5   - 1296 Xvtr PTT
+      //   pin 6   - 903 RF Out T/R switch
+      //   pin 7   - 903 RF Out T/R switch
+      
+      // PA0-7 on 2nd module are buffered outputs for band specific PTT out[puts for amps.  These should be sequenced
+      //   pin 0-5 - 6 HF/50 thru 1296
+      //   pin 6   - 1 spare - future TxInhibit
+      //   pin 7   - PTT out to TC board IF relay.  Switvch this fast on incoming PTT change from Radio
+      
+      // PB0-7 on 2nd module are unbuffered TTL outputs.
+      //   pin 0   - Port 1 (Xvtr mode) on SP4T coax switch These select IC-705 RF direct to antennas for HF/50, 144, 432 bands and the Xvtr box input
+      //   pin 1   - Port 2 (Xvtr mode) on SP4T coax switch
+      //   pin 2   - Port 3 (Xvtr mode) on SP4T coax switch
+      //   pin 3   - Port 4 (Xvtr mode) on SP4T coax switch
+      //   pin 4   - 12V Relay 1 - 1296 Xvtr Power
+      //   pin 5   - 12V Relay 2 - 903 Xvtr Power
+      //   pin 6   - 12V Relay 3 - 903 Amp Power
+      //   pin 7   - 12V Relay 4 - 222 Xvtr Power
+
+      if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3
+      if (BAND_DECODE_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_4,  (pattern & 0x0010) ? 1 : 0);  // bit 4
+      if (BAND_DECODE_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_5,  (pattern & 0x0020) ? 1 : 0);  // bit 5
+      if (BAND_DECODE_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_6,  (pattern & 0x0040) ? 1 : 0);  // bit 6
+      if (BAND_DECODE_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_7,  (pattern & 0x0080) ? 1 : 0);  // bit 7
+
+      if (BAND_DECODE_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_8,  (pattern & 0x0100) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_9,  (pattern & 0x0200) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_10, (pattern & 0x0400) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_11, (pattern & 0x0800) ? 1 : 0);  // bit 3
+      if (BAND_DECODE_OUTPUT_12 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_12, (pattern & 0x1000) ? 1 : 0);  // bit 4
+      if (BAND_DECODE_OUTPUT_13 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_13, (pattern & 0x2000) ? 1 : 0);  // bit 5
+      if (BAND_DECODE_OUTPUT_14 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_14, (pattern & 0x4000) ? 1 : 0);  // bit 6
+      if (BAND_DECODE_OUTPUT_15 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_15, (pattern & 0x8000) ? 1 : 0);  // bit 7
     #endif
 }
 
@@ -187,12 +251,13 @@ void PTT_Output(uint8_t band, bool PTT_state)
     // Set your desired PTT pattern per band in RadioConfig.h
     // ToDo: Eventually create a local UI screen to edit and monitor pin states
 
-    DPRINTF("Band_Decode_Output: Band: "); DPRINTLN(band);
+    DPRINTF("PTT_Output: Band "); DPRINTLN(band);
 
     switch (band)
     {
-        case  BAND_AM   : GPIO_PTT_Out(DECODE_BANDAM_PTT,   PTT_state); break;  //160M 
-        case  BAND_160M : GPIO_PTT_Out(DECODE_BAND160M_PTT, PTT_state); break;  //160M 
+        case  DUMMY     : GPIO_PTT_Out(DECODE_DUMMY_PTT,    false);         break;   //Dummy Band
+        case  BAND_AM   : GPIO_PTT_Out(DECODE_BANDAM_PTT,   PTT_state); break;   //AM
+        case  BAND_160M : GPIO_PTT_Out(DECODE_BAND160M_PTT, PTT_state); break;   //160M 
         case  BAND_80M  : GPIO_PTT_Out(DECODE_BAND80M_PTT,  PTT_state); break;   //80M
         case  BAND_60M  : GPIO_PTT_Out(DECODE_BAND60M_PTT,  PTT_state); break;   //60M
         case  BAND_40M  : GPIO_PTT_Out(DECODE_BAND40M_PTT,  PTT_state); break;   //40M
@@ -202,44 +267,68 @@ void PTT_Output(uint8_t band, bool PTT_state)
         case  BAND_15M  : GPIO_PTT_Out(DECODE_BAND15M_PTT,  PTT_state); break;   //15M
         case  BAND_12M  : GPIO_PTT_Out(DECODE_BAND12M_PTT,  PTT_state); break;   //12M
         case  BAND_10M  : GPIO_PTT_Out(DECODE_BAND10M_PTT,  PTT_state); break;   //10M
-        case  BAND_6M   : GPIO_PTT_Out(DECODE_BAND6M_PTT,   PTT_state); break;    //6M
-        case  BAND_FM   : GPIO_PTT_Out(DECODE_BANDFM_PTT,   PTT_state); break;    //6M
-        case  BAND_AIR  : GPIO_PTT_Out(DECODE_BANDAIR_PTT,  PTT_state); break;    //6M
+        case  BAND_6M   : GPIO_PTT_Out(DECODE_BAND6M_PTT,   PTT_state); break;   //6M
+        case  BAND_FM   : GPIO_PTT_Out(DECODE_BANDFM_PTT,   PTT_state); break;   //6M
+        case  BAND_AIR  : GPIO_PTT_Out(DECODE_BANDAIR_PTT,  PTT_state); break;   //6M
         //case BAND70   : GPIO_PTT_Out(0x01_PTT, PTT_state); break;   //6M
         case  BAND_2M   : GPIO_PTT_Out(DECODE_BAND144_PTT,  PTT_state); break;   //2M
         case  BAND_1_25M: GPIO_PTT_Out(DECODE_BAND222_PTT,  PTT_state); break;   //222
         case  BAND_70cm : GPIO_PTT_Out(DECODE_BAND432_PTT,  PTT_state); break;   //432
         case  BAND_33cm : GPIO_PTT_Out(DECODE_BAND902_PTT,  PTT_state); break;   //902
-        case  BAND_23cm : GPIO_PTT_Out(DECODE_BAND1296_PTT, PTT_state); break;  //1296
-        case  BAND_13cm : GPIO_PTT_Out(DECODE_BAND2400_PTT, PTT_state); break;  //2400
-        case  BAND_9cm  : GPIO_PTT_Out(DECODE_BAND3300_PTT, PTT_state); break;  //3400
-        case  BAND_6cm  : GPIO_PTT_Out(DECODE_BAND5760_PTT, PTT_state); break;  //5760M
+        case  BAND_23cm : GPIO_PTT_Out(DECODE_BAND1296_PTT, PTT_state); break;   //1296
+        case  BAND_13cm : GPIO_PTT_Out(DECODE_BAND2400_PTT, PTT_state); break;   //2400
+        case  BAND_9cm  : GPIO_PTT_Out(DECODE_BAND3300_PTT, PTT_state); break;   //3400
+        case  BAND_6cm  : GPIO_PTT_Out(DECODE_BAND5760_PTT, PTT_state); break;   //5760M
         case  BAND_3cm  : GPIO_PTT_Out(DECODE_BAND10G_PTT,  PTT_state); break;   //10.368.1G
         case  BAND_24G  : GPIO_PTT_Out(DECODE_BAND24G_PTT,  PTT_state); break;   //24.192G
         case  BAND_47G  : GPIO_PTT_Out(DECODE_BAND47G_PTT,  PTT_state); break;   //47.1G
         case  BAND_76G  : GPIO_PTT_Out(DECODE_BAND76G_PTT,  PTT_state); break;   //76.1G
-        case  BAND_122G : GPIO_PTT_Out(DECODE_BAND122G_PTT, PTT_state); break;  //122G
-        case  B_GENERAL : GPIO_PTT_Out(DECODE_B_GENERAL_PTT,PTT_state); break;  //Any other band not in the list
+        case  BAND_122G : GPIO_PTT_Out(DECODE_BAND122G_PTT, PTT_state); break;   //122G
+        case  B_GENERAL : GPIO_PTT_Out(DECODE_B_GENERAL_PTT,PTT_state); break;   //Any other band not in the list
         }
+        #ifdef M5STAMPC3U
+          if (!PTT_state) {
+            GPIO_PTT_Out(DECODE_DUMMY_PTT, true);
+            DPRINTLNF("turning LED blue for RX");
+            pixel.setPixelColor(0, pixel.Color(0, 0, 128));
+            pixel.show(); 
+          }
+          else
+          {
+            DPRINTLNF("turning LED red for TX");
+            pixel.setPixelColor(0, pixel.Color(128, 0, 0));
+            pixel.show(); 
+          }
+        #endif
 }
 
-void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
+void GPIO_PTT_Out(uint16_t pattern, bool _PTT_state)
 {   
-    uint8_t PTT_state = _PTT_state ? 0xFF : 0;
+    uint16_t PTT_state = _PTT_state ? 0xFFFF : 0;
 
-    DPRINTF("  PTT state "); DPRINT(_PTT_state, BIN);
-    DPRINTF("  PTT Output Binary "); DPRINTLN(pattern, BIN);
+    #ifdef M5STAMPC3U
+      if (pattern == DECODE_DUMMY_PTT && _PTT_state == true)
+        DPRINTF("  PTT state is RX");
+      else
+        DPRINTF("  PTT state "); DPRINT(_PTT_state, BIN);
+    #else  
+      DPRINTF("  PTT state "); DPRINT(_PTT_state, BIN);
+    #endif
 
+    DPRINTF("  PTT Output Binary "); DPRINT(pattern, BIN);
+    DPRINTF("  PTT Output Hex "); DPRINTLN(pattern, HEX);
+    
     //#ifndef IO_MODULE
     //  DPRINTLNF("  GPIO_PTT_Out: IO_MODULE **NOT** Enabled");
       //return;
     //#endif
 
-    // Operate a relay anytime PT is high. Probably not useful if have more than 1 PTT but is here for a test
-    // This is a M5Stack 1 rleay Unit.  The 1 and 2 relay units oeprate on a grove port (B or C) with simple digital IO.  
+    // Operate a relay anytime PTT is high. Probably not useful if have more than 1 PTT but is here for a test
+    // This is a M5Stack 1 relay Unit.  The 1 and 2 relay units operate on a grove port (B or C) with simple digital IO.  
     // On a Core, Port A is the same pins as the rest of the internal i2c, operating a relay on them would screw up I2C likely.
     // The 4 relay unit is i2c addressed and normally plugs into Port A on the Corexx itself. 
     // I2C on Port B is a separate IC2 port for the Core2 and Core3
+    // M5STAMPC3U config - ignore the above, it is all different :-)
 
     #if defined ( RELAY2_UNIT )
       if (PTT_state && pattern) {
@@ -257,57 +346,111 @@ void GPIO_PTT_Out(uint8_t pattern, bool _PTT_state)
     //Serial.println((pattern & 0x10 & PTT_state) ? 0 : 1);
     
     #ifdef IO_MODULE
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
-    if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02 & PTT_state) ? 1 : 0);}  // bit 1
-    if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04 & PTT_state) ? 1 : 0);}  // bit 2
-    if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08 & PTT_state) ? 1 : 0);}  // bit 3
-    if (BAND_DECODE_PTT_OUTPUT_4 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_4, (pattern & 0x10 & PTT_state) ? 1 : 0);}  // bit 4
-    if (BAND_DECODE_PTT_OUTPUT_5 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_5, (pattern & 0x20 & PTT_state) ? 1 : 0);}  // bit 5
-    if (BAND_DECODE_PTT_OUTPUT_6 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
-    if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_PTT_OUTPUT_0  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_0,  (pattern & 0x0001 & PTT_state) ? 1 : 0);}  // bit 0
+      if (BAND_DECODE_PTT_OUTPUT_1  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_1,  (pattern & 0x0002 & PTT_state) ? 1 : 0);}  // bit 1
+      if (BAND_DECODE_PTT_OUTPUT_2  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_2,  (pattern & 0x0004 & PTT_state) ? 1 : 0);}  // bit 2
+      if (BAND_DECODE_PTT_OUTPUT_3  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_3,  (pattern & 0x0008 & PTT_state) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_PTT_OUTPUT_4  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_4,  (pattern & 0x0010 & PTT_state) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_PTT_OUTPUT_5  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_5,  (pattern & 0x0020 & PTT_state) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_PTT_OUTPUT_6  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_6,  (pattern & 0x0040 & PTT_state) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_PTT_OUTPUT_7  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_7,  (pattern & 0x0080 & PTT_state) ? 1 : 0);}  // bit 7
+      if (BAND_DECODE_PTT_OUTPUT_8  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_8,  (pattern & 0x0100 & PTT_state) ? 1 : 0);}  // bit 0 Bank or module 2
+      if (BAND_DECODE_PTT_OUTPUT_9  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_9,  (pattern & 0x0200 & PTT_state) ? 1 : 0);}  // bit 1
+      if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400 & PTT_state) ? 1 : 0);}  // bit 2
+      if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800 & PTT_state) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_PTT_OUTPUT_12 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_12, (pattern & 0x1000 & PTT_state) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_PTT_OUTPUT_13 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_13, (pattern & 0x2000 & PTT_state) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_PTT_OUTPUT_14 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_14, (pattern & 0x4000 & PTT_state) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_PTT_OUTPUT_15 != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_15, (pattern & 0x8000 & PTT_state) ? 1 : 0);}  // bit 7
     #endif
     
     #ifdef MODULE_4RELAY_13_2
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
-    if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02 & PTT_state) ? 1 : 0);}  // bit 1
-    if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04 & PTT_state) ? 1 : 0);}  // bit 2
-    if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08 & PTT_state) ? 1 : 0);}  // bit 3
-    if (BAND_DECODE_PTT_OUTPUT_4 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_4, (pattern & 0x10 & PTT_state) ? 1 : 0);}  // bit 4
-    if (BAND_DECODE_PTT_OUTPUT_5 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_5, (pattern & 0x20 & PTT_state) ? 1 : 0);}  // bit 5
-    if (BAND_DECODE_PTT_OUTPUT_6 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
-    if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_PTT_OUTPUT_0  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_0,  (pattern & 0x0001 & PTT_state) ? 1 : 0);}  // bit 0
+      if (BAND_DECODE_PTT_OUTPUT_1  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_1,  (pattern & 0x0002 & PTT_state) ? 1 : 0);}  // bit 1
+      if (BAND_DECODE_PTT_OUTPUT_2  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_2,  (pattern & 0x0004 & PTT_state) ? 1 : 0);}  // bit 2
+      if (BAND_DECODE_PTT_OUTPUT_3  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_3,  (pattern & 0x0008 & PTT_state) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_PTT_OUTPUT_4  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_4,  (pattern & 0x0010 & PTT_state) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_PTT_OUTPUT_5  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_5,  (pattern & 0x0020 & PTT_state) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_PTT_OUTPUT_6  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_6,  (pattern & 0x0040 & PTT_state) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_PTT_OUTPUT_7  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_7,  (pattern & 0x0080 & PTT_state) ? 1 : 0);}  // bit 7
+      if (BAND_DECODE_PTT_OUTPUT_8  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_8,  (pattern & 0x0100 & PTT_state) ? 1 : 0);}  // bit 0  M odule 2
+      if (BAND_DECODE_PTT_OUTPUT_9  != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_9,  (pattern & 0x0200 & PTT_state) ? 1 : 0);}  // bit 1
+      if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400 & PTT_state) ? 1 : 0);}  // bit 2
+      if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800 & PTT_state) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_PTT_OUTPUT_12 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_12, (pattern & 0x1000 & PTT_state) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_PTT_OUTPUT_13 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_13, (pattern & 0x2000 & PTT_state) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_PTT_OUTPUT_14 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_14, (pattern & 0x4000 & PTT_state) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_PTT_OUTPUT_15 != GPIO_PIN_NOT_USED) {RELAY.setRelay(BAND_DECODE_PTT_OUTPUT_15, (pattern & 0x8000 & PTT_state) ? 1 : 0);}  // bit 7
     #endif
 
     #ifdef EXT_IO2_UNIT
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    //if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01 & PTT_state) ? 1 : 0);}  // bit 0
-    //if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02 & PTT_state) ? 1 : 0);}  // bit 1
-    //if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04 & PTT_state) ? 1 : 0);}  // bit 2
-    //if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08 & PTT_state) ? 1 : 0);}  // bit 3
-    if (BAND_DECODE_PTT_OUTPUT_4 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_4, (pattern & 0x10 & PTT_state) ? 1 : 0);}  // bit 4
-    if (BAND_DECODE_PTT_OUTPUT_5 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_5, (pattern & 0x20 & PTT_state) ? 1 : 0);}  // bit 5
-    if (BAND_DECODE_PTT_OUTPUT_6 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_6, (pattern & 0x40 & PTT_state) ? 1 : 0);}  // bit 6
-    if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_7, (pattern & 0x80 & PTT_state) ? 1 : 0);}  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      //if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x0001 & PTT_state) ? 1 : 0);}  // bit 0
+      //if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x0002 & PTT_state) ? 1 : 0);}  // bit 1
+      //if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x0004 & PTT_state) ? 1 : 0);}  // bit 2
+      //if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x0008 & PTT_state) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_PTT_OUTPUT_4 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_4, (pattern & 0x0010 & PTT_state) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_PTT_OUTPUT_5 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_5, (pattern & 0x0020 & PTT_state) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_PTT_OUTPUT_6 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_6, (pattern & 0x0040 & PTT_state) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_7, (pattern & 0x0080 & PTT_state) ? 1 : 0);}  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      //if (BAND_DECODE_PTT_OUTPUT_8 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_8, (pattern & 0x0100 & PTT_state) ? 1 : 0);}  // bit 0
+      //if (BAND_DECODE_PTT_OUTPUT_9 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_9, (pattern & 0x0200 & PTT_state) ? 1 : 0);}  // bit 1
+      //if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400 & PTT_state) ? 1 : 0);}  // bit 2
+      //if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) {extio.setPinMode(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800 & PTT_state) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_PTT_OUTPUT_12 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_12, (pattern & 0x1000 & PTT_state) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_PTT_OUTPUT_13 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_13, (pattern & 0x2000 & PTT_state) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_PTT_OUTPUT_14 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_14, (pattern & 0x4000 & PTT_state) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_PTT_OUTPUT_15 != GPIO_PIN_NOT_USED) {extio.setDigitalOutput(BAND_DECODE_PTT_OUTPUT_15, (pattern & 0x8000 & PTT_state) ? 1 : 0);}  // bit 7
     #endif
 
     #ifdef RELAY4_UNIT
-    // mask each bit and apply the 1 or 0 to the assigned pin
-    if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x01 & PTT_state) ? 1 : 0);  // bit 0
-    if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x02 & PTT_state) ? 1 : 0);  // bit 1
-    if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x04 & PTT_state) ? 1 : 0);  // bit 2
-    if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x08 & PTT_state) ? 1 : 0);  // bit 3
-    //if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_4, (pattern & 0x10) ? 1 : 0);  // bit 4
-    //if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_5, (pattern & 0x20) ? 1 : 0);  // bit 5
-    //if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_6, (pattern & 0x40) ? 1 : 0);  // bit 6
-    //if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_7, (pattern & 0x80) ? 1 : 0);  // bit 7
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_0, (pattern & 0x0001 & PTT_state) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_1, (pattern & 0x0002 & PTT_state) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_2, (pattern & 0x0004 & PTT_state) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_3, (pattern & 0x0008 & PTT_state) ? 1 : 0);  // bit 3
+      //if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_4, (pattern & 0x0010) ? 1 : 0);  // bit 4
+      //if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_5, (pattern & 0x0020) ? 1 : 0);  // bit 5
+      //if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_6, (pattern & 0x0040) ? 1 : 0);  // bit 6
+      //if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_7, (pattern & 0x0080) ? 1 : 0);  // bit 7
+            // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_PTT_OUTPUT_8 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_8, (pattern & 0x0100 & PTT_state) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_PTT_OUTPUT_9 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_9, (pattern & 0x0200 & PTT_state) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400 & PTT_state) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800 & PTT_state) ? 1 : 0);  // bit 3
+      //if (BAND_DECODE_OUTPUT_12 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_12, (pattern & 0x1000) ? 1 : 0);  // bit 4
+      //if (BAND_DECODE_OUTPUT_13 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_13, (pattern & 0x2000) ? 1 : 0);  // bit 5
+      //if (BAND_DECODE_OUTPUT_14 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_14, (pattern & 0x4000) ? 1 : 0);  // bit 6
+      //if (BAND_DECODE_OUTPUT_15 != GPIO_PIN_NOT_USED) relay.relayWrite(BAND_DECODE_OUTPUT_15, (pattern & 0x8000) ? 1 : 0);  // bit 7
     #endif
-}
 
-/*  Not used for the 4-In/8-Out module, all are fixed direction
-void Decoder_GPIO_Pin_Setup(void)
-{
+    #ifdef M5STAMPC3U
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_PTT_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_0,  (pattern & 0x0001 & PTT_state) ? 1 : 0);  // bit 0 HF/50
+      if (BAND_DECODE_PTT_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_1,  (pattern & 0x0002 & PTT_state) ? 1 : 0);  // bit 1 144
+      if (BAND_DECODE_PTT_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_2,  (pattern & 0x0004 & PTT_state) ? 1 : 0);  // bit 2 222
+      if (BAND_DECODE_PTT_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_3,  (pattern & 0x0008 & PTT_state) ? 1 : 0);  // bit 3 432
+      if (BAND_DECODE_PTT_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_4,  (pattern & 0x0010 & PTT_state) ? 1 : 0);  // bit 4 902/903
+      if (BAND_DECODE_PTT_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_5,  (pattern & 0x0020 & PTT_state) ? 1 : 0);  // bit 5 1296
+      if (BAND_DECODE_PTT_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_6,  (pattern & 0x0040 & PTT_state) ? 1 : 0);  // bit 6 not used
+      if (BAND_DECODE_PTT_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_7,  (pattern & 0x0080 & PTT_state) ? 1 : 0);  // bit 7 TxInhibit or not used
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_PTT_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_8,  (pattern & 0x0100 & PTT_state) ? 1 : 0);  // bit 0 HF/50
+      if (BAND_DECODE_PTT_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_9,  (pattern & 0x0200 & PTT_state) ? 1 : 0);  // bit 1 144
+      if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400 & PTT_state) ? 1 : 0);  // bit 2 222
+      if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800 & PTT_state) ? 1 : 0);  // bit 3 432
+      if (BAND_DECODE_PTT_OUTPUT_12 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_12, (pattern & 0x1000 & PTT_state) ? 1 : 0);  // bit 4 902/903
+      if (BAND_DECODE_PTT_OUTPUT_13 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_13, (pattern & 0x2000 & PTT_state) ? 1 : 0);  // bit 5 1296
+      if (BAND_DECODE_PTT_OUTPUT_14 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_14, (pattern & 0x4000 & PTT_state) ? 1 : 0);  // bit 6 not used
+      if (BAND_DECODE_PTT_OUTPUT_15 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_15, (pattern & 0x8000 & PTT_state) ? 1 : 0);  // bit 7 TxInhibit or not used
+    #endif
+
+    /*  Not used for the 4-In/8-Out module, all are fixed direction
+    void Decoder_GPIO_Pin_Setup(void)
+    {
     // using 8 bits since the ouput pattern is 1 byte.  Can use thenm any way you want. 
     // The pins used here are defined in RadioConfig.  The one GPIO_SWx_PIN were designated as hardware switches in the Teensy SDR 
     // If using the Teensy SDR motherboard and you have physical switch hardware on any of these then you need to pick alernate pins.
@@ -334,8 +477,9 @@ void Decoder_GPIO_Pin_Setup(void)
     if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_7, OUTPUT);  // bit 7
      
     DPRINTLNF("Decoder_GPIO_Pin_Setup: Pin Mode Setup complete");
+    }
+    */
 }
-*/
 
 void Module_4_Relay_setup()
 {
@@ -412,7 +556,8 @@ void Unit_RELAY4_setup()
           delay(10);
           counter++;
         }
-      } else {
+      } 
+      else {
         DPRINTLNF("Decoder: CoreS3 Port A i2c pins used for i2c RELAY4_UNIT UNIT setup");
         while (!relay.begin(&Wire1, 12, 11) && counter < 4) {  // for cores3 - Wire1???? addr = 0x26
           DPRINTLNF("RELAY4_UNIT INIT ERROR, Check Module is plugged in tight in Port A");
@@ -507,5 +652,64 @@ uint8_t Module_4in_8out_Input_scan(void)
  #endif
   return pattern & 0x0F;
 }
+
+#ifdef M5STAMPC3U
+  
+  uint8_t M5STAMPC3U_Input_scan(void) 
+  {
+    uint8_t pattern = 0;
+      pattern |= mcp0.digitalRead(0);       // BCD Band 0 
+      pattern |= mcp0.digitalRead(1) << 1;  // BCD Band 1
+      pattern |= mcp0.digitalRead(2) << 2;  // BCD Band 2 
+      pattern |= mcp0.digitalRead(3) << 3;  // PTT input
+    return pattern & 0x0F;  // will leave the upper 4 GPIO pins spare for now
+  }
+
+  void MCP23017_IO_setup()
+  {
+    uint8_t counter = 0;
+    
+    DPRINTLNF("Decoder: M5 StampC3U i2c pins used for 2 MCP23017 16 port expander modules address 0x20 and 0x21");
+    
+    while (!mcp0.begin_I2C(0x20) && counter < 4) {  //for core S3
+      DPRINTLNF("M5StampC3U i2c INIT ERROR, Check Modules are installed correctly, address 0x20");
+      delay(10);
+      counter++;
+    }
+    while (!mcp1.begin_I2C(0x21) && counter < 4) {  //for core S3
+      DPRINTLNF("M5StampC3U i2c INIT ERROR, Check Modules are installed correctly, address 0x21");
+      delay(10);
+      counter++;
+    }
+
+    if (counter < 4) {
+      DPRINTLNF("MCP23017 Module INIT Success");
+
+      // set up pin directions
+      int i;
+      for (i = 0; i < 8; i++)   // PA0-7
+      {
+        mcp0.pinMode(i, INPUT_PULLUP);   // PA0-7 buffered outputs on first module
+      }
+    
+      for (i = 8; i < 16; i++)  // PB0-7
+      {
+        mcp0.pinMode(i, OUTPUT);  // PB0-7 will be outputs mostly for internal PTT
+        // Outputs unbuffered for TTL 903 and 1296 output T/R (2 pins), 2x IF switches (3 pins)
+        // 3 Xvtr PTT (3 pins) need buffer, have 9V on them.
+      }
+    
+      // Module 2, all are outputs    
+      for (i = 0; i < 16; i++)   // PA0-7 and PB0-7
+      {
+        mcp1.pinMode(i, OUTPUT);   
+      }
+      
+      GPIO_PTT_Out(DECODE_DUMMY_PTT, true);   //initialize the PTT states.  Required since the ports are not all zero in RX but mixed state
+
+      vTaskDelay(700);
+    }
+  }
+#endif  // M5STAMPC3U
 
 #endif  // DECODER FILE

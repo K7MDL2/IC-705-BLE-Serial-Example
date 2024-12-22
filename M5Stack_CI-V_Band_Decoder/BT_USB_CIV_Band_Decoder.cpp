@@ -45,36 +45,78 @@ struct Bands {
 };
 */
 
-struct Bands bands[NUM_OF_BANDS] = {
-  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
-  { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
-  { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
-  { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
-  { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
-  { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
-  { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
-  { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
-  { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
-  { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
-  { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
-  { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
-  { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
-  { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
-  { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
-  { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222
-  { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
-  { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
-  { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
-  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
-  { "9cm",  3400000000, 3410000000, 3256000000, 3400100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
-  { "6cm",  5650000000, 5925000000, 5328000000, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
-  { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
-  { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
-  { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
-  { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
-  { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
-  { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
-};
+#ifndef M5STAMPC3U
+  struct Bands bands[NUM_OF_BANDS] = {
+    { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
+    { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
+    { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
+    { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
+    { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
+    { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
+    { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
+    { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
+    { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
+    { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
+    { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
+    { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
+    { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
+    { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
+    { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
+    { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
+    { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222
+    { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
+        
+    #ifdef XVBOX // for 705 transverter box, using 21Mhz IF for 903, 50Mhz for 1296, 28 for 222.
+      { "33cm", 902000000, 928000000, 881000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
+      { "23cm", 1240000000, 1300000000, 1246000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
+    #else  // typical usage 144 IF for 902, 144 IF for 1296
+      { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
+      { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
+    #endif
+
+    { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
+    { "9cm",  3400000000, 3410000000, 3256000000, 3400100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
+    { "6cm",  5650000000, 5925000000, 5328000000, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
+    { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
+    { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
+    { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
+    { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
+    { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
+    { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
+  };
+#else
+  struct Bands bands[NUM_OF_BANDS] = {
+    { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
+    { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
+    { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
+    { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
+    { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
+    { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
+    { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
+    { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
+    { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
+    { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
+    { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
+    { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
+    { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
+    { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
+    { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
+    { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
+    { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222
+    { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
+    { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
+    { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
+    { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
+    { "9cm",  3400000000, 3410000000, 3256000000, 3400100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
+    { "6cm",  5650000000, 5925000000, 5328000000, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
+    { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
+    { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
+    { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
+    { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
+    { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
+    { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
+  };
+#endif
 
 char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
 uint16_t baud_rate;                   //Current baud speed
@@ -83,8 +125,10 @@ uint32_t readtimeout = 10;            //Serial port read timeout
 //extern uint64_t frequency;                 //Current frequency in Hz
 uint8_t band = B_GENERAL;
 uint32_t timer;
-uint16_t background_color = TFT_BLACK;
-uint16_t text_color = TFT_WHITE;
+#ifndef  M5STAMPC3U
+  uint16_t background_color = TFT_BLACK;
+  uint16_t text_color = TFT_WHITE;
+#endif
 bool PTT = false;
 bool prev_PTT = true;
 extern char Grid_Square[];
@@ -393,11 +437,11 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
   DPRINTF("--> Tx Raw Msg: ");
   for (uint8_t k = 0; k <= msg_len; k++) {
     DPRINT(req[k], HEX);
-    DPRINTF(","));
+    DPRINTF(",");
   }
   DPRINTF(" msg_len = ");
   DPRINT(msg_len + 1);
-  DPRINTLNF(" END"));
+  DPRINTLNF(" END");
   #endif
 
   //#define RAWT  // for a more detailed look
@@ -676,31 +720,31 @@ void sendBand(byte band) {
 }
 
 #ifdef BTCLASSIC
-void bt_loop(void) {
-  if (BT_enabled && !btConnected) {
-    draw_new_screen();
-    DPRINTF("BT Loop - Using bd_address:");  // print default bd_address
-    for (int z = 0; z < 6; z++)
-      DPRINT(bd_address[z], HEX);
-    DPRINTLNF("");
-    M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString("Connecting to BT ...", 80, 100, 4);
+  void bt_loop(void) {
+    if (BT_enabled && !btConnected) {
+      draw_new_screen();
+      DPRINTF("BT Loop - Using bd_address:");  // print default bd_address
+      for (int z = 0; z < 6; z++)
+        DPRINT(bd_address[z], HEX);
+      DPRINTLNF("");
+      M5.Lcd.setTextColor(text_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString("Connecting to BT ...", 80, 100, 4);
 
-    btConnected = SerialBT.connect(bd_address, role);
-    if (btConnected) {
-      DPRINTLNF("BT Transceiver reconnected");
-      prev_band = 255;
-      frequency = 0;  // cause the screen to refresh
-      //break;
-    } else
-      DPRINTLNF("BT Transceiver not connected");
+      btConnected = SerialBT.connect(bd_address, role);
+      if (btConnected) {
+        DPRINTLNF("BT Transceiver reconnected");
+        prev_band = 255;
+        frequency = 0;  // cause the screen to refresh
+        //break;
+      } else
+        DPRINTLNF("BT Transceiver not connected");
 
-    draw_new_screen();
+      draw_new_screen();
+    }
   }
-}
 #endif
 
-uint8_t Get_Radio_address(void) {
+  uint8_t Get_Radio_address(void) {
   uint8_t retry_Count = 0;
   // if you do not see this print after a possible USB lockup
   //   then the app loop task, or USBHost task is stalled.  Btn often still runs.
@@ -753,55 +797,54 @@ void usbh_setup(void) {
 }
 
 #ifdef BTCLASSIC
-//
-// Sets up the screen to show some connection state
-//
-void BT_Setup(void) {
+  //
+  // Sets up the screen to show some connection state
+  //
+  void BT_Setup(void) {
+    #if defined(SSP2) && defined(BT)  // (passkey sharing)
+      //SerialBT.setPin("1234"); // doesn't seem to change anything
+      SerialBT.enableSSP();
+      SerialBT.onConfirmRequest(BTConfirmRequestCallback);
+      SerialBT.onAuthComplete(BTAuthCompleteCallback);
+      //DiscoverAsync();  // get a list of radios with available serial ports
+    #endif
 
-#if defined(SSP2) && defined(BT)  // (passkey sharing)
-  //SerialBT.setPin("1234"); // doesn't seem to change anything
-  SerialBT.enableSSP();
-  SerialBT.onConfirmRequest(BTConfirmRequestCallback);
-  SerialBT.onAuthComplete(BTAuthCompleteCallback);
-  //DiscoverAsync();  // get a list of radios with available serial ports
-#endif
+    draw_new_screen();
+    //M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
+    //M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
+    //M5.Lcd.drawString("Connecting to BT ...", 40, 80, 3);
 
-  draw_new_screen();
-  //M5.Lcd.setTextSize(2);     // to Set the size of text from 0 to 255
-  //M5.Lcd.setCursor(40, 80);  //Set the location of the cursor to the coordinates X and Y
-  //M5.Lcd.drawString("Connecting to BT ...", 40, 80, 3);
+    SerialBT.register_callback(callback);
+    // Setup bluetooth as master:
+    if (!SerialBT.begin(title, true))  // true = master  must be 16 characters exactly
+    {
+      DPRINTLNF("An error occurred initializing Bluetooth");
+      //abort();
+    } else {
+      DPRINTLNF("Bluetooth initialized");
+      DPRINTLNF("The device started, now you can pair it with bluetooth!  Use Pairing Reception menu on the radio");
+    }
 
-  SerialBT.register_callback(callback);
-  // Setup bluetooth as master:
-  if (!SerialBT.begin(title, true))  // true = master  must be 16 characters exactly
-  {
-    DPRINTLNF("An error occurred initializing Bluetooth");
-    //abort();
-  } else {
-    DPRINTLNF("Bluetooth initialized");
-    DPRINTLNF("The device started, now you can pair it with bluetooth!  Use Pairing Reception menu on the radio");
+    btConnected = SerialBT.connect(bd_address, role);
+    vTaskDelay(1000);  // give some time
+    draw_new_screen();
+    DPRINTF("btPaired = ");
+    DPRINTLN(btPaired);
+    DPRINTF("btConnected = ");
+    DPRINTLN(btConnected);
+
+    if (btConnected) {
+      btPaired = true;
+      //M5.Lcd.fillScreen(background_color);
+      //M5.Lcd.fillRect(40, 70, 319, 40, background_color);
+      //M5.Lcd.setTextColor(text_color);
+      //M5.Lcd.setTextSize(2);            // to Set the size of text from 0 to 255
+      //M5.Lcd.setCursor(40, 80);         //Set the location of the cursor to the coordinates X and Y
+      //M5.Lcd.drawString("Connected & Paired to BT", 40, 80, 3);  // erase connecting
+    } else
+      DPRINTLNF("Pair to Radio");
+    draw_new_screen();
   }
-
-  btConnected = SerialBT.connect(bd_address, role);
-  vTaskDelay(1000);  // give some time
-  draw_new_screen();
-  DPRINTF("btPaired = ");
-  DPRINTLN(btPaired);
-  DPRINTF("btConnected = ");
-  DPRINTLN(btConnected);
-
-  if (btConnected) {
-    btPaired = true;
-    //M5.Lcd.fillScreen(background_color);
-    //M5.Lcd.fillRect(40, 70, 319, 40, background_color);
-    //M5.Lcd.setTextColor(text_color);
-    //M5.Lcd.setTextSize(2);            // to Set the size of text from 0 to 255
-    //M5.Lcd.setCursor(40, 80);         //Set the location of the cursor to the coordinates X and Y
-    //M5.Lcd.drawString("Connected & Paired to BT", 40, 80, 3);  // erase connecting
-  } else
-    DPRINTLNF("Pair to Radio");
-  draw_new_screen();
-}
 #endif
 // -----------------------------------------------------------------------
 //         Poll radio for PTT, frequency, and other modes.  BLE in particular only gets what and when you ask for it (so far)
@@ -1197,42 +1240,44 @@ void draw_new_screen(void) {
   int16_t w = 319;  // end of a line
   int16_t y1 = y + 13;
   //int16_t h = 20;
-  int16_t color = TFT_YELLOW;
   int16_t font_sz = 4;  // font size
   //DPRINTLNF("+++++++++draw new screen");
 
-  if (board_type == M5ATOMS3) {
-    font_sz = 3;  // downsize for Atom
-    x = 46;  // start position
-    y = 6;
-    w = 128;  // end of a line
-    y1 = 14;   // height of line
-    //h = 12;
-  }
-
-  M5.Lcd.fillScreen(TFT_BLACK);
-  M5.Lcd.setTextColor(TFT_YELLOW, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-  M5.Lcd.setTextDatum(MC_DATUM);
-  //M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width() / 2), y, font_sz);
-  M5.Lcd.drawString(title, (int)(M5.Lcd.width() / 2), y, font_sz);
-  M5.Lcd.drawFastHLine(1, y1, w, TFT_RED);  // separator below title
-
-  if (board_type != M5ATOMS3) {
+  #ifndef  M5STAMPC3U
+    if (board_type == M5ATOMS3) {
+      font_sz = 3;  // downsize for Atom
+      x = 46;  // start position
+      y = 6;
+      w = 128;  // end of a line
+      y1 = 14;   // height of line
+      //h = 12;
+    }
+    int16_t color = TFT_YELLOW;
+    M5.Lcd.fillScreen(TFT_BLACK);
+    M5.Lcd.setTextColor(TFT_YELLOW, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
     M5.Lcd.setTextDatum(MC_DATUM);
-    M5.Lcd.setTextColor(TFT_CYAN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-  #if (defined(BT_CLASSIC) || defined(BLE)) && defined(USBHOST)
-    M5.Lcd.drawString("BT Mode       Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
-  #elif (defined(BT_CLASSIC) || defined(BLE)) && !defined(USBHOST)
-    M5.Lcd.drawString("                Search          XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
-  #elif defined(USBHOST)
-    M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
-  #else
-    if (XVTR)
-      M5.Lcd.drawString("                Search         XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
-    else
-      M5.Lcd.drawString("                Search              ", (int)(M5.Lcd.width() / 2), 220, 2);
-  #endif
-  }
+    //M5.Lcd.drawString("CI-V band Decoder", (int)(M5.Lcd.width() / 2), y, font_sz);
+    M5.Lcd.drawString(title, (int)(M5.Lcd.width() / 2), y, font_sz);
+    M5.Lcd.drawFastHLine(1, y1, w, TFT_RED);  // separator below title
+
+    if (board_type != M5ATOMS3) {
+      M5.Lcd.setTextDatum(MC_DATUM);
+      M5.Lcd.setTextColor(TFT_CYAN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+    #if (defined(BT_CLASSIC) || defined(BLE)) && defined(USBHOST)
+      M5.Lcd.drawString("BT Mode       Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
+    #elif (defined(BT_CLASSIC) || defined(BLE)) && !defined(USBHOST)
+      M5.Lcd.drawString("                Search          XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
+    #elif defined(USBHOST)
+      M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
+    #else
+      if (XVTR)
+        M5.Lcd.drawString("                Search         XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
+      else
+        M5.Lcd.drawString("                Search              ", (int)(M5.Lcd.width() / 2), 220, 2);
+    #endif
+    }
+  #endif // M5STAMPC3U
+
   // write the Band and PTT icons
   display_Freq(frequency, true);
   display_PTT(PTT, true);
@@ -1241,6 +1286,7 @@ void draw_new_screen(void) {
   display_Time(UTC, true);
   display_Grid(Grid_Square, true);
 }
+
 
 //  _UTC does nothing now but can be used to change a future clock label
 void display_Time(uint8_t _UTC, bool _force) {
@@ -1253,20 +1299,23 @@ void display_Time(uint8_t _UTC, bool _force) {
     int y = 52;
     int font_sz = 4;
 
-    M5.Lcd.setTextColor(TFT_LIGHTGREY, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    if (board_type == M5ATOMS3) {
-      font_sz = 3;  // downsize for Atom
-      x = 1;
-      x1 = 127;
-      y = 25;
-      font_sz = 3;
-    }
-    M5.Lcd.setTextDatum(ML_DATUM);  // x is left side
-    sprintf(temp_t, "%02d/%02d/%02d", month(), day(), year());
-    M5.Lcd.drawString(temp_t, x, y, font_sz);
-    M5.Lcd.setTextDatum(MR_DATUM);  // x1 is right side
-    sprintf(temp_t, "%02d:%02d:%02d", hour(), minute(), second());
-    M5.Lcd.drawString(temp_t, x1, y, font_sz);
+    #ifndef M5STAMPC3U
+      M5.Lcd.setTextColor(TFT_LIGHTGREY, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      if (board_type == M5ATOMS3) {
+        font_sz = 3;  // downsize for Atom
+        x = 1;
+        x1 = 127;
+        y = 25;
+        font_sz = 3;
+      }
+      M5.Lcd.setTextDatum(ML_DATUM);  // x is left side
+      sprintf(temp_t, "%02d/%02d/%02d", month(), day(), year());
+      M5.Lcd.drawString(temp_t, x, y, font_sz);
+      M5.Lcd.setTextDatum(MR_DATUM);  // x1 is right side
+      sprintf(temp_t, "%02d:%02d:%02d", hour(), minute(), second());
+      M5.Lcd.drawString(temp_t, x1, y, font_sz);
+    #endif
+
     time_last_disp_UTC = millis();
   }
 }
@@ -1283,32 +1332,37 @@ void display_Xvtr(bool _band, bool _force) {
   int h = 30;       // box height
   int r = 4;        // box radius corner size
 
-  M5.Lcd.setTextDatum(MR_DATUM);
+  #ifndef M5STAMPC3U
+    M5.Lcd.setTextDatum(MR_DATUM);
+  #endif
 
   if (_band != _prev_band || _force) {
     //DPRINTF("XVTR ON = "); DPRINTLN(_band);
     
-    if (board_type == M5ATOMS3) {
-      font_sz = 3;  // downsize for Atom
-      x = 99;
-      y = 118;
-      x1 = x-16;
-      y1 = y-8; 
-      w = 20;
-      h = 14;
-      r = 4;
-    }
+    #ifndef M5STAMPC3U
+      if (board_type == M5ATOMS3) {
+        font_sz = 3;  // downsize for Atom
+        x = 99;
+        y = 118;
+        x1 = x-16;
+        y1 = y-8; 
+        w = 20;
+        h = 14;
+        r = 4;
+      }
 
-    if (_band) {
-      M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_BLUE);
-      M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(Xvtr, x, y, font_sz);
-    } else {
-      M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
-      M5.Lcd.setTextColor(TFT_BLUE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(Xvtr, x, y, font_sz);
-    }
-    M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_BLUE);
+      if (_band) {
+        M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_BLUE);
+        M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(Xvtr, x, y, font_sz);
+      } else {
+        M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
+        M5.Lcd.setTextColor(TFT_BLUE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(Xvtr, x, y, font_sz);
+      }
+      M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_BLUE);
+    #endif // M5STAMPC3U
+    
     _prev_band = _band;
   }
 }
@@ -1325,58 +1379,64 @@ void display_PTT(bool _PTT_state, bool _force) {
   int h = 30;       // box height
   int r = 4;        // box radius corner size
 
-  M5.Lcd.setTextDatum(MR_DATUM);
-  if (board_type == M5ATOMS3) {
-    font_sz = 3;  // downsize for Atom
-    x = 124;
-    y = 118;
-    x1 = x-16;
-    y1 = y-8; 
-    w = 20;
-    h = 14;
-    r = 4;
-  }
-  if (_PTT_state != _prev_PTT_state || _force) {
-#ifdef PRINT_PTT_TO_SERIAL
-    Serial.print(F("*********************************************** PTT = "));
-    Serial.println(_PTT_state);
-#endif
-    if (_PTT_state) {
-      M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_RED);
-      M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(PTT_Tx, x, y, font_sz);
-    } else {
-      M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
-      M5.Lcd.setTextColor(TFT_RED);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(PTT_Tx, x, y, font_sz);
+  #ifndef M5STAMPC3U
+    M5.Lcd.setTextDatum(MR_DATUM);
+    if (board_type == M5ATOMS3) {
+      font_sz = 3;  // downsize for Atom
+      x = 124;
+      y = 118;
+      x1 = x-16;
+      y1 = y-8; 
+      w = 20;
+      h = 14;
+      r = 4;
     }
-    M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_RED);
-    _prev_PTT_state = _PTT_state;
-  }
+    
+    if (_PTT_state != _prev_PTT_state || _force) {
+      #ifdef PRINT_PTT_TO_SERIAL
+        Serial.print(F("*********************************************** PTT = "));
+        Serial.println(_PTT_state);
+      #endif
+      if (_PTT_state) {
+        M5.Lcd.fillRoundRect(x1, y1, w, h, r, TFT_RED);
+        M5.Lcd.setTextColor(TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(PTT_Tx, x, y, font_sz);
+      } else {
+        M5.Lcd.fillRoundRect(x1, y1, w, h, r, background_color);
+        M5.Lcd.setTextColor(TFT_RED);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(PTT_Tx, x, y, font_sz);
+      }
+      M5.Lcd.drawRoundRect(x1, y1, w, h, r, TFT_RED);
+      _prev_PTT_state = _PTT_state;
+    }
+  #endif
 }
 
 void display_Freq(uint64_t _freq, bool _force) {
   static uint64_t _prev_freq;
   int16_t x = 1;  // start position
   int16_t y = 104;
-  int16_t color = TFT_WHITE;
   int16_t font_sz = 6;  // font size
 
   if ((_freq != _prev_freq && _freq != 0) || _force) {
-#ifdef PRINT_VFO_TO_SERIAL
-    Serial.printf("VFOA: %13sMHz - Band: %s  Mode: %s  DataMode: %s  Filter: %s  Source: BLE %d, USBHost %d, BTClassic %d\n", formatVFO(_freq), bands[band].band_name, \
-        modeList[bands[band].mode_idx].mode_label, ModeStr[bands[band].datamode], FilStr[bands[band].filt], BLE_connected, USBH_connected, btConnected);
-#endif
+    #ifdef PRINT_VFO_TO_SERIAL
+      Serial.printf("VFOA: %13sMHz - Band: %s  Mode: %s  DataMode: %s  Filter: %s  Source: BLE %d, USBHost %d, BTClassic %d\n", formatVFO(_freq), bands[band].band_name, \
+          modeList[bands[band].mode_idx].mode_label, ModeStr[bands[band].datamode], FilStr[bands[band].filt], BLE_connected, USBH_connected, btConnected);
+    #endif
     if (board_type == M5ATOMS3) {
       font_sz = 4;  // downsize for Atom
       y = 54;
     }
-    //M5.Lcd.fillRect(x, y, x1, y1, background_color);
-    M5.Lcd.setTextDatum(MC_DATUM);
-    M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString(formatVFO(_prev_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
-    M5.Lcd.setTextColor(color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString(formatVFO(_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
+
+    #ifndef M5STAMPC3U
+      int16_t color = TFT_WHITE;
+      //M5.Lcd.fillRect(x, y, x1, y1, background_color);
+      M5.Lcd.setTextDatum(MC_DATUM);
+      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(formatVFO(_prev_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
+      M5.Lcd.setTextColor(color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(formatVFO(_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
+    #endif // M5STAMPC3U
     _prev_freq = _freq;
   }
 }
@@ -1387,27 +1447,31 @@ void display_Band(uint8_t _band, bool _force) {
   int y = 150;
   int font_sz = 4;
 
-  M5.Lcd.setTextDatum(ML_DATUM);
+
   if (_band != _prev_band || _force) {
     // Update our outputs
     Band_Decode_Output(band);
     //sendBand(band);   // change the IO pins to match band
     //Serial.printf("Band %s\n", bands[_band].band_name);
-    if (board_type == M5ATOMS3) {
-      font_sz = 4;  // downsize for Atom
-      x = 1;
-      y= 118;
-    }
-    M5.Lcd.setTextDatum(ML_DATUM);
-    M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
-    M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-    M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
+
+    #ifndef M5STAMPC3U
+      if (board_type == M5ATOMS3) {
+        font_sz = 4;  // downsize for Atom
+        x = 1;
+        y= 118;
+      }
+      M5.Lcd.setTextDatum(ML_DATUM);
+      M5.Lcd.setTextDatum(ML_DATUM);
+      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
+      M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
+    #endif
 
     if (frequency != 0) {
       if (!update_radio_settings_flag)
         #ifdef SD_CARD
-        write_bands_data();  // save on band changes.  Other times would be good bu this catches the most.
+          write_bands_data();  // save on band changes.  Other times would be good bu this catches the most.
         #else
         ; // nothing
         #endif
@@ -1427,21 +1491,23 @@ void display_Grid(char _grid[], bool _force) {
   if ((strcmp(_last_grid, _grid)) || _force) {
     //Serial.printf("Grid Square = %s\n",_grid);
 
-    if (board_type == M5ATOMS3) {
-      font_sz = 4;  // downsize for Atom
-      y = 86;
-      M5.Lcd.setTextDatum(MC_DATUM);
-      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(_last_grid, (int)(M5.Lcd.width() / 2), y, font_sz);
-      M5.Lcd.setTextColor(TFT_DARKGREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(_grid, (int)(M5.Lcd.width() / 2), y, font_sz);
-    } else {
-      M5.Lcd.setTextDatum(ML_DATUM);
-      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(_last_grid, x, y, font_sz);
-      M5.Lcd.setTextColor(TFT_GREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(_grid, x, y, font_sz);
-    }   
+    #ifndef M5STAMPC3U
+      if (board_type == M5ATOMS3) {
+        font_sz = 4;  // downsize for Atom
+        y = 86;
+        M5.Lcd.setTextDatum(MC_DATUM);
+        M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(_last_grid, (int)(M5.Lcd.width() / 2), y, font_sz);
+        M5.Lcd.setTextColor(TFT_DARKGREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(_grid, (int)(M5.Lcd.width() / 2), y, font_sz);
+      } else {
+        M5.Lcd.setTextDatum(ML_DATUM);
+        M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(_last_grid, x, y, font_sz);
+        M5.Lcd.setTextColor(TFT_GREEN, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(_grid, x, y, font_sz);
+      }
+    #endif   
     strcpy(_last_grid, _grid);
   }
 }
@@ -1491,87 +1557,101 @@ void band_Selector(uint8_t _band_input_pattern) {
       XVTR_band_before = band;                  // record the non-xvtr band before initial XVTR mode enabled.
     }
 
-    PTT_Output(band, false);  // send PTT OFF with current band before changing to new band.
-    // Inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
+    PTT_Output(DECODE_DUMMY_PTT, false);  // send PTT OFF with current band before changing to new band.
+    // On the 8In/4Out Digital IO module, the inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
     // translate input band pattern to band index then send to band Decode output
     
     DPRINTF("Band Selector input = "); DPRINTLN(_band_input_pattern);
-    for (uint8_t _input_band = 0; _input_band < NUM_OF_BANDS; _input_band++) {
+    for (_input_band = 0; _input_band < NUM_OF_BANDS; _input_band++) {
       //DPRINTF("Input search index = "); DPRINTLN(_input_band);
-      //DPRINTF("Band Map Value = "); DPRINTLN(bands[_input_band].InputMap);
+      //DPRINTF("Band Map Value = "); DPRINT(bands[_input_band].InputMap);
+      //DPRINTF("    Input Band Value = "); DPRINTLN(_input_band);
       if (bands[_input_band].InputMap == _band_input_pattern) {
-        //DPRINTF("Band Selector MATCH = "); DPRINTLN(bands[_input_band].InputMap); 
-        XVTR_Band = _input_band;
-        XVTR_enabled = true;
+        DPRINTF("Band Selector MATCH = "); DPRINTLN(bands[_input_band].InputMap); 
+        if (bands[_input_band].Xvtr_offset != 0) {
+          DPRINTF("Xvtr Band Detected = "); DPRINTLN(bands[_input_band].band_name);
+          XVTR_Band = _input_band;
+          XVTR_enabled = true;
+          #ifdef M5STAMPC3U
+            band = _input_band;
+          #endif
+        } else {
+          DPRINTF("Not a Xvtr Band = "); DPRINTLN(bands[_input_band].band_name);
+          band = _input_band;
+          XVTR_Band = 0;
+          XVTR_enabled = false;   // No match, do nothing
+        }
         break;   // we have a match, use this as the target band
       } else {
         //DPRINTF("Band Selector NO MATCH = "); DPRINTLN(bands[_input_band].InputMap);
         XVTR_enabled = false;   // No match, do nothing
       }
     }
-    DPRINTF("Band Selector Source (wired or polled) Input Pattern = ");
-    DPRINT(_band_input_pattern); DPRINTF("   Xvtr enabled = "); DPRINTLN(XVTR_enabled);
+
+    DPRINTF("Band Selector Source (wired or polled) Input Pattern = "); DPRINT(_band_input_pattern); 
+    DPRINTF("   Xvtr enabled = "); DPRINT(XVTR_enabled);
+    DPRINTF("   Band = "); DPRINT(band);
+    DPRINTF("   Xvtr Band = "); DPRINTLN(XVTR_Band);
+    draw_new_screen();
 
     _band_input_pattern_last = _band_input_pattern;
 
     // Band and Frequency are not yet changed
+    #ifndef M5STAMPC3U
+      // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, never the same band.
+      if (XVTR_enabled) {  // set VFO and other values to last used for the target XVTR band
+        SetMode(XVTR_Band);
+        vTaskDelay(10);
+        SetPre(XVTR_Band);
+        vTaskDelay(10);
+        SetAttn(XVTR_Band);
+        vTaskDelay(10);
+        SetSplit(XVTR_Band);
+        vTaskDelay(10);
+        SetAGC(XVTR_Band);
+        vTaskDelay(10);
+        SetFreq(bands[XVTR_Band].VFO_last);  // This value always has Xvtr offset applied
+        update_radio_settings_flag = true;
+      }
 
-    // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, never the same band.
-    if (XVTR_enabled) {  // set VFO and other values to last used for the target XVTR band
-      SetMode(XVTR_Band);
-      vTaskDelay(10);
-      SetPre(XVTR_Band);
-      vTaskDelay(10);
-      SetAttn(XVTR_Band);
-      vTaskDelay(10);
-      SetSplit(XVTR_Band);
-      vTaskDelay(10);
-      SetAGC(XVTR_Band);
-      vTaskDelay(10);
-      SetFreq(bands[XVTR_Band].VFO_last);  // This value always has Xvtr offset applied
-      update_radio_settings_flag = true;
-    }
+      // If turning off Xvtr mode, then restore the IF to normal last used values
+      if (XVTR_enabled_last && !XVTR_enabled) {  // This will have Xvtr offset = 0
+        // band is still Xvtr band until the radio actually changes frequency
+        SetMode(XVTR_band_before);
+        vTaskDelay(10);
+        SetPre(XVTR_band_before);
+        vTaskDelay(10);
+        SetAttn(XVTR_band_before);
+        vTaskDelay(10);
+        SetSplit(XVTR_band_before);
+        vTaskDelay(10);
+        SetAGC(XVTR_band_before);
+        vTaskDelay(10);
+        SetFreq(bands[XVTR_band_before].VFO_last);  // set radio to that last non-XVTR band used.
+        update_radio_settings_flag = true;
+      }
 
-    // If turning off Xvtr mode, then restore the IF to normal last used values
-    if (XVTR_enabled_last && !XVTR_enabled) {  // This will have Xvtr offset = 0
-      // band is still Xvtr band until the radio actually changes frequency
-      SetMode(XVTR_band_before);
-      vTaskDelay(10);
-      SetPre(XVTR_band_before);
-      vTaskDelay(10);
-      SetAttn(XVTR_band_before);
-      vTaskDelay(10);
-      SetSplit(XVTR_band_before);
-      vTaskDelay(10);
-      SetAGC(XVTR_band_before);
-      vTaskDelay(10);
-      SetFreq(bands[XVTR_band_before].VFO_last);  // set radio to that last non-XVTR band used.
-      update_radio_settings_flag = true;
-    }
-
-    if (update_radio_settings_flag == true) {
-      vTaskDelay(300);  // Give some time for the radio to change bands
-#ifdef BTCLASSIC
-      if (btConnected) SerialBT.flush();
-#endif
-#ifdef BLE
-        //if (BLE_connected) xxxxx.flush();
-#endif
-#ifdef USBHOST
-      if (USBH_connected) SerialHost.flush();
-#endif
-    }
+      if (update_radio_settings_flag == true) {
+        vTaskDelay(300);  // Give some time for the radio to change bands
+        #ifdef BTCLASSIC
+          if (btConnected) SerialBT.flush();
+        #endif
+        #ifdef BLE
+            //if (BLE_connected) xxxxx.flush();
+        #endif
+        #ifdef USBHOST
+          if (USBH_connected) SerialHost.flush();
+        #endif
+      }
+    #endif
 
     // now the band and freq should be updated
-    DPRINTF(">>>> Last VFO = ");
-    DPRINT(bands[band].VFO_last);
-    DPRINTF("   Last Xvtr VFO = ");
-    DPRINT(bands[XVTR_Band].VFO_last);
-    DPRINTF("   Band In = ");
-    DPRINT(_band_input_pattern, HEX);
-    DPRINTF("   PTT = ");
-    DPRINTLN(PTT);
-
+    DPRINTF("Current Band = ");DPRINT(bands[band].band_name);
+    DPRINTF("   Last VFO = "); DPRINT(bands[band].VFO_last);
+    DPRINTF("   Last Xvtr VFO = "); DPRINT(bands[XVTR_Band].VFO_last);
+    DPRINTF("   Band Input Pattern = "); DPRINT(_band_input_pattern, HEX);
+    DPRINTF("   PTT = "); DPRINTLN(PTT);
+    
     XVTR_enabled_last = XVTR_enabled;
   }
 }
@@ -1719,8 +1799,10 @@ void app_setup(void) {
   //Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
 
-  M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
-  //M5.Lcd.drawString(title, 5, 5, 4);
+  #ifndef M5STAMPC3U
+    M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
+    //M5.Lcd.drawString(title, 5, 5, 4);
+  #endif
 
   #ifdef USBHOST
     int count_usb = 0;
@@ -1786,7 +1868,11 @@ void app_setup(void) {
   #ifdef EXT_IO2_UNIT
     Unit_EXTIO2_setup();
   #endif
-
+  
+  #ifdef M5STAMPC3U
+    MCP23017_IO_setup();
+  #endif
+  
   draw_new_screen();
 
   usbh_setup();  // Just talk normal USB serial
@@ -1819,92 +1905,94 @@ void app_loop(void) {
   static uint8_t xvtr_band_select = 0;  // rotate through a few transverter bands.  Temp until we get a select window
   int btn_state = 0;
 
-  M5.update();
+  #ifndef M5STAMPC3U
+    M5.update();
+    
+    if (board_type == M5ATOMS3) {
+      //btn_state = M5.BtnA.wasClicked() ? 2 : M5.BtnA.wasPressed() ? 3 : 0;
+      btn_state = M5.BtnA.wasPressed() ? 3 : 0;
+      if (btn_state) {
+        BtnC_pressed = true;  // on Atoms3 translate to single screen button for Xvtr selection
+        btn_state = 0;
+      }
+    }
+
+    if (BtnA_pressed) {
+      BtnA_pressed = false;
+      DPRINTLNF("BtnA pressed - Switch to BT mode");
+      #ifdef BTCLASSIC
+        DPRINTLNF("Switch to BT mode");
+        BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
+        restart_BT_flag = true;
+      #endif
+    }
+
+    if (BtnB_pressed) {
+      BtnB_pressed = false;
+      radio_address = 0;
+      DPRINTLNF("BtnB pressed: Scan for new radio address");
+      get_new_address_flag = true;
+    }
+
+    if (BtnC_pressed) {
+      BtnC_pressed = false;
+
+      // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
+      #ifdef USBHOST
+        DPRINTLNF("BtnC pressed - Switch to USB Host mode");
+        restart_USBH_flag = true;
+      #else
+        if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
+        {
+          xvtr_band_select++;
+          DPRINTLNF("BtnC pressed - Select a Xvtr band - index = ");
+          DPRINTLN(xvtr_band_select);
+          switch (xvtr_band_select)  // index our way through a curated list.
+          {
+            case 1: band_Selector(3); break;
+            case 2: band_Selector(5); break;
+            case 3: band_Selector(6); break;
+            //case 4: band_Selector(8); break;
+            case 4: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
+            default: xvtr_band_select = 0; break;
+          }
+        }
+      #endif
+    }  // end Btn C
 
   
-  if (board_type == M5ATOMS3) {
-    //btn_state = M5.BtnA.wasClicked() ? 2 : M5.BtnA.wasPressed() ? 3 : 0;
-    btn_state = M5.BtnA.wasPressed() ? 3 : 0;
-    if (btn_state) {
-      BtnC_pressed = true;  // on Atoms3 translate to single screen button for Xvtr selection
-      btn_state = 0;
-    }
-  }
+    processCatMessages();  // look for delayed or unsolicited messages from radio
 
-  if (BtnA_pressed) {
-    BtnA_pressed = false;
-    DPRINTLNF("BtnA pressed - Switch to BT mode");
-    #ifdef BTCLASSIC
-      DPRINTLNF("Switch to BT mode");
-      BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
-      restart_BT_flag = true;
+    refesh_display();
+
+    Get_Radio_address();  // can autodiscover CI-V address if not predefined.
+  
+    #ifndef PC_PASSTHROUGH
+      poll_radio();  // do not send stuff to radio when a PC app is doing the same
     #endif
-  }
 
-  if (BtnB_pressed) {
-    BtnB_pressed = false;
-    radio_address = 0;
-    DPRINTLNF("BtnB pressed: Scan for new radio address");
-    get_new_address_flag = true;
-  }
-
-  if (BtnC_pressed) {
-    BtnC_pressed = false;
-
-// Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
     #ifdef USBHOST
-      DPRINTLNF("BtnC pressed - Switch to USB Host mode");
-      restart_USBH_flag = true;
-    #else
-      if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
-      {
-        xvtr_band_select++;
-        DPRINTLNF("BtnC pressed - Select a Xvtr band - index = ");
-        DPRINTLN(xvtr_band_select);
-        switch (xvtr_band_select)  // index our way through a curated list.
-        {
-          case 1: band_Selector(1); break;
-          case 2: band_Selector(2); break;
-          case 3: band_Selector(4); break;
-          case 4: band_Selector(8); break;
-          case 5: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
-          default: xvtr_band_select = 0; break;
-        }
+      if (restart_USBH_flag) {
+        restart_USBH();
+        restart_USBH_flag = false;
       }
     #endif
-  }  // end Btn C
 
-  processCatMessages();  // look for delayed or unsolicited messages from radio
+    #ifdef BLE
+      //BLE_loop();  // calling from the main loop for now.
+    #endif
 
-  refesh_display();
-
-  Get_Radio_address();  // can autodiscover CI-V address if not predefined.
- 
-  #ifndef PC_PASSTHROUGH
-     poll_radio();  // do not send stuff to radio when a PC app is doing the same
-  #endif
-
-  #ifdef USBHOST
-    if (restart_USBH_flag) {
-      restart_USBH();
-      restart_USBH_flag = false;
-    }
-  #endif
-
-  #ifdef BLE
-    //BLE_loop();  // calling from the main loop for now.
-  #endif
-
-  #ifdef BTCLASSIC
-    bt_loop();  // handle all BT serial messaging in place of the USB host serial
-    if (restart_BT_flag) {
-      restart_BT();
-      restart_BT_flag = false;
-    }
-  #endif
+    #ifdef BTCLASSIC
+      bt_loop();  // handle all BT serial messaging in place of the USB host serial
+      if (restart_BT_flag) {
+        restart_BT();
+        restart_BT_flag = false;
+      }
+    #endif
+  #endif// M5STAMPC3U
 
   // scan our input sources for wired PTT and band change - only 1 module type at a time for now
-  #if defined ( IO_MODULE ) || defined ( EXT_IO2_UNIT )
+  #if defined ( IO_MODULE )  || defined ( EXT_IO2_UNIT ) || defined ( M5STAMPC3U )
     if (millis() > last_input_poll + POLL_PTT_DEFAULT) {
       // Process the band input and PTT input pins
 
@@ -1912,11 +2000,13 @@ void app_loop(void) {
         decode_in = Module_4in_8out_Input_scan();  // Has 4 digital inputs, using for PTT and band input
       #elif defined ( EXT_IO2_UNIT )
         decode_in = Unit_EXTIO2_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
+      #elif defined ( M5STAMPC3U )
+        decode_in = M5STAMPC3U_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
       #endif
 
       decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit
       decode_Band_temp = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
-      
+
       // 4th pin is wired PTT from radio.
       // extract the 4th input to pass on PTT through selected band's IO pin.
       if ((decode_PTT_temp != decode_PTT_temp_last) && use_wired_PTT)  // only call when the state changes
@@ -1927,11 +2017,11 @@ void app_loop(void) {
 
       if (decode_Band_temp != decode_Band_temp_last)  // skip if nothing changed on the wired inputs
       {
-        band_Selector(decode_Band_temp);  // converts input patern to band (real or virtual Xvtr band)
+        band_Selector(decode_Band_temp);  // converts input pattern to band (real or virtual Xvtr band)
         decode_Band_temp_last = decode_Band_temp;
       }
 
       last_input_poll = millis();
     }
   #endif
-  }
+}

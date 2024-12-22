@@ -94,11 +94,26 @@
 #ifndef _M5_BT_USB_
 #define _M5_BT_USB_
 
-#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
+//#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
-#if defined ( CONFIG_IDF_TARGET_ESP32S3 )
+//#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller
+
+#define XVBOX // set some data config specific to usage with the 705 transverter box
+
+#ifdef M5STAMPC3U  
+  //#include <M5Unified.h>  // kills off USB Host
+  #define MCP23017
+  #define I2C_SDA 1
+  #define I2C_SCL 0
+
+  #include <Adafruit_NeoPixel.h>
+  //#define BUTTON_PIN 3
+  #define PIXEL_PIN 2   // GPIO2 is Sk6812 RGB LED
+  #define NUM_PIXELS 1  // Just 1 LED
+
+#elif defined ( CONFIG_IDF_TARGET_ESP32S3 )
   #ifdef __M5GFX_M5ATOMDISPLAY__
   #include <M5AtomS3.h>
   #define ATOMS3
@@ -124,6 +139,7 @@
   #define SD_SPI_MOSI_PIN 23
   #define SD_SPI_CS_PIN   4
   #define CORE2
+
 #else
   #include <M5Stack.h>
   #define SD_SPI_SCK_PIN  18
@@ -155,8 +171,14 @@
 
 #define CMD_READ_FREQ 0x03    // Read operating frequency data
 
-#define WIRED_PTT   1         // 1 = use ther wired input for fastest PTT
+#ifdef M5STAMPC3U  // for embedded 705 Transveter solution
+  #define WIRED_PTT   1       // 1 = use ther wired input for fastest PTT
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
+#else // choose for M5 Core or Atom CPUs
+  #define WIRED_PTT   0       // 1 = use ther wired input for fastest PTT
+                              // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
+#endif
+
 #define POLL_PTT_DEFAULT 287  // poll the radio for PTT status odd numbers to stagger them a bit
                               // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
                               // Also polls the wired inputs  Can go down to 25-45.  When using wired PTT set this slow.
@@ -175,17 +197,20 @@
 #define POLL_RADIO_PRE   3204 // poll radio for preamp status
 #define POLL_RADIO_SPLIT 3102 // poll radio for split status
 
-// Chose the combination needed.  Note that at least one comm service must be enabled.
-#define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
-                    // BT Classic does not work on Core3.  It might on Core2 (untested)
-//#define BLE         // Core 3.  Maybe works on Core 2, TBD
-//#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.   *** USB Host is not stable so far ****
-#define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
-//#define EXT_IO2_UNIT  // EXT.IO2 UNIT GIO extender - plugs into Port A i2c Grove port on CPU module, adds 8 GPIO ports at 3.3V max.
-#define SD_CARD      // enable sd card features
-//#define RELAY2_UNIT      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
-//#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
-#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
+#ifndef M5STAMPC3U  // Non of these apply to the M5StampC3U as used in the 705 Transverter project
+  // Chose the combination needed.  Note that at least one comm service must be enabled.
+  #define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
+                      // BT Classic does not work on Core3.  It might on Core2 (untested)
+  //#define BLE         // Core 3 (BT5).  Works on Core 2, (BT4.2) not on Core
+  //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.   *** USB Host is not stable so far ****
+  #define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
+  //#define EXT_IO2_UNIT  // EXT.IO2 UNIT GIO extender - plugs into Port A i2c Grove port on CPU module, adds 8 GPIO ports at 3.3V max.
+  #define SD_CARD      // enable sd card features
+
+  //#define RELAY2_UNIT      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
+  //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
+  //#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
+#endif
 
 //#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 

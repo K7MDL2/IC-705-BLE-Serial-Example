@@ -80,33 +80,39 @@
 #include "M5Stack_CI-V_Band_Decoder.h"
 #include "Decoder.h"
 #include "DebugPrint.h"
-#include "M5_Max3421E_Usb.h"
+#ifndef M5STAMPC3U
+  #include "M5_Max3421E_Usb.h"
+#endif
 
 #if defined(ARDUINO_NRF52_ADAFRUIT) || defined(ARDUINO_ARCH_ESP32)
   #define USE_FREERTOS
 #endif
 
-// USBHost is defined in usbh_helper.h
-#include "usbh_helper.h"
+#ifndef M5STAMPC3U
+  #ifdef USBHOST
+    // USBHost is defined in usbh_helper.h
+    #include "usbh_helper.h"
+    // CDC Host object
+    Adafruit_USBH_CDC SerialHost;
+  #endif
 
-#ifdef USBHOST
-// CDC Host object
-Adafruit_USBH_CDC SerialHost;
+  // Language ID: English
+  #define LANGUAGE_ID 0x0409
+
+  typedef struct {
+    tusb_desc_device_t desc_device;
+    uint16_t manufacturer[32];
+    uint16_t product[48];
+    uint16_t serial[16];
+    bool mounted;
+  } dev_info_t;
+
+  // CFG_TUH_DEVICE_MAX is defined by tusb_config header
+  dev_info_t dev_info[CFG_TUH_DEVICE_MAX] = { 0 };
+#else  // for M5STAMP{C3U whcih has a SK6812 RGB LED button. 
+  Adafruit_NeoPixel pixel(NUM_PIXELS, PIXEL_PIN, NEO_GRBW + NEO_KHZ400);
+  bool currentButtonPressed = false;
 #endif
-
-// Language ID: English
-#define LANGUAGE_ID 0x0409
-
-typedef struct {
-  tusb_desc_device_t desc_device;
-  uint16_t manufacturer[32];
-  uint16_t product[48];
-  uint16_t serial[16];
-  bool mounted;
-} dev_info_t;
-
-// CFG_TUH_DEVICE_MAX is defined by tusb_config header
-dev_info_t dev_info[CFG_TUH_DEVICE_MAX] = { 0 };
 
 #ifdef PC_PASSTHRU_USBHOST   // This is unused code, saving for reference
 // forward Serial <-> SerialHost
@@ -132,89 +138,93 @@ void forward_serial(void) {
 #endif
 
 #if defined(CFG_TUH_MAX3421) && CFG_TUH_MAX3421
-//--------------------------------------------------------------------+
-// Using Host shield MAX3421E controller
-//--------------------------------------------------------------------+
-//#define CFG_TUD_COUNT 2
+  //--------------------------------------------------------------------+
+  // Using Host shield MAX3421E controller
+  //--------------------------------------------------------------------+
+  //#define CFG_TUD_COUNT 2
 #endif
 
 #ifdef USE_FREERTOS
 
-#ifdef ARDUINO_ARCH_ESP32
-  #define USBH_STACK_SZ 8000
-#else
-  #define USBH_STACK_SZ 200
-#endif
+  #ifdef ARDUINO_ARCH_ESP32
+    #define USBH_STACK_SZ 8000
+  #else
+    #define USBH_STACK_SZ 200
+  #endif
 
-TaskHandle_t xHandle = NULL;
+  #ifndef M5STAMPC3U
+    #ifdef USBHOST
+      TaskHandle_t xHandle = NULL;
 
-void usbhost_rtos_task(void *param) {
- (void) param;
-  while (1) {
-    //Serial.print("+");
-    USBHost.task(10, false);
-    //vTaskDelay(10);
-     // test for stack size
-    uint32_t stack_sz;
-    stack_sz = uxTaskGetStackHighWaterMark( NULL );
-    if (stack_sz < 1000)
-      Serial.printf("\n  #######   USB Host Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+      void usbhost_rtos_task(void *param) {
+      (void) param;
+        while (1) {
+          //Serial.print("+");
+          USBHost.task(10, false);
+          //vTaskDelay(10);
+          // test for stack size
+          uint32_t stack_sz;
+          stack_sz = uxTaskGetStackHighWaterMark( NULL );
+          if (stack_sz < 1000)
+            Serial.printf("\n  #######   USB Host Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+        }
+        vTaskDelete(NULL);
+      }
+    #endif
+  #endif
+
+  extern void app_loop();
+
+  void app_loop_rtos_task(void *param) {
+  (void) param;
+    while (1) {
+      app_loop();
+      //Serial.print("\nA");
+      //vTaskDelay(12);
+      // test for stack size
+      uint32_t stack_sz;
+      stack_sz = uxTaskGetStackHighWaterMark( NULL );
+      if (stack_sz < 1000)
+        Serial.printf("\n  ^^^^^^^^^^^  app_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+    }
+    vTaskDelete(NULL);
   }
-  vTaskDelete(NULL);
-}
 
-extern void app_loop();
+  #ifdef BLE
+    extern void BLE_loop();
 
-void app_loop_rtos_task(void *param) {
- (void) param;
-  while (1) {
-    app_loop();
-    //Serial.print("\nA");
-    //vTaskDelay(12);
-    // test for stack size
-    uint32_t stack_sz;
-    stack_sz = uxTaskGetStackHighWaterMark( NULL );
-    if (stack_sz < 1000)
-      Serial.printf("\n  ^^^^^^^^^^^  app_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
-  }
-  vTaskDelete(NULL);
-}
+    void BLE_loop_rtos_task(void *param) {
+      (void) param;
+      while (1) {
+        BLE_loop();
+        //Serial.print("\nT");
+        //vTaskDelay(12);
+        // test for stack size
+        uint32_t stack_sz;
+        stack_sz = uxTaskGetStackHighWaterMark( NULL );
+        if (stack_sz < 1000)
+          Serial.printf("\n  ^^^^^^^^^^^  BLE_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+      }
+      vTaskDelete(NULL);
+    }
+  #endif // BLE
 
-#ifdef BLE
-extern void BLE_loop();
-
-void BLE_loop_rtos_task(void *param) {
- (void) param;
-  while (1) {
-    BLE_loop();
-    //Serial.print("\nT");
-    //vTaskDelay(12);
-    // test for stack size
-    uint32_t stack_sz;
-    stack_sz = uxTaskGetStackHighWaterMark( NULL );
-    if (stack_sz < 1000)
-      Serial.printf("\n  ^^^^^^^^^^^  BLE_loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
-  }
-  vTaskDelete(NULL);
-}
-#endif // BLE
-
-
-void btn_loop_rtos_task(void *param) {
- (void) param;
-  while (1) {
-    chk_btns();
-    //Serial.print("\nT");
-    //vTaskDelay(12);
-    // test for stack size
-    uint32_t stack_sz;
-    stack_sz = uxTaskGetStackHighWaterMark( NULL );
-    if (stack_sz < 1000)
-      Serial.printf("\n  ^^^^^^^^^^^  chk_btns: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
-  }
-  vTaskDelete(NULL);
-}
-
+  #ifndef M5STAMPC3U
+    void btn_loop_rtos_task(void *param) {
+    (void) param;
+      while (1) {
+        chk_btns();
+        //Serial.print("\nT");
+        //vTaskDelay(12);
+        // test for stack size
+        uint32_t stack_sz;
+        stack_sz = uxTaskGetStackHighWaterMark( NULL );
+        if (stack_sz < 1000)
+          Serial.printf("\n  ^^^^^^^^^^^  chk_btns: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
+      }
+      vTaskDelete(NULL);
+    }
+  #endif
 
 #endif  // FREERTOS
 
@@ -231,81 +241,84 @@ bool BtnC_pressed = false;
 uint64_t frequency = 0;
 uint8_t board_type = 0;
 
-void chk_btns(void) {
-  #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) && !defined ( __M5GFX_M5ATOMDISPLAY__ )
-    auto touchPoint = M5.Touch.getDetail(); 
-    if (prev_state != touchPoint.state) {
-        prev_state = touchPoint.state;
-    }
-    if ((M5.Display.height() > touchPoint.y &&
-         touchPoint.y > M5.Display.height() - 40) &&
-        touchPoint.state == m5::touch_state_t::touch_begin) {
-        if (M5.Display.width() / 3 > touchPoint.x && touchPoint.x > 0){
-            BtnA_pressed = true;
-            DPRINTLNF("3A");
-        }
-        if ((M5.Display.width() / 3) * 2 > touchPoint.x &&
-            touchPoint.x > M5.Display.width() / 3) {
-            BtnB_pressed = true;
-            DPRINTLNF("3B");
-        }
-        if (M5.Display.width() > touchPoint.x &&
-            touchPoint.x > (M5.Display.width() / 3) * 2) {
-            BtnC_pressed = true;
-            DPRINTLNF("3C");
-        }
-    }   
+#ifndef M5STAMPC3U
+  void chk_btns(void) {
+    #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) && !defined ( __M5GFX_M5ATOMDISPLAY__ )
+      auto touchPoint = M5.Touch.getDetail(); 
+      if (prev_state != touchPoint.state) {
+          prev_state = touchPoint.state;
+      }
+      if ((M5.Display.height() > touchPoint.y &&
+          touchPoint.y > M5.Display.height() - 40) &&
+          touchPoint.state == m5::touch_state_t::touch_begin) {
+          if (M5.Display.width() / 3 > touchPoint.x && touchPoint.x > 0){
+              BtnA_pressed = true;
+              DPRINTLNF("3A");
+          }
+          if ((M5.Display.width() / 3) * 2 > touchPoint.x &&
+              touchPoint.x > M5.Display.width() / 3) {
+              BtnB_pressed = true;
+              DPRINTLNF("3B");
+          }
+          if (M5.Display.width() > touchPoint.x &&
+              touchPoint.x > (M5.Display.width() / 3) * 2) {
+              BtnC_pressed = true;
+              DPRINTLNF("3C");
+          }
+      }   
 
-  #elif !defined ( CORE2LIB ) && ( defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) )
-    int state = M5.BtnA.wasHold() ? 1
-            : M5.BtnA.wasClicked() ? 2
-            : M5.BtnA.wasPressed() ? 3
-            : M5.BtnA.wasReleased() ? 4
-            : M5.BtnA.wasDecideClickCount() ? 5
-            : 0;
-    if (state == 3 && !BtnA_pressed) {  // Only process once the main loop is done
-      BtnA_pressed = true;
-      DPRINTF("2A, state = "); DPRINTLN(state);
-    }
-    
-    state = M5.BtnB.wasHold() ? 1
-          : M5.BtnB.wasClicked() ? 2
-          : M5.BtnB.wasPressed() ? 3
-          : M5.BtnB.wasReleased() ? 4
-          : M5.BtnB.wasDecideClickCount() ? 5
-          : 0;
-    if (state == 3 && !BtnB_pressed) {
-      BtnB_pressed = true;
-      DPRINTF("2B, state = "); DPRINTLN(state);
-    }
-
-    state = M5.BtnC.wasHold() ? 1
-          : M5.BtnC.wasClicked() ? 2
-          : M5.BtnC.wasPressed() ? 3
-          : M5.BtnC.wasReleased() ? 4
-          : M5.BtnC.wasDecideClickCount() ? 5
-          : 0;
-    if (state == 3 & !BtnC_pressed) {
-      BtnC_pressed = true;
-      DPRINTF("2C, state = "); DPRINTLN(state);
-    }
-   
-  #else
-    if (//M5.BtnA.wasReleased() ||
-     M5.BtnA.pressedFor(100, 3000)) {
+    #elif !defined ( CORE2LIB ) && ( defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) )
+      int state = M5.BtnA.wasHold() ? 1
+              : M5.BtnA.wasClicked() ? 2
+              : M5.BtnA.wasPressed() ? 3
+              : M5.BtnA.wasReleased() ? 4
+              : M5.BtnA.wasDecideClickCount() ? 5
+              : 0;
+      if (state == 3 && !BtnA_pressed) {  // Only process once the main loop is done
         BtnA_pressed = true;
-        DPRINTLNF("A");
-    } else if (//M5.BtnB.wasReleased() || 
-    M5.BtnB.pressedFor(100, 3000)) {
+        DPRINTF("2A, state = "); DPRINTLN(state);
+      }
+      
+      state = M5.BtnB.wasHold() ? 1
+            : M5.BtnB.wasClicked() ? 2
+            : M5.BtnB.wasPressed() ? 3
+            : M5.BtnB.wasReleased() ? 4
+            : M5.BtnB.wasDecideClickCount() ? 5
+            : 0;
+      if (state == 3 && !BtnB_pressed) {
         BtnB_pressed = true;
-        DPRINTLNF("B");
-    } else if (//M5.BtnC.wasReleased() || 
-    M5.BtnC.pressedFor(100, 3000)) {
+        DPRINTF("2B, state = "); DPRINTLN(state);
+      }
+
+      state = M5.BtnC.wasHold() ? 1
+            : M5.BtnC.wasClicked() ? 2
+            : M5.BtnC.wasPressed() ? 3
+            : M5.BtnC.wasReleased() ? 4
+            : M5.BtnC.wasDecideClickCount() ? 5
+            : 0;
+      if (state == 3 & !BtnC_pressed) {
         BtnC_pressed = true;
-        DPRINTLNF("C");
-    }
-  #endif
+        DPRINTF("2C, state = "); DPRINTLN(state);
+      }
+    
+    #elif !defined (M5STAMPC3U)
+      if (//M5.BtnA.wasReleased() ||
+      M5.BtnA.pressedFor(100, 3000)) {
+          BtnA_pressed = true;
+          DPRINTLNF("A");
+      } else if (//M5.BtnB.wasReleased() || 
+      M5.BtnB.pressedFor(100, 3000)) {
+          BtnB_pressed = true;
+          DPRINTLNF("B");
+      } else if (//M5.BtnC.wasReleased() || 
+      M5.BtnC.pressedFor(100, 3000)) {
+          BtnC_pressed = true;
+          DPRINTLNF("C");
+      }
+    #endif
   }
+#endif //M5STAMPC3U
+
 //
 //   Main Setup for ESP32
 //
@@ -313,7 +326,24 @@ void setup() {
   Serial.begin(115200);
   while ( !Serial ) delay(10);   // wait for native usb
 
-  #ifdef CONFIG_IDF_TARGET_ESP32S3
+  #ifdef M5STAMPC3U
+    //auto cfg = M5.config();
+    //M5.begin(cfg);
+    //M5.Power.begin();
+    Wire.begin(I2C_SDA, I2C_SCL);  // M5StampC3U i2c
+      // set up neopixel
+    pixel.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+    pixel.clear(); // Set pixel colors to 'off'
+    pixel.show();
+    // set up GPIO
+    Serial.println("turning LED blue");
+    pixel.setPixelColor(0, pixel.Color(0, 0, 128));
+    pixel.show(); 
+    //Serial.println("turning LED red");
+    //pixel.setPixelColor(0, pixel.Color(128, 0, 0));
+    //pixel.show(); 
+
+  #elif CONFIG_IDF_TARGET_ESP32S3
     auto cfg = M5.config();
     M5.begin(cfg);
     M5.Power.begin();
@@ -368,14 +398,16 @@ void setup() {
     //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
   #endif
     
-  SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
-  //SPI.setFrequency(SPI_FREQ);
+  #ifndef M5STAMPC3U
+    SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+    //SPI.setFrequency(SPI_FREQ);
+  #endif
   
   #ifdef USBHOST  
-  // init host stack on controller (rhport) 1
-  USBHost.begin(1);
-  // Initialize SerialHost
-  SerialHost.begin(115200);
+    // init host stack on controller (rhport) 1
+    USBHost.begin(1);
+    // Initialize SerialHost
+    SerialHost.begin(115200);
   #endif
 
   #ifdef USE_FREERTOS
@@ -401,8 +433,8 @@ void setup() {
       //xTaskCreate(app_loop_rtos_task, "app", 8000, NULL, 3, &xHandle); 
       //xTaskCreate(BLE_loop_rtos_task, "BLE", 8000, NULL, 2, &xHandle);   // callback on server ID not working inside a task
       //xTaskCreate(btn_loop_rtos_task, "btns", 8000, NULL, 2, &xHandle);   // callback on server ID not working inside a task
-    #endif
-  #endif
+    #endif  // USBHOST
+  #endif // FREERTOS
 
   #ifndef USBHOST
     app_setup();  // setup app stuff
@@ -411,9 +443,9 @@ void setup() {
   #ifdef BLE
     BLE_Setup();
     Scan_BLE_Servers();
-  #endif
+  #endif // BLE
 
-  DPRINTLNF("TinyUSB Host Serial Setup Done");
+  DPRINTLNF("Setup Done");
 }
 
 //*****************************************************************************
@@ -431,19 +463,20 @@ void loop() {
 
   loop_time = millis();  // watermark
   
-  M5.update();
-
-  #ifndef USE_FREERTOS
+   #ifndef USE_FREERTOS
     //USBHost.task(10,false);
     //USBHost.task();
   #endif
 
-  chk_btns();
+  #ifndef M5STAMPC3U
+    M5.update();
+    chk_btns();
+  #endif
   
   #ifdef _PC_PASSTHRU   // Unused code, save for reference or test
   // allow a PC to talk o teh radio and opposite.  Need debug shuto    ff typically
     forward_serial();
-  #endif
+  #endif  // _PC_PASSTHRU
   
   pass_PC_to_radio();
   
@@ -451,236 +484,239 @@ void loop() {
   
   #ifdef BLE
     BLE_loop();
-  #endif
+  #endif  // BLE
 
   //#ifdef USBHOST
     app_loop();   // call to application main loop - moved to FreeRTOS task
   // #endif
   
+  #ifndef M5STAMPC3U
     // Measure our current and max loop times
-  int32_t temp_time = millis() - loop_time;  // current loop duration
+    int32_t temp_time = millis() - loop_time;  // current loop duration
 
-  if ((temp_time > loop_max_time) || temp_time > loop_time_threshold) {
-    if (temp_time > loop_max_time)
-      loop_max_time = temp_time;
-    //Serial.print("!");   // Turn on to see RTOS scheduling time allocated visually
-    if (loop_max_time > loop_time_threshold) {
-      //Serial.printf("! loop time > %d  current time = %d  max time seen %d\n", loop_time_threshold, temp_time, loop_max_time);
-      //Serial.println(" App loop time > 500!");
-      M5.Lcd.setTextDatum(ML_DATUM);
-      M5.Lcd.setTextColor(WHITE, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString("!", 0, 0, 2);
-      //if (loop_max_time > 3000 && SerialBT.isClosed() && SerialBT.isReady())
-      //  restart_BT(); // try this as a USBHost lockup failover short of having the btn task
-    }  //    delete and restart the app task, or even the USBHost task
-    else {
-      M5.Lcd.setTextDatum(ML_DATUM);                            // erase the marker
-      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString("!", 0, 0, 2);
+    if ((temp_time > loop_max_time) || temp_time > loop_time_threshold) {
+      if (temp_time > loop_max_time)
+        loop_max_time = temp_time;
+      //Serial.print("!");   // Turn on to see RTOS scheduling time allocated visually
+      if (loop_max_time > loop_time_threshold) {
+        //Serial.printf("! loop time > %d  current time = %d  max time seen %d\n", loop_time_threshold, temp_time, loop_max_time);
+        //Serial.println(" App loop time > 500!");
+        M5.Lcd.setTextDatum(ML_DATUM);
+        M5.Lcd.setTextColor(WHITE, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString("!", 0, 0, 2);
+        //if (loop_max_time > 3000 && SerialBT.isClosed() && SerialBT.isReady())
+        //  restart_BT(); // try this as a USBHost lockup failover short of having the btn task
+      }  //    delete and restart the app task, or even the USBHost task
+      else {
+        M5.Lcd.setTextDatum(ML_DATUM);                            // erase the marker
+        M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString("!", 0, 0, 2);
+      }
     }
-  }
+  #endif // M5STAMPC3U
+
   //uint32_t stack_sz;
   //stack_sz = uxTaskGetStackHighWaterMark( NULL );
   //if (stack_sz < 1000)
     //Serial.printf("\n  #######   App Loop: Stack Size Low Space Warning < 1000 words left free:  %lu\n",stack_sz);
 }
 
-void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx,
+#ifndef M5STAMPC3U
+  void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx,
                             uint8_t const* report, uint16_t len) {
-}
+  }
 
-//--------------------------------------------------------------------+
-// TinyUSB Host callbacks
-//--------------------------------------------------------------------+
+  //--------------------------------------------------------------------+
+  // TinyUSB Host callbacks
+  //--------------------------------------------------------------------+
 
-// Invoked when a device with CDC interface is mounted
-// idx is index of cdc interface in the internal pool.
-void tuh_cdc_mount_cb(uint8_t idx) {
-  // bind SerialHost object to this interface 
-  #ifdef USBHOST
-  SerialHost.mount(idx);
-  #endif
-  Serial.println("\n****** SerialHost is connected to a new CDC device");
-  USBH_connected = true;
-  frequency = 0;
-  //BT_enabled= false;
-  delay(1200);  // Delay first Tx or get a hang.
-  //SerialHost.flush();
-}
+  // Invoked when a device with CDC interface is mounted
+  // idx is index of cdc interface in the internal pool.
+  void tuh_cdc_mount_cb(uint8_t idx) {
+    // bind SerialHost object to this interface 
+    #ifdef USBHOST
+    SerialHost.mount(idx);
+    #endif
+    Serial.println("\n****** SerialHost is connected to a new CDC device");
+    USBH_connected = true;
+    frequency = 0;
+    //BT_enabled= false;
+    delay(1200);  // Delay first Tx or get a hang.
+    //SerialHost.flush();
+  }
 
-// Invoked when a device with CDC interface is unmounted
-void tuh_cdc_umount_cb(uint8_t idx) {
-  #ifdef USBHOST
-  SerialHost.umount(idx);
-  #endif
-  Serial.println("\n****** SerialHost is disconnected");
-  USBH_connected = false;
-  frequency = 0;  // force the screen to update if reconnecting to same frequency
-  //btConnected = false;
-  //BT_enabled = true;
-  ESP.restart();
-}
+  // Invoked when a device with CDC interface is unmounted
+  void tuh_cdc_umount_cb(uint8_t idx) {
+    #ifdef USBHOST
+    SerialHost.umount(idx);
+    #endif
+    Serial.println("\n****** SerialHost is disconnected");
+    USBH_connected = false;
+    frequency = 0;  // force the screen to update if reconnecting to same frequency
+    //btConnected = false;
+    //BT_enabled = true;
+    ESP.restart();
+  }
 
+  #ifndef EXTRAS
+    //--------------------------------------------------------------------+
+    // TinyUSB Host callbacks
+    //--------------------------------------------------------------------+
 
-#ifndef EXTRAS
-//--------------------------------------------------------------------+
-// TinyUSB Host callbacks
-//--------------------------------------------------------------------+
+    void print_device_descriptor(tuh_xfer_t *xfer);
 
-void print_device_descriptor(tuh_xfer_t *xfer);
+    void utf16_to_utf8(uint16_t *temp_buf, size_t buf_len);
 
-void utf16_to_utf8(uint16_t *temp_buf, size_t buf_len);
+    void print_lsusb(void) {
+      bool no_device = true;
+      for (uint8_t daddr = 1; daddr < CFG_TUH_DEVICE_MAX + 1; daddr++) {
+        // TODO can use tuh_mounted(daddr), but tinyusb has an bug
+        // use local connected flag instead
+        dev_info_t *dev = &dev_info[daddr - 1];
+        if (dev->mounted) {
+          Serial.printf("Device %u: ID %04x:%04x %s %s\r\n", daddr,
+                        dev->desc_device.idVendor, dev->desc_device.idProduct,
+                        (char *) dev->manufacturer, (char *) dev->product);
 
-void print_lsusb(void) {
-  bool no_device = true;
-  for (uint8_t daddr = 1; daddr < CFG_TUH_DEVICE_MAX + 1; daddr++) {
-    // TODO can use tuh_mounted(daddr), but tinyusb has an bug
-    // use local connected flag instead
-    dev_info_t *dev = &dev_info[daddr - 1];
-    if (dev->mounted) {
-      Serial.printf("Device %u: ID %04x:%04x %s %s\r\n", daddr,
-                    dev->desc_device.idVendor, dev->desc_device.idProduct,
-                    (char *) dev->manufacturer, (char *) dev->product);
+          no_device = false;
+        }
+      }
 
-      no_device = false;
+      if (no_device) {
+        Serial.println("No device connected (except hub)");  
+      }
+      USBHost_ready = (uint8_t) no_device;  // flag for setup to wait for USB Host to be ready.
     }
-  }
 
-  if (no_device) {
-    Serial.println("No device connected (except hub)");  
-  }
-  USBHost_ready = (uint8_t) no_device;  // flag for setup to wait for USB Host to be ready.
-}
+    //void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx,
+    //                            uint8_t const* report, uint16_t len) {
+    //}
 
-//void tuh_hid_report_sent_cb(uint8_t dev_addr, uint8_t idx,
-//                            uint8_t const* report, uint16_t len) {
-//}
+    // Invoked when device is mounted (configured)
+    void tuh_mount_cb(uint8_t daddr) {
+      Serial.printf("Device attached, address = %d\r\n", daddr);
 
-// Invoked when device is mounted (configured)
-void tuh_mount_cb(uint8_t daddr) {
-  Serial.printf("Device attached, address = %d\r\n", daddr);
-
-  dev_info_t *dev = &dev_info[daddr - 1];
-  dev->mounted = true;
-  USBHost_ready = 1;  // flag for setup to wait for USB Host to be ready.
-  
-  // Get Device Descriptor
-  tuh_descriptor_get_device(daddr, &dev->desc_device, 18, print_device_descriptor, 0);
-}
-
-/// Invoked when device is unmounted (bus reset/unplugged)
-void tuh_umount_cb(uint8_t daddr) {
-  Serial.printf("Device removed, address = %d\r\n", daddr);
-  dev_info_t *dev = &dev_info[daddr - 1];
-  dev->mounted = false;
-
-  // print device summary
-  print_lsusb();
-}
-
-void print_device_descriptor(tuh_xfer_t *xfer) {
-  if (XFER_RESULT_SUCCESS != xfer->result) {
-    Serial.printf("Failed to get device descriptor\r\n");
-    return;
-  }
-
-  uint8_t const daddr = xfer->daddr;
-  dev_info_t *dev = &dev_info[daddr - 1];
-  tusb_desc_device_t *desc = &dev->desc_device;
-
-  Serial.printf("Device %u: ID %04x:%04x\r\n", daddr, desc->idVendor, desc->idProduct);
-  Serial.printf("Device Descriptor:\r\n");
-  Serial.printf("  bLength             %u\r\n"     , desc->bLength);
-  Serial.printf("  bDescriptorType     %u\r\n"     , desc->bDescriptorType);
-  Serial.printf("  bcdUSB              %04x\r\n"   , desc->bcdUSB);
-  Serial.printf("  bDeviceClass        %u\r\n"     , desc->bDeviceClass);
-  Serial.printf("  bDeviceSubClass     %u\r\n"     , desc->bDeviceSubClass);
-  Serial.printf("  bDeviceProtocol     %u\r\n"     , desc->bDeviceProtocol);
-  Serial.printf("  bMaxPacketSize0     %u\r\n"     , desc->bMaxPacketSize0);
-  Serial.printf("  idVendor            0x%04x\r\n" , desc->idVendor);
-  Serial.printf("  idProduct           0x%04x\r\n" , desc->idProduct);
-  Serial.printf("  bcdDevice           %04x\r\n"   , desc->bcdDevice);
-
-  // Get String descriptor using Sync API
-  Serial.printf("  iManufacturer       %u     ", desc->iManufacturer);
-  if (XFER_RESULT_SUCCESS ==
-      tuh_descriptor_get_manufacturer_string_sync(daddr, LANGUAGE_ID, dev->manufacturer, sizeof(dev->manufacturer))) {
-    utf16_to_utf8(dev->manufacturer, sizeof(dev->manufacturer));
-    Serial.printf((char *) dev->manufacturer);
-  }
-  Serial.printf("\r\n");
-
-  Serial.printf("  iProduct            %u     ", desc->iProduct);
-  if (XFER_RESULT_SUCCESS ==
-      tuh_descriptor_get_product_string_sync(daddr, LANGUAGE_ID, dev->product, sizeof(dev->product))) {
-    utf16_to_utf8(dev->product, sizeof(dev->product));
-    Serial.printf((char *) dev->product);
-  }
-  Serial.printf("\r\n");
-
-  Serial.printf("  iSerialNumber       %u     ", desc->iSerialNumber);
-  if (XFER_RESULT_SUCCESS ==
-      tuh_descriptor_get_serial_string_sync(daddr, LANGUAGE_ID, dev->serial, sizeof(dev->serial))) {
-    utf16_to_utf8(dev->serial, sizeof(dev->serial));
-    Serial.printf((char *) dev->serial);
-  }
-  Serial.printf("\r\n");
-
-  Serial.printf("  bNumConfigurations  %u\r\n", desc->bNumConfigurations);
-
-  // print device summary
-  print_lsusb();
-}
-
-//--------------------------------------------------------------------+
-// String Descriptor Helper
-//--------------------------------------------------------------------+
-
-static void _convert_utf16le_to_utf8(const uint16_t *utf16, size_t utf16_len, uint8_t *utf8, size_t utf8_len) {
-  // TODO: Check for runover.
-  (void) utf8_len;
-  // Get the UTF-16 length out of the data itself.
-
-  for (size_t i = 0; i < utf16_len; i++) {
-    uint16_t chr = utf16[i];
-    if (chr < 0x80) {
-      *utf8++ = chr & 0xff;
-    } else if (chr < 0x800) {
-      *utf8++ = (uint8_t) (0xC0 | (chr >> 6 & 0x1F));
-      *utf8++ = (uint8_t) (0x80 | (chr >> 0 & 0x3F));
-    } else {
-      // TODO: Verify surrogate.
-      *utf8++ = (uint8_t) (0xE0 | (chr >> 12 & 0x0F));
-      *utf8++ = (uint8_t) (0x80 | (chr >> 6 & 0x3F));
-      *utf8++ = (uint8_t) (0x80 | (chr >> 0 & 0x3F));
+      dev_info_t *dev = &dev_info[daddr - 1];
+      dev->mounted = true;
+      USBHost_ready = 1;  // flag for setup to wait for USB Host to be ready.
+      
+      // Get Device Descriptor
+      tuh_descriptor_get_device(daddr, &dev->desc_device, 18, print_device_descriptor, 0);
     }
-    // TODO: Handle UTF-16 code points that take two entries.
-  }
-}
 
-// Count how many bytes a utf-16-le encoded string will take in utf-8.
-static int _count_utf8_bytes(const uint16_t *buf, size_t len) {
-  size_t total_bytes = 0;
-  for (size_t i = 0; i < len; i++) {
-    uint16_t chr = buf[i];
-    if (chr < 0x80) {
-      total_bytes += 1;
-    } else if (chr < 0x800) {
-      total_bytes += 2;
-    } else {
-      total_bytes += 3;
+    /// Invoked when device is unmounted (bus reset/unplugged)
+    void tuh_umount_cb(uint8_t daddr) {
+      Serial.printf("Device removed, address = %d\r\n", daddr);
+      dev_info_t *dev = &dev_info[daddr - 1];
+      dev->mounted = false;
+
+      // print device summary
+      print_lsusb();
     }
-    // TODO: Handle UTF-16 code points that take two entries.
-  }
-  return total_bytes;
-}
 
-void utf16_to_utf8(uint16_t *temp_buf, size_t buf_len) {
-  size_t utf16_len = ((temp_buf[0] & 0xff) - 2) / sizeof(uint16_t);
-  size_t utf8_len = _count_utf8_bytes(temp_buf + 1, utf16_len);
+    void print_device_descriptor(tuh_xfer_t *xfer) {
+      if (XFER_RESULT_SUCCESS != xfer->result) {
+        Serial.printf("Failed to get device descriptor\r\n");
+        return;
+      }
 
-  _convert_utf16le_to_utf8(temp_buf + 1, utf16_len, (uint8_t *) temp_buf, buf_len);
-  ((uint8_t *) temp_buf)[utf8_len] = '\0';
-}
+      uint8_t const daddr = xfer->daddr;
+      dev_info_t *dev = &dev_info[daddr - 1];
+      tusb_desc_device_t *desc = &dev->desc_device;
 
-#endif  // extras
+      Serial.printf("Device %u: ID %04x:%04x\r\n", daddr, desc->idVendor, desc->idProduct);
+      Serial.printf("Device Descriptor:\r\n");
+      Serial.printf("  bLength             %u\r\n"     , desc->bLength);
+      Serial.printf("  bDescriptorType     %u\r\n"     , desc->bDescriptorType);
+      Serial.printf("  bcdUSB              %04x\r\n"   , desc->bcdUSB);
+      Serial.printf("  bDeviceClass        %u\r\n"     , desc->bDeviceClass);
+      Serial.printf("  bDeviceSubClass     %u\r\n"     , desc->bDeviceSubClass);
+      Serial.printf("  bDeviceProtocol     %u\r\n"     , desc->bDeviceProtocol);
+      Serial.printf("  bMaxPacketSize0     %u\r\n"     , desc->bMaxPacketSize0);
+      Serial.printf("  idVendor            0x%04x\r\n" , desc->idVendor);
+      Serial.printf("  idProduct           0x%04x\r\n" , desc->idProduct);
+      Serial.printf("  bcdDevice           %04x\r\n"   , desc->bcdDevice);
+
+      // Get String descriptor using Sync API
+      Serial.printf("  iManufacturer       %u     ", desc->iManufacturer);
+      if (XFER_RESULT_SUCCESS ==
+          tuh_descriptor_get_manufacturer_string_sync(daddr, LANGUAGE_ID, dev->manufacturer, sizeof(dev->manufacturer))) {
+        utf16_to_utf8(dev->manufacturer, sizeof(dev->manufacturer));
+        Serial.printf((char *) dev->manufacturer);
+      }
+      Serial.printf("\r\n");
+
+      Serial.printf("  iProduct            %u     ", desc->iProduct);
+      if (XFER_RESULT_SUCCESS ==
+          tuh_descriptor_get_product_string_sync(daddr, LANGUAGE_ID, dev->product, sizeof(dev->product))) {
+        utf16_to_utf8(dev->product, sizeof(dev->product));
+        Serial.printf((char *) dev->product);
+      }
+      Serial.printf("\r\n");
+
+      Serial.printf("  iSerialNumber       %u     ", desc->iSerialNumber);
+      if (XFER_RESULT_SUCCESS ==
+          tuh_descriptor_get_serial_string_sync(daddr, LANGUAGE_ID, dev->serial, sizeof(dev->serial))) {
+        utf16_to_utf8(dev->serial, sizeof(dev->serial));
+        Serial.printf((char *) dev->serial);
+      }
+      Serial.printf("\r\n");
+
+      Serial.printf("  bNumConfigurations  %u\r\n", desc->bNumConfigurations);
+
+      // print device summary
+      print_lsusb();
+    }
+
+    //--------------------------------------------------------------------+
+    // String Descriptor Helper
+    //--------------------------------------------------------------------+
+
+    static void _convert_utf16le_to_utf8(const uint16_t *utf16, size_t utf16_len, uint8_t *utf8, size_t utf8_len) {
+      // TODO: Check for runover.
+      (void) utf8_len;
+      // Get the UTF-16 length out of the data itself.
+
+      for (size_t i = 0; i < utf16_len; i++) {
+        uint16_t chr = utf16[i];
+        if (chr < 0x80) {
+          *utf8++ = chr & 0xff;
+        } else if (chr < 0x800) {
+          *utf8++ = (uint8_t) (0xC0 | (chr >> 6 & 0x1F));
+          *utf8++ = (uint8_t) (0x80 | (chr >> 0 & 0x3F));
+        } else {
+          // TODO: Verify surrogate.
+          *utf8++ = (uint8_t) (0xE0 | (chr >> 12 & 0x0F));
+          *utf8++ = (uint8_t) (0x80 | (chr >> 6 & 0x3F));
+          *utf8++ = (uint8_t) (0x80 | (chr >> 0 & 0x3F));
+        }
+        // TODO: Handle UTF-16 code points that take two entries.
+      }
+    }
+
+    // Count how many bytes a utf-16-le encoded string will take in utf-8.
+    static int _count_utf8_bytes(const uint16_t *buf, size_t len) {
+      size_t total_bytes = 0;
+      for (size_t i = 0; i < len; i++) {
+        uint16_t chr = buf[i];
+        if (chr < 0x80) {
+          total_bytes += 1;
+        } else if (chr < 0x800) {
+          total_bytes += 2;
+        } else {
+          total_bytes += 3;
+        }
+        // TODO: Handle UTF-16 code points that take two entries.
+      }
+      return total_bytes;
+    }
+
+    void utf16_to_utf8(uint16_t *temp_buf, size_t buf_len) {
+      size_t utf16_len = ((temp_buf[0] & 0xff) - 2) / sizeof(uint16_t);
+      size_t utf8_len = _count_utf8_bytes(temp_buf + 1, utf16_len);
+
+      _convert_utf16le_to_utf8(temp_buf + 1, utf16_len, (uint8_t *) temp_buf, buf_len);
+      ((uint8_t *) temp_buf)[utf8_len] = '\0';
+    }
+  #endif  // extras
+#endif // M5STAMPC3U
