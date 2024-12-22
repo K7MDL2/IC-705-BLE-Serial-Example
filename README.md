@@ -23,7 +23,21 @@ The M5STAMPC3U is using this same code with added #defines to account for minor 
 
 I used a M5Core2 with 4-In/8-Out module at the radio for the BT band decoding and transverter control and frequency display.  It uses 4 wires run to the M5StampC3U in the box. 3 wires are BCD-coded band info and 1 wire is for PTT.  I used a separate controller in the box because this will be set in the back seat of my rover truck, or away from the operating position.  If you where just using box this at home and have desk space, you could mount the M5Core2 and add i2C IO modules to it and skip the M5StampC3U.   M5Stack has flush panel mount frames for the M5Core series.   Max 12V current draw should be < 10amp due to the 50W 903 amp.  Normally it is < 3A.   I am seeing about 1A for RX mode.  I chose to power only the Xvtr board in use, saving power and possible interference between them.
 
+The SP4T coax switch bypasses the Xvtr box while also breaking out the 705 common RF cable for dedicated band antennas.  HF/50, 144, and 432 pass through the SP4T coax switch bypassing the whole Xvtr system.  PTT breakout is provided for HF/6M, 144, 222, 432, 902/3 and 1296 bands for amp PTT.  Every band has its own antenna jack.  Except for the 222 RF output, all IF and RF outputs are split into Rx and TX.  You can easily add attenuators and LNAs as needed, or relocate the 903/1296 T/R switches outside the box such as on a mast with a preamp and split RF.  I have external RF amps for most of the bands.  This coax and PTT breakout make it easy.  
+
+If you already have transverters (for any band) you could package this differently by using external transverters and focus this build on the control and RF/PTT breakout and sequencing.  I now have a IC-905 for higher bands so I did not go this route.  I wanted to base the rover truck on the IC-905 since it has 1296 and higher bands, but adding 222 which uses a 28Mhz IF (or 21) won't work.  Same for the UR3LM 903 board which happens to be 28/21Mhz IF vs the standard 144Mhz IF.  
+
+I originally envisioned this box having 6 transverter bands to allow me to use my Hermes Lite 2 (HL2) as a SDR-based IF rig with just an ethernet connection to the remotely placed package, but I found relying on a computer screen in a mobile environment too slow and cumbersome, even with control pods or dedicated controller like the PiHPSDR (I have 2 of themn).  Ease of use by the apps for switching between digital and voice, logging between multiple radios/bands and operating quickly without a laptop all factored in.
+
+Set config #defines 
+      CLEAN_SD_DB_FILE - overwrites SD card saved data file with new band data structure
+      XVBOX - radio-side controller IF band data changes for the UR3LM transveter boards using 21 and 50Mhz IF instead of 28 and 144.
+      M5STAMPC3U - builds the code for a (currently) headless embedded controller in the Transverter Box, set for 3 bands, 222, 903, and 1296.  
+
 ** ** Pictures to be added  ** ** 
+
+Eventually I will move a lot of config to the SD card.
+
 
 *****************************************
 
