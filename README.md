@@ -10,6 +10,8 @@ SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/
 
 Latest summary: Dec 22, 2024
 I built a 3-band Transverter box adding missin VHF/UHF bands for 222, 902/3 and 1296 to the IC-705, or any other multiband radio with HF, 6, 144, and 432 bands, which there are many.  
+![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Top View Front](https://github.com/user-attachments/assets/1c883ef0-376b-41ee-81da-cb7c4c26b37c)
+![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Back View](https://github.com/user-attachments/assets/2dd7e8d9-e548-4fd3-b8d0-b0611b4c8bf5)
 
 I used the latest transverter boards from UR3LM, all now have the option for a external 10Mhz reference and can select between 2 IF frequencies.  I used 21Mhz IF option for 222 and 903 which gives greater band coverage thean teh usual 28-30 many radios are limited to.  I am using 50Mhz for the 1296 Xvtr. Using SP6T switches you could easily handle 6 transverters.  If you only have a HF/6M or even a HJF only IF rig, you can use a unity gain xvtr board to convert IF outputs down to HF.  If I was just doing 6-7 bands covering 50-1296 I would just use a Q5 Signal multi-band converter.  It is more compact, higher power oputput (25 or 50W per band) and will be about the same cost.  With only 3 Xvtrs, the cost is worth the fun of the build.
 
@@ -34,9 +36,12 @@ Set config #defines
       XVBOX - radio-side controller IF band data changes for the UR3LM transveter boards using 21 and 50Mhz IF instead of 28 and 144.
       M5STAMPC3U - builds the code for a (currently) headless embedded controller in the Transverter Box, set for 3 bands, 222, 903, and 1296.  
 
-** ** Pictures to be added  ** ** 
-
 Eventually I will move a lot of config to the SD card.
+
+
+![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Top View](https://github.com/user-attachments/assets/776fd484-0e7e-459f-81a9-9e05f6ebf51c)
+![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Control Board with M5StampC3U](https://github.com/user-attachments/assets/76a96611-48fa-40c3-a52b-4a43ad44704f)
+![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - 12V power distribution](https://github.com/user-attachments/assets/2656da74-567d-4d7c-a353-442eeb2dfbea)
 
 
 *****************************************
