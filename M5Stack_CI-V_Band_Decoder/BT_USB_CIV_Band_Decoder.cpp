@@ -65,9 +65,9 @@ struct Bands {
     { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
     
     #ifdef XVBOX // for 705 transverter box, using 21Mhz IF for 903, 50Mhz for 1296, 28 for 222.
-      { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 21MHz LO
+      { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 28MHz LO
       { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  with no LO
-      { "33cm", 902000000, 928000000, 881000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902 with 21Mhz LO
+      { "33cm", 902000000, 928000000, 874000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902 with 28Mhz LO
       { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz with 50Mhz LO
     
     #else  // typical usage 144 IF for 902, 144 IF for 1296
