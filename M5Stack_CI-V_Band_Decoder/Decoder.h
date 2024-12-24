@@ -492,7 +492,7 @@ enum band_idx { DUMMY,
 // Bits 7-3 of the lower byte is not used here, used by PTT so they are set to pin-not-used and thus value does not matter.
 // 0xYYZZ where ZZ is typically 07 sets the IF SP6T switch to all off.  Only needed for Xvtr bands
 
-
+  #define ALL_OFF (0xF8F3)  // This pattern is sent at start of a band change to create a break before make effect
   #define DECODE_BAND_DUMMY   (0xF207)    //Dummy Row
   #define DECODE_BANDAM       (0xF207)    //AM
   #define DECODE_BAND160M     (0xF207)    //160M 

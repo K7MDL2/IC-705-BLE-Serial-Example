@@ -175,6 +175,7 @@
 #ifdef M5STAMPC3U  // for embedded 705 Transveter solution
   #define WIRED_PTT   1       // 1 = use ther wired input for fastest PTT
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
+
 #else // choose for M5 Core or Atom CPUs
   #define WIRED_PTT   1       // 1 = use ther wired input for fastest PTT
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.

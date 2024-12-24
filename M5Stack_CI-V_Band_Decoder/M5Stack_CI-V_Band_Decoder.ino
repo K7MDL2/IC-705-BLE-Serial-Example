@@ -330,7 +330,7 @@ void setup() {
     //auto cfg = M5.config();
     //M5.begin(cfg);
     //M5.Power.begin();
-    Wire.begin(I2C_SDA, I2C_SCL);  // M5StampC3U i2c
+    Wire.begin(I2C_SDA, I2C_SCL,400000);  // M5StampC3U i2c
       // set up neopixel
     pixel.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
     pixel.clear(); // Set pixel colors to 'off'

@@ -84,7 +84,9 @@ void Band_Decode_Output(uint8_t band)
 
     DPRINTF("Band_Decode_Output: Band "); DPRINTLN(band);
 
-    switch (band)
+    //GPIO_Out(ALL_OFF);  // turn off devices to effect break before make
+
+    switch (band)  // Now set them to the desired ON state
     {   
         case  DUMMY     : GPIO_Out(0);   break;   //Dummy Band
         case  BAND_AM   : GPIO_Out(DECODE_BANDAM);   break;   //AM
@@ -200,13 +202,13 @@ void GPIO_Out(uint16_t pattern)
 
       // 24 outputs available - 8 are inputs, 8 are PTT outputs, 16 are control lines
       
-      // PA0-7 on 1st module are buffered inputs
+      // PA0-7 on 1st module are buffered inputs - 0x03 to turn off IF ports
       //   pin 0-2  - 3 Band select data inputs
       //   pin 3    - 1 PTT input
       //   pin 4-7  - 4 spare inputs
       //   pin 8    - 1 GND
 
-      // PB0-7 on 1st module are unbuffered TTL outputs
+      // PB0-7 on 1st module are unbuffered TTL outputs - 0xF0 to turn them all off.
       //   pin 0-2 - 3 IF solid state SP6T switch 0=A 1=B 2=C
       //   pin 3   - 222 Xvtr PTT
       //   pin 4   - 903 Xvtr PTT
@@ -214,12 +216,12 @@ void GPIO_Out(uint16_t pattern)
       //   pin 6   - 903 RF Out T/R switch
       //   pin 7   - 903 RF Out T/R switch
       
-      // PA0-7 on 2nd module are buffered outputs for band specific PTT out[puts for amps.  These should be sequenced
+      // PA0-7 on 2nd module are buffered outputs for band specific PTT outputs for amps.  These should be sequenced.  - 0x0800 to set all idle
       //   pin 0-5 - 6 HF/50 thru 1296
       //   pin 6   - 1 spare - future TxInhibit
-      //   pin 7   - PTT out to TC board IF relay.  Switvch this fast on incoming PTT change from Radio
+      //   pin 7   - PTT out to TC board IF relay.  Switch this fast on incoming PTT change from Radio
       
-      // PB0-7 on 2nd module are unbuffered TTL outputs.
+      // PB0-7 on 2nd module are unbuffered TTL outputs.  - 0xF000 to set all to off
       //   pin 0   - Port 1 (Xvtr mode) on SP4T coax switch These select IC-705 RF direct to antennas for HF/50, 144, 432 bands and the Xvtr box input
       //   pin 1   - Port 2 (Xvtr mode) on SP4T coax switch
       //   pin 2   - Port 3 (Xvtr mode) on SP4T coax switch
@@ -228,6 +230,8 @@ void GPIO_Out(uint16_t pattern)
       //   pin 5   - 12V Relay 2 - 903 Xvtr Power
       //   pin 6   - 12V Relay 3 - 903 Amp Power
       //   pin 7   - 12V Relay 4 - 222 Xvtr Power
+
+      // send pattern (0xF8F3) before change to do a break before make effect
 
       if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0
       if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1

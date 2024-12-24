@@ -65,7 +65,7 @@ struct Bands {
     { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
     
     #ifdef XVBOX // for 705 transverter box, using 21Mhz IF for 903, 50Mhz for 1296, 28 for 222.
-      { "1.25M", 222000000, 225000000, 201000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 21MHz LO
+      { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 21MHz LO
       { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  with no LO
       { "33cm", 902000000, 928000000, 881000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902 with 21Mhz LO
       { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz with 50Mhz LO
@@ -1870,6 +1870,7 @@ void app_loop(void) {
   uint8_t decode_PTT_temp;
   static uint8_t decode_PTT_temp_last = 0;
   static uint32_t last_input_poll = 0;
+  static uint32_t last_ptt_input_poll = 0;
   uint8_t decode_Band_temp;
   static uint8_t decode_Band_temp_last = 0;
   uint8_t decode_in;
@@ -1965,16 +1966,15 @@ void app_loop(void) {
   // scan our input sources for wired PTT and band change - only 1 module type at a time for now
   #if defined ( IO_MODULE )  || defined ( EXT_IO2_UNIT ) || defined ( M5STAMPC3U )
     // Have observed the app loop time to generally be < 10ms so go fast
-    if (1) {
-    //uint8_t poll_interval = 4;  //  time in ms for wired we can scan it much faster since it is not querying the radio over a BT connection
-    //if (millis() > last_input_poll + poll_interval) {
+    uint8_t poll_interval = 8;  //  time in ms for wired we can scan it much faster since it is not querying the radio over a BT connection
+    if (millis() > last_input_poll + poll_interval) {
       // Process the band input and PTT input pins
       #if defined ( IO_MODULE )
         decode_in = Module_4in_8out_Input_scan();  // Has 4 digital inputs, using for PTT and band input
       #elif defined ( EXT_IO2_UNIT )
         decode_in = Unit_EXTIO2_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
       #elif defined ( M5STAMPC3U )
-        decode_in = M5STAMPC3U_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
+        decode_in = M5STAMPC3U_Input_scan(1);     // Has 8 I/O ports, using lower 4 for band and PTT input
       #endif
 
       decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit
