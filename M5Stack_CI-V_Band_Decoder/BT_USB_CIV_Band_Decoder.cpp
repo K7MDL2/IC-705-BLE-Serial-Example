@@ -1240,6 +1240,8 @@ void draw_new_screen(void) {
       M5.Lcd.drawString("                Search          XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
     #elif defined(USBHOST)
       M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
+    #elif defined (XVBOX)
+      M5.Lcd.drawString("222             903             1296 ", (int)(M5.Lcd.width() / 2), 220, 2);
     #else
       if (XVTR)
         M5.Lcd.drawString("                Search         XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
@@ -1891,44 +1893,59 @@ void app_loop(void) {
 
     if (BtnA_pressed) {
       BtnA_pressed = false;
-      DPRINTLNF("BtnA pressed - Switch to BT mode");
-      #ifdef BTCLASSIC
-        DPRINTLNF("Switch to BT mode");
-        BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
-        restart_BT_flag = true;
+      #ifdef XVBOX
+        // select band 222
+        band_Selector(3);
+      #else
+        DPRINTLNF("BtnA pressed - Switch to BT mode");
+        #ifdef BTCLASSIC
+          DPRINTLNF("Switch to BT mode");
+          BT_enabled = true;  // allows operaor to turn on BT if BT feature is active
+          restart_BT_flag = true;
+        #endif
       #endif
     }
 
     if (BtnB_pressed) {
       BtnB_pressed = false;
-      radio_address = 0;
-      DPRINTLNF("BtnB pressed: Scan for new radio address");
-      get_new_address_flag = true;
+      #ifdef XVBOX
+        // select band 903
+        band_Selector(5);
+      #else
+
+        radio_address = 0;
+        DPRINTLNF("BtnB pressed: Scan for new radio address");
+        get_new_address_flag = true;
+      #endif
     }
 
     if (BtnC_pressed) {
       BtnC_pressed = false;
-
-      // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
-      #ifdef USBHOST
-        DPRINTLNF("BtnC pressed - Switch to USB Host mode");
-        restart_USBH_flag = true;
+      #ifdef XVBOX
+        // select band 1296
+        band_Selector(6);
       #else
-        if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
-        {
-          xvtr_band_select++;
-          DPRINTLNF("BtnC pressed - Select a Xvtr band - index = ");
-          DPRINTLN(xvtr_band_select);
-          switch (xvtr_band_select)  // index our way through a curated list.
+        // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
+        #ifdef USBHOST
+          DPRINTLNF("BtnC pressed - Switch to USB Host mode");
+          restart_USBH_flag = true;
+        #else
+          if (XVTR)  // Btn used for USB or Xvtr for now  - Emulate the wired input for now
           {
-            case 1: band_Selector(3); break;
-            case 2: band_Selector(5); break;
-            case 3: band_Selector(6); break;
-            //case 4: band_Selector(8); break;
-            case 4: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
-            default: xvtr_band_select = 0; break;
+            xvtr_band_select++;
+            DPRINTLNF("BtnC pressed - Select a Xvtr band - index = ");
+            DPRINTLN(xvtr_band_select);
+            switch (xvtr_band_select)  // index our way through a curated list.
+            {
+              case 1: band_Selector(3); break;
+              case 2: band_Selector(5); break;
+              case 3: band_Selector(6); break;
+              //case 4: band_Selector(8); break;
+              case 4: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
+              default: xvtr_band_select = 0; break;
+            }
           }
-        }
+        #endif
       #endif
     }  // end Btn C
 
