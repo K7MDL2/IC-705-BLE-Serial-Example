@@ -98,7 +98,8 @@
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
-//#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller
+//#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
+                      // Comment out and the CPU architecture is automatically selected for all others (AtomS3, Core, Core2, CoreS3/SE)
 
 #define XVBOX // set some data config specific to usage with the 705 transverter box
 

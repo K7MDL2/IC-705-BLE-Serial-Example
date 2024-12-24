@@ -394,10 +394,11 @@ enum band_idx { DUMMY,
 //  Set the upper half (2nd MCP23017 port expander - 8 available outputs 8-16 in our numbering) bits 0-3
 
 //  The upper byte, lower 4 bits are the SP4T coax switch.   1 = on for each of 4 ports.
-//  Any Xvtr band (222, 903, 1296) would be Port 1 (0x01 - 1st bit or bit 0)
-//  HF/50 would be Port 2 (0x02 - 2nd bit or bit 1)
-//  144 would be Port 3 (0x04 - 3rd bit or bit 2)
-//  432 would be Port 4 (0x08 - 4th bit or bit 3)
+//  Any Xvtr band (222, 903, 1296) would be Port 1  - 0x0001  or 1
+//  HF/50 would be Port 2 (0x02 - 2nd bit or bit 1) - 0x0010  or 2
+//  144 would be Port 3 (0x04 - 3rd bit or bit 2)   - 0x0100  or 4
+//  432 would be Port 4 (0x08 - 4th bit or bit 3)   - 0x1000  or 8
+//  If band undefined then default to 0x0002 or 2 to pass through anything to the 50/HF port
 
 // Also in Module 2, the upper 4 bits are the 12V power relays.   0 = on for each relay.
 //  bit 7 1296 12V ON to 1296 Xvtr  - binary 1110 or 0xExyz
@@ -407,22 +408,28 @@ enum band_idx { DUMMY,
 //  bit 4 222 12V ON to 222 Xvtr    - binary 0111 or 0x7xyz
 //  All non-Xvtr bands set top mibble to 0xF
 
-// Lower half, lowest bits are PTT out.  6 dedicated buffered 
+//  so upper byte for 222 band is 0111 0001 or 0x71
+
+// Lower byte, lowest bits are PTT out.  6 dedicated buffered 
 // bits 0-2 are IF SP6T switch.  A, B, C
 //          CBA
-//    RF1 = 000  50/HF
+//    RF1 = 000  NC
 //    RF2 = 001  NC
 //    RF3 = 010  222
-//    RF4 = 011  1296
+//    RF4 = 011  NC
 //    RF5 = 100  903
-//    RF6 = 101  NC (should be 1296 but RF switch is a junk box damaged one so moved to RF4)
+//    RF6 = 101  1296
 //    OFF = 110  
 //    OFF = 111
 
-// bits 3 to 7 are used in PTT function so can sedt to 0, they wil lbe ignored here.
+// bits 3 to 7 are used in PTT function so can set to 0, they wil lbe ignored here.
+
+// so lower byte for 222 here is simply 0010 or 0x02
+// Full value for 222 is then 0x7102
 
 // Bits 7-3 of the lower byte is not used here, used by PTT so they are set to pin-not-used and thus value does not matter.
 // 0xYYZZ where ZZ is typically 07 sets the IF SP6T switch to all off.  Only needed for Xvtr bands
+
 
   #define DECODE_BAND_DUMMY   (0xF207)    //Dummy Row
   #define DECODE_BANDAM       (0xF207)    //AM
@@ -444,7 +451,7 @@ enum band_idx { DUMMY,
   #define DECODE_BAND222      (0x7102)    //222
   #define DECODE_BAND432      (0xF807)    //432
   #define DECODE_BAND902      (0x9104)    //902  Turn on both 12V relays, 2 & 3 for 903 Xvtr and Amp
-  #define DECODE_BAND1296     (0xE103)    //1296
+  #define DECODE_BAND1296     (0xE105)    //1296
   #define DECODE_BAND2400     (0xF207)    //2400
   #define DECODE_BAND3300     (0xF207)    //3400
   #define DECODE_BAND5760     (0xF207)    //5760M

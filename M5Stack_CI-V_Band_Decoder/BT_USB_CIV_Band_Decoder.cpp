@@ -45,7 +45,7 @@ struct Bands {
 };
 */
 
-#ifndef M5STAMPC3U
+//#ifndef M5STAMPC3U
   struct Bands bands[NUM_OF_BANDS] = {
     { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
     { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
@@ -63,15 +63,18 @@ struct Bands {
     { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
     { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
     { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
-    { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222
-    { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
-        
+    
     #ifdef XVBOX // for 705 transverter box, using 21Mhz IF for 903, 50Mhz for 1296, 28 for 222.
-      { "33cm", 902000000, 928000000, 881000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
-      { "23cm", 1240000000, 1300000000, 1246000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
+      { "1.25M", 222000000, 225000000, 201000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 21MHz LO
+      { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  with no LO
+      { "33cm", 902000000, 928000000, 881000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902 with 21Mhz LO
+      { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz with 50Mhz LO
+    
     #else  // typical usage 144 IF for 902, 144 IF for 1296
-      { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
-      { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
+      { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 28Mhz LO
+      { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  No LO
+      { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902  with 144Mhz LO
+      { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz  with 144Mhz LO
     #endif
 
     { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
@@ -84,6 +87,7 @@ struct Bands {
     { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
     { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
   };
+/*
 #else
   struct Bands bands[NUM_OF_BANDS] = {
     { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
@@ -117,7 +121,7 @@ struct Bands {
     { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
   };
 #endif
-
+*/
 char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
 uint16_t baud_rate;                   //Current baud speed
 uint32_t readtimeout = 10;            //Serial port read timeout
