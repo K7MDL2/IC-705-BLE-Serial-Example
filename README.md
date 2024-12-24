@@ -8,7 +8,14 @@ SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/
 
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
-Latest Update: DEc 23, 2024
+Latest Update: Dec 24, 2024
+Optimized Wired PTT scanning time in both the display and Xvtr box (XVBox) controllers to not miss radio wired PTT events, balanced with increased noise from high speed i2c bus activity heard when on 222Mhz using the 21Mhz IF.  Switched both 903 and 222 to 28MHz IF since 903 is actually 22Mhz IF and is out of the ham band which an unmodified IC-705 won't transmit.  The 28Mhz IF also was relatively free of the i2c noise, especially with the scan timing and i2c bus speed choices applied.  After all that, I discovered I missed the primary source of radiated i2c bus noise, the 4" long i2c cable running down to the INA226 voltage and current sensor.  I plan to use a shielded cable but for now, I snapped a medium size ferrite on it which has solved 80% of the noise from that.  28Mhz IF has taken care of most of the the remaining 20% of i2c noise.
+
+I am pondering the physical solution to buffer the internal Xvtr PTT lines and external band decoder and PTT Input lines, add pullups, and RFI proof them.  Probably a new board mounted on top of the 903/1296 stack.  I am also considering laying out a control board PCB which with surface mount parts and ground planes for i2c bus radiated noise sheilding.  I can consolidate all this stuff and not require the space the MCP23017 and ULN2803 modules take up.
+
+On the M5Core2 controller side I am looking at using the M5Stack prototype base module which has inside a 5V regulator, 12V coaxial power jack, proto board space and edge connectors.  Put a MCP23017 and ULN2803 on the board, tap into the bus for i2c pins, and I can eliminate the 4IN/8Out IO module.  Also do not need the 4-Relay module.  It will have 5V pullup and bypass caps al lconveniently inside with a simple multiconnector interface to a siongle 5 wire control cable to the XVBox
+
+Dec 23, 2024
 Several minor changes and setup for future module expansions.
 I fed -70dBm signal into each transverter and initially only 903 had the expected output (close to S9 with 705 preamp on).  Bypassed all cables, not the problem.  Had a partially bad SP6T solid state RF switch (used for the IF routing to the Xvtrs). I knew one of the 2 boards (RX and TX paths) was bad and it happened to be the one on the RX path.  I could move 1 Xvtr output cable but not the other so I swapped the TX board into the RX position.  RX is working but the outputs were still generally too low.  
 
