@@ -1241,7 +1241,7 @@ void draw_new_screen(void) {
     #elif defined(USBHOST)
       M5.Lcd.drawString("                Search       USB Mode", (int)(M5.Lcd.width() / 2), 220, 2);
     #elif defined (XVBOX)
-      M5.Lcd.drawString("222             903             1296 ", (int)(M5.Lcd.width() / 2), 220, 2);
+      M5.Lcd.drawString(" 222             903             1296 ", (int)(M5.Lcd.width() / 2), 220, 2);
     #else
       if (XVTR)
         M5.Lcd.drawString("                Search         XVTR ", (int)(M5.Lcd.width() / 2), 220, 2);
@@ -1895,7 +1895,10 @@ void app_loop(void) {
       BtnA_pressed = false;
       #ifdef XVBOX
         // select band 222
-        band_Selector(3);
+        if (band != BAND_1_25M)
+          band_Selector(3);
+        else
+          band_Selector(0);
       #else
         DPRINTLNF("BtnA pressed - Switch to BT mode");
         #ifdef BTCLASSIC
@@ -1910,7 +1913,10 @@ void app_loop(void) {
       BtnB_pressed = false;
       #ifdef XVBOX
         // select band 903
-        band_Selector(5);
+        if (band != BAND_33cm)
+          band_Selector(5);
+        else
+          band_Selector(0);
       #else
 
         radio_address = 0;
@@ -1923,7 +1929,10 @@ void app_loop(void) {
       BtnC_pressed = false;
       #ifdef XVBOX
         // select band 1296
-        band_Selector(6);
+        if (band != BAND_23cm)
+          band_Selector(6);
+        else
+          band_Selector(0);
       #else
         // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
         #ifdef USBHOST
