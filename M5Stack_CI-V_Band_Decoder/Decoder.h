@@ -55,111 +55,114 @@ enum band_idx { DUMMY,
 // Make IO Pin assignments here. 
 
 // These are 4 RELAY (_RY_PIN_x) outputs on the Module_4RELAY module
-// 8 outputs are defined here for stacking 2 4-port modules
-#define GPIO_MOD_RY_PIN_0    0   // Mod1 0-3 are module 1 i2c addr 0x26
-#define GPIO_MOD_RY_PIN_1    1
-#define GPIO_MOD_RY_PIN_2    2
-#define GPIO_MOD_RY_PIN_3    3
-#define GPIO_MOD_RY_PIN_4    4   // 4-7 are on module 2 if used, addr 0xxxx - reassign addr from default of 0x26 before stacking.
-#define GPIO_MOD_RY_PIN_5    5  // if using the ext.IO i2c extender unit it is default of 0x27 so choose wisely
-#define GPIO_MOD_RY_PIN_6    6
-#define GPIO_MOD_RY_PIN_7    7
-#define GPIO_MOD_RY_PIN_8    0   // Mod 2 0-3 are module 1 i2c addr 0x27
-#define GPIO_MOD_RY_PIN_9    1
-#define GPIO_MOD_RY_PIN_10   2
-#define GPIO_MOD_RY_PIN_11   3
-#define GPIO_MOD_RY_PIN_12   4   // 4-7 are on module 2 if used, addr 0xxxx - reassign addr from default of 0x26 before stacking.
-#define GPIO_MOD_RY_PIN_13   5  // if using the ext.IO i2c extender unit it is default of 0x27 so choose wisely
-#define GPIO_MOD_RY_PIN_14   6
-#define GPIO_MOD_RY_PIN_15   7
+// 8 outputs are defined here for stacking 2 4-port modules, or 4 modules for 16 ports
+#define GPIO_MOD1_RY_PIN_0    0   // Mod1 0-3 are module 1 i2c addr 0x26
+#define GPIO_MOD1_RY_PIN_1    1
+#define GPIO_MOD1_RY_PIN_2    2
+#define GPIO_MOD1_RY_PIN_3    3
+#define GPIO_MOD2_RY_PIN_4    0   // 4-7 are on module 2 if used, addr 0xxxx - reassign addr from default of 0x26 before stacking.
+#define GPIO_MOD2_RY_PIN_5    1  // if using the ext.IO i2c extender unit it is default of 0x27 so choose wisely
+#define GPIO_MOD2_RY_PIN_6    2
+#define GPIO_MOD2_RY_PIN_7    3
+#define GPIO_MOD3_RY_PIN_8    0   // Mod 2 0-3 are module 1 i2c addr 0x27
+#define GPIO_MOD3_RY_PIN_9    1
+#define GPIO_MOD3_RY_PIN_10   2
+#define GPIO_MOD3_RY_PIN_11   3
+#define GPIO_MOD4_RY_PIN_12   0   // 4-7 are on module 2 if used, addr 0xxxx - reassign addr from default of 0x26 before stacking.
+#define GPIO_MOD4_RY_PIN_13   1  // if using the ext.IO i2c extender unit it is default of 0x27 so choose wisely
+#define GPIO_MOD4_RY_PIN_14   2
+#define GPIO_MOD4_RY_PIN_15   3
 
 // These are 8 MOSFET outputs (_MO_PIN_x) on the 4-In/8-Out module
-#define GPIO_MOD_MO_PIN_0    0
-#define GPIO_MOD_MO_PIN_1    1
-#define GPIO_MOD_MO_PIN_2    2
-#define GPIO_MOD_MO_PIN_3    3
-#define GPIO_MOD_MO_PIN_4    4
-#define GPIO_MOD_MO_PIN_5    5
-#define GPIO_MOD_MO_PIN_6    6
-#define GPIO_MOD_MO_PIN_7    7
-#define GPIO_MOD_MO_PIN_8    0
-#define GPIO_MOD_MO_PIN_9    1
-#define GPIO_MOD_MO_PIN_10   2
-#define GPIO_MOD_MO_PIN_11   3
-#define GPIO_MOD_MO_PIN_12   4
-#define GPIO_MOD_MO_PIN_13   5
-#define GPIO_MOD_MO_PIN_14   6
-#define GPIO_MOD_MO_PIN_15   7
+#define GPIO_MOD1_MO_PIN_0    0
+#define GPIO_MOD1_MO_PIN_1    1
+#define GPIO_MOD1_MO_PIN_2    2
+#define GPIO_MOD1_MO_PIN_3    3
+#define GPIO_MOD1_MO_PIN_4    4
+#define GPIO_MOD1_MO_PIN_5    5
+#define GPIO_MOD1_MO_PIN_6    6
+#define GPIO_MOD1_MO_PIN_7    7
+// pins for 2nd module if ever setup
+#define GPIO_MOD2_MO_PIN_8    0
+#define GPIO_MOD2_MO_PIN_9    1
+#define GPIO_MOD2_MO_PIN_10   2
+#define GPIO_MOD2_MO_PIN_11   3
+#define GPIO_MOD2_MO_PIN_12   4
+#define GPIO_MOD2_MO_PIN_13   5
+#define GPIO_MOD2_MO_PIN_14   6
+#define GPIO_MOD2_MO_PIN_15   7
 
 // These are 4 digital inputs (_MI_PIN_x) on the 4-In/8-Out module - 4 per module
-#define GPIO_MOD_MI_PIN_0    0  // 1st Module
-#define GPIO_MOD_MI_PIN_1    1
-#define GPIO_MOD_MI_PIN_2    2
-#define GPIO_MOD_MI_PIN_3    3
-#define GPIO_MOD_MI_PIN_4    0   // 2nd module
-#define GPIO_MOD_MI_PIN_5    1
-#define GPIO_MOD_MI_PIN_6    2
-#define GPIO_MOD_MI_PIN_7    3
+#define GPIO_MOD1_MI_PIN_0    0  // 1st Module
+#define GPIO_MOD1_MI_PIN_1    1
+#define GPIO_MOD1_MI_PIN_2    2
+#define GPIO_MOD1_MI_PIN_3    3
+
+#define GPIO_MOD2_MI_PIN_4    0   // 2nd module
+#define GPIO_MOD3_MI_PIN_5    1
+#define GPIO_MOD2_MI_PIN_6    2
+#define GPIO_MOD2_MI_PIN_7    3
 
 
 // These are the 8 IO (_IO_x) pins on the EXT.IO2 UNIT.  Lower 4 will be inputs, upper outputs
-#define GPIO_MOD_IO_PIN_0    0
-#define GPIO_MOD_IO_PIN_1    1
-#define GPIO_MOD_IO_PIN_2    2
-#define GPIO_MOD_IO_PIN_3    3
-#define GPIO_MOD_IO_PIN_4    4
-#define GPIO_MOD_IO_PIN_5    5
-#define GPIO_MOD_IO_PIN_6    6
-#define GPIO_MOD_IO_PIN_7    7
-#define GPIO_MOD_IO_PIN_8    0  // 2nd module
-#define GPIO_MOD_IO_PIN_9    1
-#define GPIO_MOD_IO_PIN_10   2
-#define GPIO_MOD_IO_PIN_11   3
-#define GPIO_MOD_IO_PIN_12   4
-#define GPIO_MOD_IO_PIN_13   5
-#define GPIO_MOD_IO_PIN_14   6
-#define GPIO_MOD_IO_PIN_15   7
+#define GPIO_MOD1_IO_PIN_0    0
+#define GPIO_MOD1_IO_PIN_1    1
+#define GPIO_MOD1_IO_PIN_2    2
+#define GPIO_MOD1_IO_PIN_3    3
+#define GPIO_MOD1_IO_PIN_4    4
+#define GPIO_MOD1_IO_PIN_5    5
+#define GPIO_MOD1_IO_PIN_6    6
+#define GPIO_MOD1_IO_PIN_7    7
+
+#define GPIO_MOD2_IO_PIN_8    0  // 2nd module
+#define GPIO_MOD2_IO_PIN_9    1
+#define GPIO_MOD2_IO_PIN_10   2
+#define GPIO_MOD2_IO_PIN_11   3
+#define GPIO_MOD2_IO_PIN_12   4
+#define GPIO_MOD2_IO_PIN_13   5
+#define GPIO_MOD2_IO_PIN_14   6
+#define GPIO_MOD2_IO_PIN_15   7
 
 // These are the 8 ports (PA0-7) configured for buffered inputs on the MCP23017 Port Expander modules
-#define GPIO_MOD_PE1_PIN_0    0
-#define GPIO_MOD_PE1_PIN_1    1
-#define GPIO_MOD_PE1_PIN_2    2
-#define GPIO_MOD_PE1_PIN_3    3
-#define GPIO_MOD_PE1_PIN_4    4
-#define GPIO_MOD_PE1_PIN_5    5
-#define GPIO_MOD_PE1_PIN_6    6
-#define GPIO_MOD_PE1_PIN_7    7
+#define GPIO_MOD1_PE_PIN_0    0
+#define GPIO_MOD1_PE_PIN_1    1
+#define GPIO_MOD1_PE_PIN_2    2
+#define GPIO_MOD1_PE_PIN_3    3
+#define GPIO_MOD1_PE_PIN_4    4
+#define GPIO_MOD1_PE_PIN_5    5
+#define GPIO_MOD1_PE_PIN_6    6
+#define GPIO_MOD1_PE_PIN_7    7
 
 // Remaining 24 ports configured for outputs, some buffered
 // PB0-7 on module 1
-#define GPIO_MOD_PE1_PIN_8    8
-#define GPIO_MOD_PE1_PIN_9    9
-#define GPIO_MOD_PE1_PIN_10   10
-#define GPIO_MOD_PE1_PIN_11   11
-#define GPIO_MOD_PE1_PIN_12   12
-#define GPIO_MOD_PE1_PIN_13   13
-#define GPIO_MOD_PE1_PIN_14   14
-#define GPIO_MOD_PE1_PIN_15   15
+#define GPIO_MOD1_PE_PIN_8    8
+#define GPIO_MOD1_PE_PIN_9    9
+#define GPIO_MOD1_PE_PIN_10   10
+#define GPIO_MOD1_PE_PIN_11   11
+#define GPIO_MOD1_PE_PIN_12   12
+#define GPIO_MOD1_PE_PIN_13   13
+#define GPIO_MOD1_PE_PIN_14   14
+#define GPIO_MOD1_PE_PIN_15   15
 
 // PA0-7 on module 2 are buffered outputs
-#define GPIO_MOD_PE2_PIN_0    0
-#define GPIO_MOD_PE2_PIN_1    1
-#define GPIO_MOD_PE2_PIN_2    2
-#define GPIO_MOD_PE2_PIN_3    3
-#define GPIO_MOD_PE2_PIN_4    4
-#define GPIO_MOD_PE2_PIN_5    5
-#define GPIO_MOD_PE2_PIN_6    6
-#define GPIO_MOD_PE2_PIN_7    7
+#define GPIO_MOD2_PE_PIN_0    0
+#define GPIO_MOD2_PE_PIN_1    1
+#define GPIO_MOD2_PE_PIN_2    2
+#define GPIO_MOD2_PE_PIN_3    3
+#define GPIO_MOD2_PE_PIN_4    4
+#define GPIO_MOD2_PE_PIN_5    5
+#define GPIO_MOD2_PE_PIN_6    6
+#define GPIO_MOD2_PE_PIN_7    7
 
 // PB0-7 on module 2
-#define GPIO_MOD_PE2_PIN_8    8
-#define GPIO_MOD_PE2_PIN_9    9
-#define GPIO_MOD_PE2_PIN_10   10
-#define GPIO_MOD_PE2_PIN_11   11
-#define GPIO_MOD_PE2_PIN_12   12
-#define GPIO_MOD_PE2_PIN_13   13
-#define GPIO_MOD_PE2_PIN_14   14
-#define GPIO_MOD_PE2_PIN_15   15
+#define GPIO_MOD2_PE_PIN_8    8
+#define GPIO_MOD2_PE_PIN_9    9
+#define GPIO_MOD2_PE_PIN_10   10
+#define GPIO_MOD2_PE_PIN_11   11
+#define GPIO_MOD2_PE_PIN_12   12
+#define GPIO_MOD2_PE_PIN_13   13
+#define GPIO_MOD2_PE_PIN_14   14
+#define GPIO_MOD2_PE_PIN_15   15
 
 // BAND DECODE INPUT (_INPUT_) PINS
 // Assign your pins of choice.  Use a number or one of the existing #define number names
@@ -174,7 +177,7 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_INPUT_5        GPIO_PIN_NOT_USED      // bit 1
   #define BAND_DECODE_INPUT_6        GPIO_PIN_NOT_USED      // bit 2
   #define BAND_DECODE_INPUT_7        GPIO_PIN_NOT_USED      // bit 3
-#else  // Transverter Box  PA0-7 on Module 1
+#else  // Transverter Box  M5STAMP C3U controller PA0-7 on MCP23017 Module 1
   #define BAND_DECODE_INPUT_0        GPIO_MOD_PE1_PIN_0     // bit 0   Band 0
   #define BAND_DECODE_INPUT_1        GPIO_MOD_PE1_PIN_1     // bit 1   Band 1
   #define BAND_DECODE_INPUT_2        GPIO_MOD_PE1_PIN_2     // bit 2   Band 2
@@ -192,16 +195,29 @@ enum band_idx { DUMMY,
 
 #ifndef M5STAMPC3U
   // 8 are inputs, 8 are defined under PTT section, and remaining 16 are for general outputs
-  #define BAND_DECODE_OUTPUT_0        GPIO_MOD_IO_PIN_0      // bit 0  PB module 1 fopr M5StampC3U
-  #define BAND_DECODE_OUTPUT_1        GPIO_MOD_IO_PIN_1      // bit 1
-  #define BAND_DECODE_OUTPUT_2        GPIO_MOD_IO_PIN_2      // bit 2
-  #define BAND_DECODE_OUTPUT_3        GPIO_MOD_IO_PIN_3      // bit 3
-  #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED      // bit 4
-  #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED      // bit 5
-  #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED      // bit 6
-  #define BAND_DECODE_OUTPUT_7        GPIO_PIN_NOT_USED      // bit 7
+  #ifdef XVBOX  // Front end controller talking to Xvtr box embedded controller
 
-  #define BAND_DECODE_OUTPUT_8        GPIO_PIN_NOT_USED      // bit 0 PA Module 2
+    #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_IO_PIN_0     // bit 0 
+    #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_IO_PIN_1     // bit 1
+    #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_IO_PIN_2     // bit 2
+    #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED     // bit 3
+    #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED      // bit 4
+    #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED      // bit 5
+    #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED      // bit 6
+    #define BAND_DECODE_OUTPUT_7        GPIO_PIN_NOT_USED      // bit 7
+  #else
+    #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_IO_PIN_0     // bit 0  
+    #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_IO_PIN_1     // bit 1
+    #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_IO_PIN_2     // bit 2
+    #define BAND_DECODE_OUTPUT_3        GPIO_MOD1_IO_PIN_3     // bit 3
+    #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED      // bit 4
+    #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED      // bit 5
+    #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED      // bit 6
+    #define BAND_DECODE_OUTPUT_7        GPIO_PIN_NOT_USED      // bit 7
+  #endif
+
+  // on 2nd module if present and setup
+  #define BAND_DECODE_OUTPUT_8        GPIO_PIN_NOT_USED      // bit 0
   #define BAND_DECODE_OUTPUT_9        GPIO_PIN_NOT_USED      // bit 1
   #define BAND_DECODE_OUTPUT_10       GPIO_PIN_NOT_USED      // bit 2
   #define BAND_DECODE_OUTPUT_11       GPIO_PIN_NOT_USED      // bit 3
@@ -209,29 +225,28 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_OUTPUT_13       GPIO_PIN_NOT_USED      // bit 5
   #define BAND_DECODE_OUTPUT_14       GPIO_PIN_NOT_USED      // bit 6
   #define BAND_DECODE_OUTPUT_15       GPIO_PIN_NOT_USED      // bit 7
-  #define BAND_DECODE_OUTPUT_16       GPIO_PIN_NOT_USED      // bit 0 PB Module 2
 
-#else  // Transverter Box   
+#else  // Transverter Box embedded controller config
   // PA0-7 Module 1 are inputs.  PA0-7 Module 2 are PTT outputs.  PB0-7 on each module (16 total) for general outputs
   // There are 32 IO ports total between the 2x MCP23017 port expanders.
-  // 8 are used as inputs, 8 ofr PTT outputs, 16 are other control outputs.  There are more ports on the CPU if needed
-  #define BAND_DECODE_OUTPUT_0        GPIO_MOD_PE1_PIN_8      // bit 0  PB module 1 for M5StampC3U
-  #define BAND_DECODE_OUTPUT_1        GPIO_MOD_PE1_PIN_9      // bit 1
-  #define BAND_DECODE_OUTPUT_2        GPIO_MOD_PE1_PIN_10     // bit 2
+  // 8 are used as inputs, 8 for PTT outputs, 16 are other control outputs.  There are more ports on the CPU if needed
+  #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_PE_PIN_8      // bit 0  PB module 1 for M5StampC3U
+  #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_PE_PIN_9      // bit 1
+  #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_PE_PIN_10     // bit 2
   #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED       // bit 3  These (3-7) are used for internal PTT so handled by PTT function, not here
   #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED       // bit 4
   #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED       // bit 5
   #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED       // bit 6
   #define BAND_DECODE_OUTPUT_7        GPIO_PIN_NOT_USED       // bit 7
 
-  #define BAND_DECODE_OUTPUT_8        GPIO_MOD_PE2_PIN_8      // bit 0  PB Module 2
-  #define BAND_DECODE_OUTPUT_9        GPIO_MOD_PE2_PIN_9      // bit 1
-  #define BAND_DECODE_OUTPUT_10       GPIO_MOD_PE2_PIN_10     // bit 2
-  #define BAND_DECODE_OUTPUT_11       GPIO_MOD_PE2_PIN_11     // bit 3
-  #define BAND_DECODE_OUTPUT_12       GPIO_MOD_PE2_PIN_12     // bit 4
-  #define BAND_DECODE_OUTPUT_13       GPIO_MOD_PE2_PIN_13     // bit 5
-  #define BAND_DECODE_OUTPUT_14       GPIO_MOD_PE1_PIN_14     // bit 6
-  #define BAND_DECODE_OUTPUT_15       GPIO_MOD_PE1_PIN_15     // bit 7
+  #define BAND_DECODE_OUTPUT_8        GPIO_MOD2_PE_PIN_8      // bit 0  PB Module 2
+  #define BAND_DECODE_OUTPUT_9        GPIO_MOD2_PE_PIN_9      // bit 1
+  #define BAND_DECODE_OUTPUT_10       GPIO_MOD2_PE_PIN_10     // bit 2
+  #define BAND_DECODE_OUTPUT_11       GPIO_MOD2_PE_PIN_11     // bit 3
+  #define BAND_DECODE_OUTPUT_12       GPIO_MOD2_PE_PIN_12     // bit 4
+  #define BAND_DECODE_OUTPUT_13       GPIO_MOD2_PE_PIN_13     // bit 5
+  #define BAND_DECODE_OUTPUT_14       GPIO_MOD2_PE_PIN_14     // bit 6
+  #define BAND_DECODE_OUTPUT_15       GPIO_MOD2_PE_PIN_15     // bit 7
 #endif
 
 #ifndef M5STAMPC3U
@@ -239,14 +254,27 @@ enum band_idx { DUMMY,
   // Assign your pins of choice.  Use a number or one of the existing #define number names
   // Make sure they are not monitored by the code as a button or other use like an encoder.
   // If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
-  #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED     // bit 0  PA0-7 Module 2
-  #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED     // bit 1
-  #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED     // bit 2
-  #define BAND_DECODE_PTT_OUTPUT_3    GPIO_PIN_NOT_USED     // bit 3
-  #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD_IO_PIN_4     // bit 4
-  #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD_IO_PIN_5     // bit 5
-  #define BAND_DECODE_PTT_OUTPUT_6    GPIO_MOD_IO_PIN_6     // bit 6
-  #define BAND_DECODE_PTT_OUTPUT_7    GPIO_MOD_IO_PIN_7     // bit 7
+  
+  #ifdef XVBOX  // only 4 outputs used on the XVBOX config, 3 for band decode out, 1 for PTT out
+
+    #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED     // bit 0
+    #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED     // bit 1
+    #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED     // bit 2
+    #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_IO_PIN_3    // bit 3
+    #define BAND_DECODE_PTT_OUTPUT_4    GPIO_PIN_NOT_USED     // bit 4
+    #define BAND_DECODE_PTT_OUTPUT_5    GPIO_PIN_NOT_USED     // bit 5
+    #define BAND_DECODE_PTT_OUTPUT_6    GPIO_PIN_NOT_USED     // bit 6
+    #define BAND_DECODE_PTT_OUTPUT_7    GPIO_PIN_NOT_USED     // bit 7
+  #else  // first 4 are band decode, 2nd 4 are PTT outputs matching each band decoder output
+    #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED     // bit 0 
+    #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED     // bit 1
+    #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED     // bit 2
+    #define BAND_DECODE_PTT_OUTPUT_3    GPIO_PIN_NOT_USED     // bit 3
+    #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD1_IO_PIN_4     // bit 4
+    #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD1_IO_PIN_5     // bit 5
+    #define BAND_DECODE_PTT_OUTPUT_6    GPIO_MOD1_IO_PIN_6     // bit 6
+    #define BAND_DECODE_PTT_OUTPUT_7    GPIO_MOD1_IO_PIN_7     // bit 7
+  #endif
   
   #define BAND_DECODE_PTT_OUTPUT_8    GPIO_PIN_NOT_USED     // bit 0 PB0-7 on Module 1
   #define BAND_DECODE_PTT_OUTPUT_9    GPIO_PIN_NOT_USED     // bit 1
@@ -258,26 +286,26 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_PTT_OUTPUT_15   GPIO_PIN_NOT_USED     // bit 7
 #else  
   // Xvtr Box uses outputs on PB3-7 on 1st module and buffered PA0-7 on 2nd MCP23017 module for band specific PTT outputs for amp PTTs
-
+  // for the transverter PTT, there is likely 9 to 12V in RX state so a buffer is required.
   // Xvtr Box uses ports 3-7 of 8 outputs on PB3-7 on 1st MCP23017 module for band specific internal PTT outputs for amp PTTs
   #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED      // bit 0  0, 1 and 2 used by band decoder for internal IF SP6T switch
   #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED      // bit 1  
   #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED      // bit 2  
-  #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD_PE1_PIN_11    // bit 3  222 Xvtr Brd PTT       0 = TX
-  #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD_PE1_PIN_12    // bit 4  902/903 Xvtr Brd PTT   0 = TX
-  #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD_PE1_PIN_13    // bit 5  1296 Xvtr Brd PTT      0 = TX
-  #define BAND_DECODE_PTT_OUTPUT_6    GPIO_MOD_PE1_PIN_14    // bit 6  T/R switch, 903 RF Xvtr board output  1 = TX
-  #define BAND_DECODE_PTT_OUTPUT_7    GPIO_MOD_PE1_PIN_15    // bit 7  T/R swtich, 1296 RF Xvtr board output   1 = TX
+  #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_PE_PIN_11    // bit 3  222 Xvtr Brd PTT       0 = TX
+  #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD1_PE_PIN_12    // bit 4  902/903 Xvtr Brd PTT   0 = TX
+  #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD1_PE_PIN_13    // bit 5  1296 Xvtr Brd PTT      0 = TX
+  #define BAND_DECODE_PTT_OUTPUT_6    GPIO_MOD1_PE_PIN_14    // bit 6  T/R switch, 903 RF Xvtr board output  1 = TX
+  #define BAND_DECODE_PTT_OUTPUT_7    GPIO_MOD1_PE_PIN_15    // bit 7  T/R swtich, 1296 RF Xvtr board output   1 = TX
   
   // 2nd module PA0-7 are PTT outputs on back panel to amps and/or antennas
-  #define BAND_DECODE_PTT_OUTPUT_8    GPIO_MOD_PE2_PIN_0     // bit 0  HF/50
-  #define BAND_DECODE_PTT_OUTPUT_9    GPIO_MOD_PE2_PIN_1     // bit 1  144
-  #define BAND_DECODE_PTT_OUTPUT_10   GPIO_MOD_PE2_PIN_2     // bit 2  222
-  #define BAND_DECODE_PTT_OUTPUT_11   GPIO_MOD_PE2_PIN_3     // bit 3  432
-  #define BAND_DECODE_PTT_OUTPUT_12   GPIO_MOD_PE2_PIN_4     // bit 4  902/903
-  #define BAND_DECODE_PTT_OUTPUT_13   GPIO_MOD_PE2_PIN_5     // bit 5  1296
+  #define BAND_DECODE_PTT_OUTPUT_8    GPIO_MOD2_PE_PIN_0     // bit 0  HF/50
+  #define BAND_DECODE_PTT_OUTPUT_9    GPIO_MOD2_PE_PIN_1     // bit 1  144
+  #define BAND_DECODE_PTT_OUTPUT_10   GPIO_MOD2_PE_PIN_2     // bit 2  222
+  #define BAND_DECODE_PTT_OUTPUT_11   GPIO_MOD2_PE_PIN_3     // bit 3  432
+  #define BAND_DECODE_PTT_OUTPUT_12   GPIO_MOD2_PE_PIN_4     // bit 4  902/903
+  #define BAND_DECODE_PTT_OUTPUT_13   GPIO_MOD2_PE_PIN_5     // bit 5  1296
   #define BAND_DECODE_PTT_OUTPUT_14   GPIO_PIN_NOT_USED      // bit 6  spare, could use for antenna switching
-  #define BAND_DECODE_PTT_OUTPUT_15   GPIO_MOD_PE2_PIN_7     // bit 7  spare
+  #define BAND_DECODE_PTT_OUTPUT_15   GPIO_MOD2_PE_PIN_7    // bit 7  PTT to TC board IF input TR relay
 #endif
 
 // *************************************************************************************************************
@@ -292,36 +320,70 @@ enum band_idx { DUMMY,
 
 #ifndef M5STAMPC3U
   // For normal usage with M5Stack CoreXX modules
-  #define DECODE_INPUT_DUMMY        (0xFF)    //Dummy Row
-  #define DECODE_INPUT_BANDAM       (0xFF)    //AM
-  #define DECODE_INPUT_BAND160M     (0xFF)    //160M 
-  #define DECODE_INPUT_BAND80M      (0xFF)    //80M
-  #define DECODE_INPUT_BAND60M      (0xFF)    //60M
-  #define DECODE_INPUT_BAND40M      (0xFF)    //40M
-  #define DECODE_INPUT_BAND30M      (0xFF)    //30M
-  #define DECODE_INPUT_BAND20M      (0xFF)    //20M
-  #define DECODE_INPUT_BAND17M      (0xFF)    //17M      
-  #define DECODE_INPUT_BAND15M      (0xFF)    //15M
-  #define DECODE_INPUT_BAND12M      (0xFF)    //12M
-  #define DECODE_INPUT_BAND10M      (0xFF)    //10M
-  #define DECODE_INPUT_BANDFM       (0xFF)    //FM Braodcast Band
-  #define DECODE_INPUT_BANDAIR      (0xFF)    //Aircraft Band
-  //#define DECODE_INPUT_BAND70       (0xFF)    //70MHz
-  #define DECODE_INPUT_BAND6M       (0x01)    //6M
-  #define DECODE_INPUT_BAND144      (0x02)    //2M
-  #define DECODE_INPUT_BAND222      (0x03)    //222
-  #define DECODE_INPUT_BAND432      (0x04)    //432
-  #define DECODE_INPUT_BAND902      (0x05)    //902
-  #define DECODE_INPUT_BAND1296     (0x06)    //1296
-  #define DECODE_INPUT_BAND2400     (0xFF)    //2400
-  #define DECODE_INPUT_BAND3300     (0xFF)    //3400
-  #define DECODE_INPUT_BAND5760     (0xFF)    //5760M
-  #define DECODE_INPUT_BAND10G      (0xFF)    //10.368.1G
-  #define DECODE_INPUT_BAND24G      (0xFF)    //24.192G
-  #define DECODE_INPUT_BAND47G      (0xFF)    //47.1G
-  #define DECODE_INPUT_BAND76G      (0xFF)    //76.1G
-  #define DECODE_INPUT_BAND122G     (0xFF)    //122G
-  #define DECODE_INPUT_B_GENERAL    (0xFF)     // Non-Ham Band
+  #ifdef XVBOX  // COnfig to talk to Xvtrt box controller
+
+    #define DECODE_INPUT_DUMMY        (0xFF)    //Dummy Row
+    #define DECODE_INPUT_BANDAM       (0x01)    //AM
+    #define DECODE_INPUT_BAND160M     (0x01)    //160M 
+    #define DECODE_INPUT_BAND80M      (0x01)    //80M
+    #define DECODE_INPUT_BAND60M      (0x01)    //60M
+    #define DECODE_INPUT_BAND40M      (0x01)    //40M
+    #define DECODE_INPUT_BAND30M      (0x01)    //30M
+    #define DECODE_INPUT_BAND20M      (0x01)    //20M
+    #define DECODE_INPUT_BAND17M      (0x01)    //17M      
+    #define DECODE_INPUT_BAND15M      (0x01)    //15M
+    #define DECODE_INPUT_BAND12M      (0x01)    //12M
+    #define DECODE_INPUT_BAND10M      (0x01)    //10M
+    #define DECODE_INPUT_BANDFM       (0x01)    //FM Braodcast Band
+    #define DECODE_INPUT_BANDAIR      (0x01)    //Aircraft Band
+    //#define DECODE_INPUT_BAND70       (0x01)    //70MHz
+    #define DECODE_INPUT_BAND6M       (0x01)    //6M
+    #define DECODE_INPUT_BAND144      (0x02)    //2M
+    #define DECODE_INPUT_BAND222      (0x03)    //222
+    #define DECODE_INPUT_BAND432      (0x04)    //432
+    #define DECODE_INPUT_BAND902      (0x05)    //902
+    #define DECODE_INPUT_BAND1296     (0x06)    //1296
+    #define DECODE_INPUT_BAND2400     (0x01)    //2400
+    #define DECODE_INPUT_BAND3300     (0x01)    //3400
+    #define DECODE_INPUT_BAND5760     (0x01)    //5760M
+    #define DECODE_INPUT_BAND10G      (0x01)    //10.368.1G
+    #define DECODE_INPUT_BAND24G      (0x01)    //24.192G
+    #define DECODE_INPUT_BAND47G      (0x01)    //47.1G
+    #define DECODE_INPUT_BAND76G      (0x01)    //76.1G
+    #define DECODE_INPUT_BAND122G     (0x01)    //122G
+    #define DECODE_INPUT_B_GENERAL    (0x01)     // Non-Ham Band
+  #else  // default for 4 Xvtr, 903, 2304, 3300, 5760
+    #define DECODE_INPUT_DUMMY        (0xFF)    //Dummy Row
+    #define DECODE_INPUT_BANDAM       (0xFF)    //AM
+    #define DECODE_INPUT_BAND160M     (0xFF)    //160M 
+    #define DECODE_INPUT_BAND80M      (0xFF)    //80M
+    #define DECODE_INPUT_BAND60M      (0xFF)    //60M
+    #define DECODE_INPUT_BAND40M      (0xFF)    //40M
+    #define DECODE_INPUT_BAND30M      (0xFF)    //30M
+    #define DECODE_INPUT_BAND20M      (0xFF)    //20M
+    #define DECODE_INPUT_BAND17M      (0xFF)    //17M      
+    #define DECODE_INPUT_BAND15M      (0xFF)    //15M
+    #define DECODE_INPUT_BAND12M      (0xFF)    //12M
+    #define DECODE_INPUT_BAND10M      (0xFF)    //10M
+    #define DECODE_INPUT_BANDFM       (0xFF)    //FM Braodcast Band
+    #define DECODE_INPUT_BANDAIR      (0xFF)    //Aircraft Band
+    //#define DECODE_INPUT_BAND70       (0xFF)    //70MHz
+    #define DECODE_INPUT_BAND6M       (0xFF)    //6M
+    #define DECODE_INPUT_BAND144      (0xFF)    //2M
+    #define DECODE_INPUT_BAND222      (0xFF)    //222
+    #define DECODE_INPUT_BAND432      (0xFF)    //432
+    #define DECODE_INPUT_BAND902      (0x01)    //902
+    #define DECODE_INPUT_BAND1296     (0xFF)    //1296
+    #define DECODE_INPUT_BAND2400     (0x02)    //2400
+    #define DECODE_INPUT_BAND3300     (0x04)    //3400
+    #define DECODE_INPUT_BAND5760     (0x08)    //5760M
+    #define DECODE_INPUT_BAND10G      (0xFF)    //10.368.1G
+    #define DECODE_INPUT_BAND24G      (0xFF)    //24.192G
+    #define DECODE_INPUT_BAND47G      (0xFF)    //47.1G
+    #define DECODE_INPUT_BAND76G      (0xFF)    //76.1G
+    #define DECODE_INPUT_BAND122G     (0xFF)    //122G
+    #define DECODE_INPUT_B_GENERAL    (0xFF)     // Non-Ham Band
+  #endif
 
 #else  // For Xvtr Box with M5StampC3U
   #define DECODE_INPUT_DUMMY        (0xFF)    //Dummy Row
@@ -469,36 +531,72 @@ enum band_idx { DUMMY,
 // Here the PTT lines are on the upper half of the group of 8 module outputs so we set values on the upper nibble, the lower will be ignored.
 // if not used enter 0x00 
 #ifndef M5STAMPC3U
-  #define DECODE_DUMMY_PTT        (0x0000)    //Dummy Row
-  #define DECODE_BANDAM_PTT       (0x0000)   //16M_PTT 
-  #define DECODE_BAND160M_PTT     (0x0000)   //160M_PTT 
-  #define DECODE_BAND80M_PTT      (0x0000)    //80M_PTT
-  #define DECODE_BAND60M_PTT      (0x0000)    //60M_PTT
-  #define DECODE_BAND40M_PTT      (0x0000)    //40M_PTT
-  #define DECODE_BAND30M_PTT      (0x0000)    //30M_PTT
-  #define DECODE_BAND20M_PTT      (0x0000)    //20M_PTT
-  #define DECODE_BAND17M_PTT      (0x0000)    //17M_PTT      
-  #define DECODE_BAND15M_PTT      (0x0000)    //15M_PTT
-  #define DECODE_BAND12M_PTT      (0x0000)    //12M_PTT
-  #define DECODE_BAND10M_PTT      (0x0000)    //10M_PTT
-  #define DECODE_BANDFM_PTT       (0x0000)    //6M_PTT
-  #define DECODE_BANDAIR_PTT      (0x0000)    //6M_PTT
-  //#define DECODE_BAND70_PTT    (0x0001)    //70M_PTTHz
-  #define DECODE_BAND6M_PTT       (0x0000)    //6M_PTT
-  #define DECODE_BAND144_PTT      (0x0000)    //2M_PTT
-  #define DECODE_BAND222_PTT      (0x0000)    //222_PTT
-  #define DECODE_BAND432_PTT      (0x0000)    //432_PTT
-  #define DECODE_BAND902_PTT      (0x0001)    //902_PTT
-  #define DECODE_BAND1296_PTT     (0x0000)    //1296_PTT
-  #define DECODE_BAND2400_PTT     (0x0002)    //2400_PTT
-  #define DECODE_BAND3300_PTT     (0x0004)    //3400_PTT
-  #define DECODE_BAND5760_PTT     (0x0008)    //5760_PTT
-  #define DECODE_BAND10G_PTT      (0x0000)    //10.368.1G_PTT
-  #define DECODE_BAND24G_PTT      (0x0000)    //24.192G_PTT
-  #define DECODE_BAND47G_PTT      (0x0000)    //47.1G_PTT
-  #define DECODE_BAND76G_PTT      (0x0000)    //76.1G_PTT
-  #define DECODE_BAND122G_PTT     (0x0000)    //122G_PTT
-  #define DECODE_B_GENERAL_PTT    (0x0000)     // Non-Ham Band
+  #ifdef XVBOX  // patterns sent to transverter box controller.  3 BCD band decode outputs and single PTT wire.  
+                // Xvtr Box breaks out PTT in this case, not here as usual.  Single PTT on the 4th Output port so 0x0008
+
+    #define DECODE_DUMMY_PTT        (0x0008)    //Dummy Row
+    #define DECODE_BANDAM_PTT       (0x0008)   //16M_PTT 
+    #define DECODE_BAND160M_PTT     (0x0008)   //160M_PTT 
+    #define DECODE_BAND80M_PTT      (0x0008)    //80M_PTT
+    #define DECODE_BAND60M_PTT      (0x0008)    //60M_PTT
+    #define DECODE_BAND40M_PTT      (0x0008)    //40M_PTT
+    #define DECODE_BAND30M_PTT      (0x0008)    //30M_PTT
+    #define DECODE_BAND20M_PTT      (0x0008)    //20M_PTT
+    #define DECODE_BAND17M_PTT      (0x0008)    //17M_PTT      
+    #define DECODE_BAND15M_PTT      (0x0008)    //15M_PTT
+    #define DECODE_BAND12M_PTT      (0x0008)    //12M_PTT
+    #define DECODE_BAND10M_PTT      (0x0008)    //10M_PTT
+    #define DECODE_BANDFM_PTT       (0x0008)    //6M_PTT
+    #define DECODE_BANDAIR_PTT      (0x0008)    //6M_PTT
+    //#define DECODE_BAND70_PTT    (0x0008)    //70M_PTTHz
+    #define DECODE_BAND6M_PTT       (0x0008)    //6M_PTT
+    #define DECODE_BAND144_PTT      (0x0008)    //2M_PTT
+    #define DECODE_BAND222_PTT      (0x0008)    //222_PTT
+    #define DECODE_BAND432_PTT      (0x0008)    //432_PTT
+    #define DECODE_BAND902_PTT      (0x0008)    //902_PTT
+    #define DECODE_BAND1296_PTT     (0x0008)    //1296_PTT
+    #define DECODE_BAND2400_PTT     (0x0008)    //2400_PTT
+    #define DECODE_BAND3300_PTT     (0x0008)    //3400_PTT
+    #define DECODE_BAND5760_PTT     (0x0008)    //5760_PTT
+    #define DECODE_BAND10G_PTT      (0x0008)    //10.368.1G_PTT
+    #define DECODE_BAND24G_PTT      (0x0008)    //24.192G_PTT
+    #define DECODE_BAND47G_PTT      (0x0008)    //47.1G_PTT
+    #define DECODE_BAND76G_PTT      (0x0008)    //76.1G_PTT
+    #define DECODE_BAND122G_PTT     (0x0008)    //122G_PTT
+    #define DECODE_B_GENERAL_PTT    (0x0008)     // Non-Ham Band
+
+  #else // default pattern, no Xvtr box so break out PTT here
+    #define DECODE_DUMMY_PTT        (0x0000)    //Dummy Row
+    #define DECODE_BANDAM_PTT       (0x0000)   //16M_PTT 
+    #define DECODE_BAND160M_PTT     (0x0000)   //160M_PTT 
+    #define DECODE_BAND80M_PTT      (0x0000)    //80M_PTT
+    #define DECODE_BAND60M_PTT      (0x0000)    //60M_PTT
+    #define DECODE_BAND40M_PTT      (0x0000)    //40M_PTT
+    #define DECODE_BAND30M_PTT      (0x0000)    //30M_PTT
+    #define DECODE_BAND20M_PTT      (0x0000)    //20M_PTT
+    #define DECODE_BAND17M_PTT      (0x0000)    //17M_PTT      
+    #define DECODE_BAND15M_PTT      (0x0000)    //15M_PTT
+    #define DECODE_BAND12M_PTT      (0x0000)    //12M_PTT
+    #define DECODE_BAND10M_PTT      (0x0000)    //10M_PTT
+    #define DECODE_BANDFM_PTT       (0x0000)    //6M_PTT
+    #define DECODE_BANDAIR_PTT      (0x0000)    //6M_PTT
+    //#define DECODE_BAND70_PTT    (0x0001)    //70M_PTTHz
+    #define DECODE_BAND6M_PTT       (0x0000)    //6M_PTT
+    #define DECODE_BAND144_PTT      (0x0000)    //2M_PTT
+    #define DECODE_BAND222_PTT      (0x0000)    //222_PTT
+    #define DECODE_BAND432_PTT      (0x0000)    //432_PTT
+    #define DECODE_BAND902_PTT      (0x0001)    //902_PTT
+    #define DECODE_BAND1296_PTT     (0x0000)    //1296_PTT
+    #define DECODE_BAND2400_PTT     (0x0002)    //2400_PTT
+    #define DECODE_BAND3300_PTT     (0x0004)    //3400_PTT
+    #define DECODE_BAND5760_PTT     (0x0008)    //5760_PTT
+    #define DECODE_BAND10G_PTT      (0x0000)    //10.368.1G_PTT
+    #define DECODE_BAND24G_PTT      (0x0000)    //24.192G_PTT
+    #define DECODE_BAND47G_PTT      (0x0000)    //47.1G_PTT
+    #define DECODE_BAND76G_PTT      (0x0000)    //76.1G_PTT
+    #define DECODE_BAND122G_PTT     (0x0000)    //122G_PTT
+    #define DECODE_B_GENERAL_PTT    (0x0000)     // Non-Ham Band
+  #endif
 #else  
   // For Xvtr Box with M5StampC3U
   // bits 0-2 is IF switch for Xvtr bands, set in the Band Decode function, ignored here as pins are set to not used for PTT

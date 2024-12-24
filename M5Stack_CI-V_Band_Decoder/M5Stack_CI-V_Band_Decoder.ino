@@ -458,7 +458,7 @@ void loop() {
   
   static int32_t loop_time = 0;
   static int32_t loop_max_time = 0;
-  int32_t loop_time_threshold = 30;
+  int32_t loop_time_threshold = 10;
   static int32_t prev_loop_time = 0;
 
   loop_time = millis();  // watermark

@@ -176,11 +176,11 @@
   #define WIRED_PTT   1       // 1 = use ther wired input for fastest PTT
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 #else // choose for M5 Core or Atom CPUs
-  #define WIRED_PTT   0       // 1 = use ther wired input for fastest PTT
+  #define WIRED_PTT   1       // 1 = use ther wired input for fastest PTT
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 #endif
 
-#define POLL_PTT_DEFAULT 287  // poll the radio for PTT status odd numbers to stagger them a bit
+#define POLL_PTT_DEFAULT 247  // poll the radio for PTT status odd numbers to stagger them a bit
                               // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
                               // Also polls the wired inputs  Can go down to 25-45.  When using wired PTT set this slow.
 #define POLL_PTT_USBHOST 262  // Dynamically changes value based on detected radio address.
@@ -190,9 +190,9 @@
                               //   Unlike other modes.  BT seems to answer every request. USB2 engine is likely the same in \
                               //   all radios, where BT got a capacity upgrade.  The 905 acts the same as the 905 (905 is USB only) \
                               //   Have not compared to a LAN connection.
-#define POLL_RADIO_FREQ   208 // poll the radio for frequency
+#define POLL_RADIO_FREQ   708 // poll the radio for frequency
 #define POLL_RADIO_UTC    998 // poll radio for time and location
-#define POLL_RADIO_MODE  1101 // poll radio for extended mode, filter and datamode
+#define POLL_RADIO_MODE  6101 // poll radio for extended mode, filter and datamode
 #define POLL_RADIO_AGC   3403 // poll radio for AGC
 #define POLL_RADIO_ATTN  3305 // poll radio for atten status
 #define POLL_RADIO_PRE   3204 // poll radio for preamp status

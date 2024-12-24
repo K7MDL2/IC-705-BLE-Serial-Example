@@ -87,41 +87,7 @@ struct Bands {
     { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
     { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
   };
-/*
-#else
-  struct Bands bands[NUM_OF_BANDS] = {
-    { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
-    { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
-    { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
-    { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
-    { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
-    { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
-    { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
-    { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
-    { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
-    { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
-    { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
-    { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
-    { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
-    { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
-    { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
-    { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
-    { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222
-    { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440
-    { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902
-    { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz
-    { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
-    { "9cm",  3400000000, 3410000000, 3256000000, 3400100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
-    { "6cm",  5650000000, 5925000000, 5328000000, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
-    { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
-    { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
-    { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
-    { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
-    { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
-    { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
-  };
-#endif
-*/
+
 char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
 uint16_t baud_rate;                   //Current baud speed
 uint32_t readtimeout = 10;            //Serial port read timeout
@@ -147,7 +113,7 @@ bool XVTR = true;                    // Enables Xvtr support
   // Edit the bands table farther down the page to enter the fixed LO offset (in Hz) to add to radio dial
   // frequency for the transverter band of interest. Only 1 band supported at this point
 uint8_t XVTR_Band = 0;      // Xvtr band to display - temp until a band select menu is built
-uint8_t brightness = 130;   // 0-255
+uint8_t brightness = 110;   // 0-255
 bool XVTR_enabled = false;  // true when a transverter feature is active
 uint8_t read_buffer[64];  //Read buffer
 uint8_t prev_band = 0xFF;
@@ -850,6 +816,7 @@ void usbh_setup(void) {
     draw_new_screen();
   }
 #endif
+
 // -----------------------------------------------------------------------
 //         Poll radio for PTT, frequency, and other modes.  BLE in particular only gets what and when you ask for it (so far)
 // --------------------------------------------------------------------------
@@ -1997,9 +1964,11 @@ void app_loop(void) {
 
   // scan our input sources for wired PTT and band change - only 1 module type at a time for now
   #if defined ( IO_MODULE )  || defined ( EXT_IO2_UNIT ) || defined ( M5STAMPC3U )
-    if (millis() > last_input_poll + POLL_PTT_DEFAULT) {
+    // Have observed the app loop time to generally be < 10ms so go fast
+    if (1) {
+    //uint8_t poll_interval = 4;  //  time in ms for wired we can scan it much faster since it is not querying the radio over a BT connection
+    //if (millis() > last_input_poll + poll_interval) {
       // Process the band input and PTT input pins
-
       #if defined ( IO_MODULE )
         decode_in = Module_4in_8out_Input_scan();  // Has 4 digital inputs, using for PTT and band input
       #elif defined ( EXT_IO2_UNIT )

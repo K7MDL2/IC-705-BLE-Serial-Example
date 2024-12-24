@@ -8,7 +8,18 @@ SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/
 
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
-Latest summary: Dec 22, 2024
+Latest Update: DEc 23, 2024
+Several minor changes and setup for future module expansions.
+I fed -70dBm signal into each transverter and initially only 903 had the expected output (close to S9 with 705 preamp on).  Bypassed all cables, not the problem.  Had a partially bad SP6T solid state RF switch (used for the IF routing to the Xvtrs). I knew one of the 2 boards (RX and TX paths) was bad and it happened to be the one on the RX path.  I could move 1 Xvtr output cable but not the other so I swapped the TX board into the RX position.  RX is working but the outputs were still generally too low.  
+
+The TC board has an optional MMIC (IC1) with 330ohm bias resistor I prepopulated during the build to add some IF stage RX path gain and also has a trim pot.  I cut the trace and installed a MAR3 (12dB gain), the existing 330ohm bias resistor on the max 15V supply is just about right, maybe a tad too high.  I think 280ohms is what the calculator called for.  Considered using a MAR6+ but that was over 20dB gain and felt like a bit much.  The IC-705 seems less sensitive on 144Mhz than my K3 144 internal Xvtr.  I also noted that the 1296 Xvtr conversion gain is less when configured for 50Mhz IF vs. 144Mhz IF.  So I configured the software for 144 IF.   Waiting for a new SP6T RF Switch board in early January.  This will effect my TX testing, still to be done.
+
+End result is I now have about S9 on 222 and 903 without preamps (21Mhz IF) and S7 on 1296 with 144 preamp on.  Before I was lucky to get S1 on 1296.  I also have a SG-Labs 1296 25W PA+LNA combo that buimps up the signal more so all looks proper now.
+
+Modified the wired inpout scanning to make Wired PTT much faster.  Wired PTT does not poll the radio, clogging up the BT comm channel, so there is no issue to scan it at max possible rate.  I am generally seeing main loop times <10ms.  I slowed down some info and display update polling rates.  I should figure out how to set wired PTT up as an interrupt.
+
+
+Dec 22, 2024
 I built a 3-band Transverter box adding missin VHF/UHF bands for 222, 902/3 and 1296 to the IC-705, or any other multiband radio with HF, 6, 144, and 432 bands, which there are many.  
 ![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Top View Front](https://github.com/user-attachments/assets/1c883ef0-376b-41ee-81da-cb7c4c26b37c)
 ![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Back View](https://github.com/user-attachments/assets/2dd7e8d9-e548-4fd3-b8d0-b0611b4c8bf5)
