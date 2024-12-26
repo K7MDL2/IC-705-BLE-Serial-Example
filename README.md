@@ -1,12 +1,16 @@
 # IC-705-BLE, BT Classic, and USB Host Serial Examples
 
-Disclaimer: this is a work in progress!    on Sept 22, 2024, I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
+Disclaimer: this is a work in progress!    I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
 
-Be sure to check out the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
+Be sure to check out project Wiki pages. There are now 2 related constructions sung the same code
+  1. CI-V Band decoder and Display  - see the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
+  2. BCD wired input Band decoder + 3 band transveer box. Has PTT and antenna breaksout for VHFbands 50, 144, 222, 432, 902/3, qn 1296.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-band-Transverter-Box
 
 SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/SD-Card-Usage
 
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
+
+The latest updates below are mostly realted to the new 3-band Xvtr box build leveraging the same CI-V decoder/Display code to make using the 705 as an IF rig even easier by making the Xvtrs appear highly integrated to the 705 as can be.
 
 Latest Update: 26 Dec 2024
 
