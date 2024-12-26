@@ -2,7 +2,7 @@
 
 Disclaimer: this is a work in progress!    I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
 
-Be sure to check out project Wiki pages. There are now 2 related constructions sung the same code
+Be sure to check out project Wiki pages. There are now 2 related constructions using the same code
   1. CI-V Band decoder and Display  - see the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
   2. BCD wired input Band decoder + 3 band transveer box. Has PTT and antenna breaksout for VHFbands 50, 144, 222, 432, 902/3, qn 1296.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-band-Transverter-Box
 
