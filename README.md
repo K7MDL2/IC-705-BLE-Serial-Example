@@ -1,4 +1,4 @@
-# IC-705-BLE, BT Classic, and USB Host Serial Examples
+# IC-705-BLE, BT Classic, and USB Host Serial Examples featuring a CI-V decoder and 3-Band Transverter Box
 
 Disclaimer: this is a work in progress!    I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
 
