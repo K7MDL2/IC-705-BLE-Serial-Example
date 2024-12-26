@@ -108,7 +108,7 @@
   #define MCP23017
   #define I2C_SDA 1
   #define I2C_SCL 0
-
+  #include "INA226.h"  //  https://github.com/RobTillaart/INA226
   #include <Adafruit_NeoPixel.h>
   //#define BUTTON_PIN 3
   #define PIXEL_PIN 2   // GPIO2 is Sk6812 RGB LED

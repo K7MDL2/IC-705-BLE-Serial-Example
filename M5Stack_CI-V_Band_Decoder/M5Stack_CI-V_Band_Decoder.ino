@@ -39,6 +39,11 @@
           except you may need to edit the SPI pins for different model CPU such as the Core3 or a Core 2 maybe.
 
 *********************************************************************
+
+// INA226 library Info 
+//  AUTHOR: Rob Tillaart
+//     URL: https://github.com/RobTillaart/INA226
+
 *********************************************************************
 
  Adafruit invests time and resources providing this open source code,
@@ -109,7 +114,7 @@
 
   // CFG_TUH_DEVICE_MAX is defined by tusb_config header
   dev_info_t dev_info[CFG_TUH_DEVICE_MAX] = { 0 };
-#else  // for M5STAMP{C3U whcih has a SK6812 RGB LED button. 
+#else  // for M5STAMP{C3U which has a SK6812 RGB LED button. 
   Adafruit_NeoPixel pixel(NUM_PIXELS, PIXEL_PIN, NEO_GRBW + NEO_KHZ400);
   bool currentButtonPressed = false;
 #endif

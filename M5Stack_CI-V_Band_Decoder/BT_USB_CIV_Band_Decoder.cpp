@@ -45,48 +45,47 @@ struct Bands {
 };
 */
 
-//#ifndef M5STAMPC3U
-  struct Bands bands[NUM_OF_BANDS] = {
-    { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
-    { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
-    { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
-    { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
-    { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
-    { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
-    { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
-    { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
-    { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
-    { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
-    { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
-    { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
-    { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
-    { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
-    { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
-    { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
-    
-    #ifdef XVBOX // for 705 transverter box, using 21Mhz IF for 903, 50Mhz for 1296, 28 for 222.
-      { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 28MHz LO
-      { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  with no LO
-      { "33cm", 902000000, 928000000, 874000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902 with 28Mhz LO
-      { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz with 50Mhz LO
-    
-    #else  // typical usage 144 IF for 902, 144 IF for 1296
-      { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 28Mhz LO
-      { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  No LO
-      { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902  with 144Mhz LO
-      { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz  with 144Mhz LO
-    #endif
+struct Bands bands[NUM_OF_BANDS] = {
+  { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
+  { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAM },                        // AM
+  { "160M", 1800000, 2000000, 0, 1860000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND160M },                    // 160m
+  { "80M", 3500000, 4000000, 0, 3573000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND80M },                     // 80m
+  { "60M", 5351000, 5367000, 0, 5351000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND60M },                     // 60m
+  { "40M", 7000000, 7300000, 0, 7074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND40M },                     // 40m
+  { "30M", 10100000, 10150000, 0, 10136000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND30M },                  // 30m
+  { "20M", 14000000, 14350000, 0, 14074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND20M },                  // 20m
+  { "17M", 18068000, 18168000, 0, 18100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND17M },                  // 17m
+  { "15M", 21000000, 21450000, 0, 21074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND15M },                  // 15m
+  { "12M", 24890000, 24990000, 0, 24891500, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND12M },                  // 12m
+  { "10M", 28000000, 29700000, 0, 28074000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10M },                  // 10m
+  { "6M", 50000000, 54000000, 0, 50125000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND6M },                   // 6m
+  { "FM", 88000000, 108000000, 0, 95700000, 6, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDFM },                  // FM
+  { "Air", 118000000, 137000000, 0, 119200000, 2, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BANDAIR },               // AIR
+  { "2M", 144000000, 148000000, 0, 144200000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND144 },                // 2m
+  
+  #ifdef XVBOX // for 705 transverter box, using 21Mhz IF for 903, 50Mhz for 1296, 28 for 222.
+    { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 28MHz LO
+    { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  with no LO
+    { "33cm", 902000000, 928000000, 874000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902 with 28Mhz LO
+    { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz with 50Mhz LO
+  
+  #else  // typical usage 144 IF for 902, 144 IF for 1296
+    { "1.25M", 222000000, 225000000, 194000000, 222100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND222 },     // 222 with 28Mhz LO
+    { "70cm", 430000000, 450000000, 0, 432100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND432 },              // 430/440  No LO
+    { "33cm", 902000000, 928000000, 758000000, 903100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND902 },      // 902  with 144Mhz LO
+    { "23cm", 1240000000, 1300000000, 1152000000, 1296100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND1296 },  // 1296Mhz  with 144Mhz LO
+  #endif
 
-    { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
-    { "9cm",  3400000000, 3410000000, 3256000000, 3400100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
-    { "6cm",  5650000000, 5925000000, 5328000000, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
-    { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
-    { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
-    { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
-    { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
-    { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
-    { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
-  };
+  { "13cm", 2300000000, 2450000000, 1870000000, 2304100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND2400 },  // 2.3 and 2.4GHz
+  { "9cm",  3400000000, 3410000000, 3256000000, 3400100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND3300 },            // 3.3GHz
+  { "6cm",  5650000000, 5925000000, 5328000000, 5760100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND5760 },            // 5.7GHz
+  { "3cm", 10000000000, 10500000000, 0, 10368100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND10G },         // 10GHz
+  { "24G", 24000000000, 24002000000, 0, 24031000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND24G },         // 24GHz
+  { "47G", 47000000000, 47002000000, 0, 47192100000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND47G },         // 47GHz
+  { "76G", 76000000000, 76002000000, 0, 76000000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND76G },         // 76GHz
+  { "122G", 122000000000, 122002000000, 0, 122001000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_BAND122G },     // 122GHz
+  { "GENE", 0, 123000000000, 0, 432000000, 1, 1, 0, 1, 0, 0, 0, DECODE_INPUT_B_GENERAL }                    // 0 to 122GHz
+};
 
 char title[17] = "CIV Band Decoder";  // make exactly 16 chards if used as the BT device name
 uint16_t baud_rate;                   //Current baud speed
@@ -143,6 +142,10 @@ void read_bands_data(void);
 //uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0x33, 0xbb, 0x7f, 0x00 };  // Rick's 705
 uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9, 0x00 };  // Mike's 705
 // ######################################################################
+
+#ifdef M5STAMPC3U
+  INA226 INA(0x40);    // Address on i2c bus is 0x40 by default.  
+#endif
 
 #ifdef USBHOST
 // CDC Host object
@@ -1844,6 +1847,14 @@ void app_setup(void) {
   
   #ifdef M5STAMPC3U
     MCP23017_IO_setup();
+    if (!INA.begin() )
+    {
+      Serial.println("could not connect. Fix and Reboot");
+    }
+    INA.setMaxCurrentShunt(8.2, 0.00836);  // Solders about a 3/8" piece of resistor lead across the 10 ohm shunt resistor supplied in my INA226 board
+    //  Did initial calculation which camne out at 0.0082ohms then tweaked the value to calibrate it to match my 5-digit Fluke DVM current reading.
+    // Also connected teh IN+ pin to the VBUS pin to masure voltage.   
+    // This board I installed in series with the 12V front panel power switch as a high side current measurement.
   #endif
   
   draw_new_screen();
@@ -1873,6 +1884,7 @@ void app_loop(void) {
   static uint8_t decode_PTT_temp_last = 0;
   static uint32_t last_input_poll = 0;
   static uint32_t last_ptt_input_poll = 0;
+  static uint32_t last_disp_info = 0;
   uint8_t decode_Band_temp;
   static uint8_t decode_Band_temp_last = 0;
   uint8_t decode_in;
@@ -1987,7 +1999,21 @@ void app_loop(void) {
         restart_BT_flag = false;
       }
     #endif
-  #endif// M5STAMPC3U
+  #else
+    if (millis() > last_disp_info + 1000)
+    {
+      Serial.print(INA.getBusVoltage(), 3);
+      Serial.print("\t");
+      Serial.print(INA.getShuntVoltage_mV(), 3);
+      Serial.print("\t");
+      Serial.print(INA.getCurrent_mA(), 3);
+      Serial.print("\t");
+      Serial.print(INA.getPower_mW(), 3);
+      Serial.println();
+      last_disp_info = millis();
+    }
+  #endif  // not M5STAMPC3U
+
 
   // scan our input sources for wired PTT and band change - only 1 module type at a time for now
   #if defined ( IO_MODULE )  || defined ( EXT_IO2_UNIT ) || defined ( M5STAMPC3U )
