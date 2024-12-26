@@ -35,7 +35,7 @@ As of now the basic box is working on RX and TX except the internal 10W attenuat
 
 Items left to finish
       1. Replace 1 SP6T RF switch board (TX IF)
-      2. Make final design decision about the PTT and 3 band decoder input lines.  They are direct to the CPU right now with weak 3.3V pullups enabled.  These should be buffered to minimize chance for CPU damage. A new pullup source facing the radio side will be needed on the buffer outputs.  This could be done in the Radio side display controller.  I have a "PLC Prototype" M5Stack module which has a 9-24VDc to 5V regulator, perf board and edge connector.   I  may be able to fit a port expander and buffer with pullup resistors in there.  I have a small space left on the control board to wire in a 4 pin connector and 4 transistors, caps and some resistors.  Can use the the bottom side of the control board for most of the likely SMD parts.  Already have connectors installed for the i2c connected display and current sensor.
+      2. Make final design decision about the PTT and 3 band decoder input lines.  They are direct to the CPU right now with weak 3.3V pullups enabled.  These should be buffered to minimize chance for CPU damage. A new pullup source facing the radio side will be needed on the buffer outputs.  This could be done in the Radio side display controller.  I have a "PLC Prototype" M5Stack module which has a 9-24VDc to 5V regulator, perf board and edge connector.   I  may be able to fit a port expander and buffer with pullup resistors in there.  I have space on the control board to wire in a 4 pin connector and 4 transistors, caps and some resistors.  Already have connectors installed for the i2c connected display and current sensor.
       3. Once the DC converter is mounted, install suitable heat sink solution to the back panel and mount the 50ohm RF terminating resistor, used to attenuate 10W down to < 10mW.
       4. Install RF bypass caps on the 6 PTT outputs.
 
@@ -43,9 +43,7 @@ These items add extra features like boosting RF output to more usable levels.
       5. Await delivery of the 50W 903 RF pallet.
       6. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.
       7. Await delivery of the 2W 1296 amp module.  Required to boost 100mW Xvbtr output up to 1.5W for the external SG-Labs 25W 1296 amp/LNA unit.
-      8. Code for the INA226 V and I sensor.
-      9. code for the SSD1306 compatible OLED display
-      10. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
+      8. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
       
 
 Dec 24, 2024
