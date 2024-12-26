@@ -1,6 +1,6 @@
 /*************************************************************************
       ICOM CI-V Band Decoder and PTT breakout
-      K7MDL 8/2024
+      Michael Lewis K7MDL Dec 2024
 
       BT Classic Serial or USB connection for IC-705
       USB for other models 
@@ -94,11 +94,11 @@
 #ifndef _M5_BT_USB_
 #define _M5_BT_USB_
 
-#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
+//#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
-//#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
+#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
                       // Comment out and the CPU architecture is automatically selected for all others (AtomS3, Core, Core2, CoreS3/SE)
 
 #define XVBOX // set some data config specific to usage with the 705 transverter box
@@ -113,6 +113,12 @@
   //#define BUTTON_PIN 3
   #define PIXEL_PIN 2   // GPIO2 is Sk6812 RGB LED
   #define NUM_PIXELS 1  // Just 1 LED
+  #include <Adafruit_GFX.h>
+  #include <Adafruit_SSD1306.h>
+  #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+  #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+  #define SCREEN_WIDTH 128 // OLED display width, in pixels
+  #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
 #elif defined ( CONFIG_IDF_TARGET_ESP32S3 )
   #ifdef __M5GFX_M5ATOMDISPLAY__

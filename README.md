@@ -11,10 +11,16 @@ SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/
 Latest Update: 26 Dec 2024
 
 Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current 
-with my DVM and calibrated the current output.  Voltage is very close by default. Displays in debug every 1 second.  This will be displayed on the OLED display to be added soon.
+with my DVM and calibrated the current output.  Voltage is very close by default. Displays in debug every 1 second.  This will be displayed on the OLED display.
 
+Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 4 screens, each with a single row of large text.  
+      1. Xvtr Box bands = "HF/6M", "2M", "70cm", "1.25cm", "33cm", "23cm"
+      2. "Rx" or "Tx" on hte left side, "XVTR" on the right side if one of the 3 Xvtr bands is actve (222, 902/3 or 1296)
+      3. voltage in VDC
+      4. current in Amps DC
 
 25 Dec 2024
+
 My SP6T IF switch on the TX IF path has 3 bad ports out of the 6.  RF4-6 are good. I moved 222 TX IF input cable from RF3 to RF4 until a replacement board arrives.  The port assignments are arbitrary, chosen for the cleanest cabling.  RF3 for 222 is on the opposite side from RF4,5 & 6 which serves 903 and 1296.
 
 I measured 2.4dB loss through the TC board (which is the IF T/R switch + RX and TX attenuators) and the active SP6T IF switch port for each band.  The transverters require -5dBm to +3dBm drive, 10dBm max.  The IC-705 can put output up to 40dBm. I used a 10W 30dB attenuator for 32.4 dB total attenuation and raised the 705 output power until I started to see the transverter output flatten out (compression point), around 40-70%.  Can set the 705's RF Output max power limit setting to the final value.

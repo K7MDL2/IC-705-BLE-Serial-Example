@@ -145,6 +145,7 @@ uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9, 0x00 };  // Mike's
 
 #ifdef M5STAMPC3U
   INA226 INA(0x40);    // Address on i2c bus is 0x40 by default.  
+  Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #endif
 
 #ifdef USBHOST
@@ -1845,7 +1846,7 @@ void app_setup(void) {
     Unit_EXTIO2_setup();
   #endif
   
-  #ifdef M5STAMPC3U
+  #ifdef M5STAMPC3U // For 705 Xvtr box controller
     MCP23017_IO_setup();
     if (!INA.begin() )
     {
@@ -1855,6 +1856,24 @@ void app_setup(void) {
     //  Did initial calculation which camne out at 0.0082ohms then tweaked the value to calibrate it to match my 5-digit Fluke DVM current reading.
     // Also connected teh IN+ pin to the VBUS pin to masure voltage.   
     // This board I installed in series with the 12V front panel power switch as a high side current measurement.
+  
+    Serial.println(F("Start SSD1306 OLED display Init"));
+    // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+    if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+      Serial.println(F("SSD1306 allocation failed"));
+      for(;;); // Don't proceed, loop forever
+    }
+    // Show initial display buffer contents on the screen --
+    // the library initializes this with an Adafruit splash screen.
+    display.display();
+    delay(500);
+    // Clear the buffer
+    display.clearDisplay();
+    // Draw a single pixel in white
+    display.drawPixel(10, 10, SSD1306_WHITE);
+    // Show the display buffer on the screen. You MUST call display() after
+    // drawing commands to make them visible on screen!
+    display.display();
   #endif
   
   draw_new_screen();
@@ -1890,6 +1909,7 @@ void app_loop(void) {
   uint8_t decode_in;
   static uint8_t xvtr_band_select = 0;  // rotate through a few transverter bands.  Temp until we get a select window
   int btn_state = 0;
+  static uint8_t screen = 0;
 
   #ifndef M5STAMPC3U
     M5.update();
@@ -1962,7 +1982,7 @@ void app_loop(void) {
               case 2: band_Selector(DECODE_INPUT_BAND902); break;
               case 3: band_Selector(DECODE_INPUT_BAND1296); break;
               //case 4: band_Selector(DECODE_INPUT_BAND10G); break;
-              case 4: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
+              case 4: band_Selector(0);  // fall thru to reset counter to non-Xvtr band
               default: xvtr_band_select = 0; break;
             }
           }
@@ -1999,21 +2019,84 @@ void app_loop(void) {
         restart_BT_flag = false;
       }
     #endif
-  #else
+  #else   // Xvtr box controller
+    float volts = 0.0;
+    float current = 0.0;
+    char Rx[3] = "Rx";
+    char Tx[3] = "Tx";
+
     if (millis() > last_disp_info + 1000)
     {
-      Serial.print(INA.getBusVoltage(), 3);
-      Serial.print("\t");
-      Serial.print(INA.getShuntVoltage_mV(), 3);
-      Serial.print("\t");
-      Serial.print(INA.getCurrent_mA(), 3);
-      Serial.print("\t");
-      Serial.print(INA.getPower_mW(), 3);
-      Serial.println();
+      // print to serial if debug is on
+      if (band == 1)  // < 144MHz
+        DPRINTF("HF/6M");
+      else
+        DPRINT(bands[band].band_name);
+      DPRINTF("\t");
+      DPRINT(decode_PTT_temp_last);
+      DPRINTF("\t");
+      volts = INA.getBusVoltage();
+      DPRINT(volts, 3);
+      DPRINTF("\t");
+      DPRINT(INA.getShuntVoltage_mV(), 3);
+      DPRINTF("\t");
+      current = INA.getCurrent_mA();
+      current /= 1000;
+      DPRINT(current , 3);
+      DPRINTF("\t");
+      DPRINTLN(INA.getPower_mW()/1000, 3);
+
+      // Show on OLED display
+      // Rotate the info on the small OLED screen to keep font sizes larger
+      display.setTextSize(3); // Draw 3X-scale text
+      display.setTextColor(SSD1306_WHITE);
+      
+      if (screen == 0) {  
+        display.clearDisplay();
+        display.setCursor(0, 5);
+        if (band == 1)  // < 144MHz
+          display.print("HF/6M");
+        else
+          display.print(bands[band].band_name);
+        display.display();   // Update display
+      }
+
+      if (screen == 1) {
+        display.clearDisplay();
+        display.setCursor(0, 5);
+        if (decode_PTT_temp_last)
+          display.print(Tx);
+        else 
+          display.print(Rx);
+        display.print(" ");
+        if (XVTR_Band)
+          display.print("XVTR");
+        display.display();   // Update display
+      }
+
+      if (screen == 2) {
+        display.clearDisplay();
+        display.setCursor(0, 5);
+        display.print(volts);
+        display.print("V");
+        display.display();   // Update display
+      }
+
+      if (screen == 3) {
+        display.clearDisplay();
+        display.setCursor(0, 5);
+        display.print(current);
+        display.print("A");
+        display.display();   // Update display
+      }
+      
+      screen += 1;
+      if (screen > 3) 
+        screen = 0;  // loop around the screens each second
+      
       last_disp_info = millis();
     }
-  #endif  // not M5STAMPC3U
-
+  #endif  // M5STAMPC3U
 
   // scan our input sources for wired PTT and band change - only 1 module type at a time for now
   #if defined ( IO_MODULE )  || defined ( EXT_IO2_UNIT ) || defined ( M5STAMPC3U )
