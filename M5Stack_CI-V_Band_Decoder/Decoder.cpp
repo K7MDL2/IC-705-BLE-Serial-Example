@@ -270,7 +270,7 @@ void GPIO_Out(uint16_t pattern)
 void PTT_Output(uint8_t band, bool PTT_state)
 {
     // Set your desired PTT pattern per band in RadioConfig.h
-    // ToDo: Eventually create a local UI screen to edit and monitor pin states
+    // ToDo: Eventually create a local UI screen and SD card config file to edit and monitor pin states
 
     DPRINTF("PTT_Output: Band "); DPRINTLN(band);
 
@@ -309,7 +309,7 @@ void PTT_Output(uint8_t band, bool PTT_state)
         }
         #ifdef M5STAMPC3U
           if (!PTT_state) {
-            GPIO_PTT_Out(DECODE_DUMMY_PTT, true);
+            GPIO_PTT_Out(0, true);
             DPRINTLNF("turning LED blue for RX");
             pixel.setPixelColor(0, pixel.Color(0, 0, 128));
             pixel.show(); 

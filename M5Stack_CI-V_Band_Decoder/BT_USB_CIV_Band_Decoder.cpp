@@ -2032,19 +2032,27 @@ void app_loop(void) {
         DPRINTF("HF/6M");
       else
         DPRINT(bands[band].band_name);
+      DPRINTF(" \t");
+
+      if (decode_PTT_temp_last)
+        DPRINTF(Tx);
+      else 
+        DPRINTF(Rx);
       DPRINTF("\t");
-      DPRINT(decode_PTT_temp_last);
-      DPRINTF("\t");
+      
       volts = INA.getBusVoltage();
       DPRINT(volts, 3);
-      DPRINTF("\t");
+      DPRINTF("V   \t");
       DPRINT(INA.getShuntVoltage_mV(), 3);
-      DPRINTF("\t");
+      DPRINTF("mV(shunt)   \t");
+      
       current = INA.getCurrent_mA();
       current /= 1000;
       DPRINT(current , 3);
-      DPRINTF("\t");
-      DPRINTLN(INA.getPower_mW()/1000, 3);
+      DPRINTF("A   \t");
+      
+      DPRINT(INA.getPower_mW()/1000, 3);
+      DPRINTLNF("W");
 
       // Show on OLED display
       // Rotate the info on the small OLED screen to keep font sizes larger
