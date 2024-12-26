@@ -1946,10 +1946,10 @@ void app_loop(void) {
             DPRINTLN(xvtr_band_select);
             switch (xvtr_band_select)  // index our way through a curated list.
             {
-              case 1: band_Selector(3); break;
-              case 2: band_Selector(5); break;
-              case 3: band_Selector(6); break;
-              //case 4: band_Selector(8); break;
+              case 1: band_Selector(DECODE_INPUT_BAND222); break;
+              case 2: band_Selector(DECODE_INPUT_BAND902); break;
+              case 3: band_Selector(DECODE_INPUT_BAND1296); break;
+              //case 4: band_Selector(DECODE_INPUT_BAND10G); break;
               case 4: band_Selector(0);  // fall thru to reset counter   8 (4th bit) is reserved for PTT input from radio
               default: xvtr_band_select = 0; break;
             }
@@ -2000,7 +2000,7 @@ void app_loop(void) {
       #elif defined ( EXT_IO2_UNIT )
         decode_in = Unit_EXTIO2_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
       #elif defined ( M5STAMPC3U )
-        decode_in = M5STAMPC3U_Input_scan(1);     // Has 8 I/O ports, using lower 4 for band and PTT input
+        decode_in = M5STAMPC3U_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
       #endif
 
       decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit

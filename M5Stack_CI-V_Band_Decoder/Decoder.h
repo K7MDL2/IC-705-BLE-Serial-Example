@@ -123,7 +123,7 @@ enum band_idx { DUMMY,
 #define GPIO_MOD2_IO_PIN_14   6
 #define GPIO_MOD2_IO_PIN_15   7
 
-// These are the 8 ports (PA0-7) configured for buffered inputs on the MCP23017 Port Expander modules
+// These are the 8 ports (PA0-7) configured for buffered outputs on the 1st of 2 MCP23017 Port Expander module
 #define GPIO_MOD1_PE_PIN_0    0
 #define GPIO_MOD1_PE_PIN_1    1
 #define GPIO_MOD1_PE_PIN_2    2
@@ -133,8 +133,7 @@ enum band_idx { DUMMY,
 #define GPIO_MOD1_PE_PIN_6    6
 #define GPIO_MOD1_PE_PIN_7    7
 
-// Remaining 24 ports configured for outputs, some buffered
-// PB0-7 on module 1
+// PB0-7 on module 1 are unbuffered
 #define GPIO_MOD1_PE_PIN_8    8
 #define GPIO_MOD1_PE_PIN_9    9
 #define GPIO_MOD1_PE_PIN_10   10
@@ -144,7 +143,7 @@ enum band_idx { DUMMY,
 #define GPIO_MOD1_PE_PIN_14   14
 #define GPIO_MOD1_PE_PIN_15   15
 
-// PA0-7 on module 2 are buffered outputs
+// PA0-7 on module 2 are buffered outputs for PTT outputs
 #define GPIO_MOD2_PE_PIN_0    0
 #define GPIO_MOD2_PE_PIN_1    1
 #define GPIO_MOD2_PE_PIN_2    2
@@ -154,7 +153,7 @@ enum band_idx { DUMMY,
 #define GPIO_MOD2_PE_PIN_6    6
 #define GPIO_MOD2_PE_PIN_7    7
 
-// PB0-7 on module 2
+// PB0-7 on module 2  are unbuffered outputs for SP4T RF switch cntrol and a bank of 4 relays that turn on 12V to each Xvtr and the 903 PA
 #define GPIO_MOD2_PE_PIN_8    8
 #define GPIO_MOD2_PE_PIN_9    9
 #define GPIO_MOD2_PE_PIN_10   10
@@ -163,6 +162,20 @@ enum band_idx { DUMMY,
 #define GPIO_MOD2_PE_PIN_13   13
 #define GPIO_MOD2_PE_PIN_14   14
 #define GPIO_MOD2_PE_PIN_15   15
+
+//  These are IO pins on the C3U module intended for Band decode input and PTT input and IF switch control
+//  PTT is the only IO pin that requires high speed scanning.  
+//  Putting PTT on the CPU instead of the MCP23017 avoids putting high speed daa flow on the i2c bus which causes noise on the 222 band
+//  Using the CPU IO lets the i2c bus be polled at low speed reducing radiated noise.
+
+#define GPIO_C3U_BAND_0     10
+#define GPIO_C3U_BAND_1     8
+#define GPIO_C3U_BAND_2     7
+#define GPIO_C3U_PTT        6
+#define GPIO_C3U_IFSW_A     5
+#define GPIO_C3U_IFSW_B     4
+#define GPIO_C3U_IFSW_C     3
+
 
 // BAND DECODE INPUT (_INPUT_) PINS
 // Assign your pins of choice.  Use a number or one of the existing #define number names
@@ -178,10 +191,10 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_INPUT_6        GPIO_PIN_NOT_USED      // bit 2
   #define BAND_DECODE_INPUT_7        GPIO_PIN_NOT_USED      // bit 3
 #else  // Transverter Box  M5STAMP C3U controller PA0-7 on MCP23017 Module 1
-  #define BAND_DECODE_INPUT_0        GPIO_MOD_PE1_PIN_0     // bit 0   Band 0
-  #define BAND_DECODE_INPUT_1        GPIO_MOD_PE1_PIN_1     // bit 1   Band 1
-  #define BAND_DECODE_INPUT_2        GPIO_MOD_PE1_PIN_2     // bit 2   Band 2
-  #define BAND_DECODE_INPUT_3        GPIO_MOD_PE1_PIN_3     // bit 3   PTT Input
+  #define BAND_DECODE_INPUT_0        GPIO_C3U_BAND_0        // bit 0   Band 0
+  #define BAND_DECODE_INPUT_1        GPIO_C3U_BAND_1        // bit 1   Band 1
+  #define BAND_DECODE_INPUT_2        GPIO_C3U_BAND_2        // bit 2   Band 2
+  #define BAND_DECODE_INPUT_3        GPIO_C3U_PTT           // bit 3   PTT Input
   #define BAND_DECODE_INPUT_4        GPIO_PIN_NOT_USED      // bit 0
   #define BAND_DECODE_INPUT_5        GPIO_PIN_NOT_USED      // bit 1
   #define BAND_DECODE_INPUT_6        GPIO_PIN_NOT_USED      // bit 2
@@ -227,12 +240,12 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_OUTPUT_15       GPIO_PIN_NOT_USED      // bit 7
 
 #else  // Transverter Box embedded controller config
-  // PA0-7 Module 1 are inputs.  PA0-7 Module 2 are PTT outputs.  PB0-7 on each module (16 total) for general outputs
-  // There are 32 IO ports total between the 2x MCP23017 port expanders.
-  // 8 are used as inputs, 8 for PTT outputs, 16 are other control outputs.  There are more ports on the CPU if needed
-  #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_PE_PIN_8      // bit 0  PB module 1 for M5StampC3U
-  #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_PE_PIN_9      // bit 1
-  #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_PE_PIN_10     // bit 2
+  // PA0-7 Module 1 has Xvtr internal PTT outputs.  PA0-7 Module 2 has external PTT outputs.  These are both buffered
+  // PB0-7 on each module (16 total) for general unbuffered outputs
+  // There are 32 IO ports total between the 2x MCP23017 port expanders.  7 more on the CPU.  Any can be mapped in teh IO bank
+  #define BAND_DECODE_OUTPUT_0        GPIO_C3U_IFSW_A         // bit 0  Bits 0-2 are mnapped top pins 3-5 on the M5StampC3U
+  #define BAND_DECODE_OUTPUT_1        GPIO_C3U_IFSW_B         // bit 1
+  #define BAND_DECODE_OUTPUT_2        GPIO_C3U_IFSW_C         // bit 2
   #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED       // bit 3  These (3-7) are used for internal PTT so handled by PTT function, not here
   #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED       // bit 4
   #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED       // bit 5
@@ -285,15 +298,16 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_PTT_OUTPUT_14   GPIO_PIN_NOT_USED     // bit 6
   #define BAND_DECODE_PTT_OUTPUT_15   GPIO_PIN_NOT_USED     // bit 7
 #else  
-  // Xvtr Box uses outputs on PB3-7 on 1st module and buffered PA0-7 on 2nd MCP23017 module for band specific PTT outputs for amp PTTs
-  // for the transverter PTT, there is likely 9 to 12V in RX state so a buffer is required.
-  // Xvtr Box uses ports 3-7 of 8 outputs on PB3-7 on 1st MCP23017 module for band specific internal PTT outputs for amp PTTs
-  #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED      // bit 0  0, 1 and 2 used by band decoder for internal IF SP6T switch
-  #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED      // bit 1  
-  #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED      // bit 2  
-  #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_PE_PIN_11    // bit 3  222 Xvtr Brd PTT       0 = TX
-  #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD1_PE_PIN_12    // bit 4  902/903 Xvtr Brd PTT   0 = TX
-  #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD1_PE_PIN_13    // bit 5  1296 Xvtr Brd PTT      0 = TX
+  // Xvtr Box uses outputs on PA0-3 and PB6-7 on 1st module.  PA0-7 are buffered
+  // PA0-7 on 2nd MCP23017 module for band specific PTT outputs for amp PTTs amnd is buffered
+  // For the transverter internal PTT, there is 9V in RX state so a buffer is required.
+  // Note: this is a mapping between virutal pins and physical pins.The actual pins can be assigned in any order *within* a module.
+  #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED    
+  #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED     
+  #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED    
+  #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_PE_PIN_2     // bit 3  222 Xvtr Brd PTT       0 = TX    
+  #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD1_PE_PIN_3     // bit 4  902/903 Xvtr Brd PTT   0 = TX   
+  #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD1_PE_PIN_4     // bit 5  1296 Xvtr Brd PTT      0 = TX 
   #define BAND_DECODE_PTT_OUTPUT_6    GPIO_MOD1_PE_PIN_14    // bit 6  T/R switch, 903 RF Xvtr board output  1 = TX
   #define BAND_DECODE_PTT_OUTPUT_7    GPIO_MOD1_PE_PIN_15    // bit 7  T/R swtich, 1296 RF Xvtr board output   1 = TX
   
@@ -419,7 +433,7 @@ enum band_idx { DUMMY,
 #endif
 
 // Band Decode Output pattern
-// Example: For Core module with jsut hte 4In/*out module, there are 8 output.  Use lowest half of the value.
+// Example: For Core module with just the 4In/8out module, there are 8 output.  Use lowest half of the value.
 #ifndef M5STAMPC3U
   #define DECODE_BAND_DUMMY   (0x0000)    //Dummy Row
   #define DECODE_BANDAM       (0x0001)    //AM
@@ -472,17 +486,18 @@ enum band_idx { DUMMY,
 
 //  so upper byte for 222 band is 0111 0001 or 0x71
 
+// Moved these 3 pins from teh MCP23107 to the CPU GPIO to get them off the MCP23017 to reduce noise from i2c activity.
 // Lower byte, lowest bits are PTT out.  6 dedicated buffered 
 // bits 0-2 are IF SP6T switch.  A, B, C
 //          CBA
-//    RF1 = 000  NC
-//    RF2 = 001  NC
-//    RF3 = 010  222
-//    RF4 = 011  NC
-//    RF5 = 100  903
-//    RF6 = 101  1296
-//    OFF = 110  
-//    OFF = 111
+//    RF1 = 000  NC     0
+//    RF2 = 001  NC     1
+//    RF3 = 010  222    2
+//    RF4 = 011  NC     3
+//    RF5 = 100  903    4
+//    RF6 = 101  1296   5
+//    OFF = 110         6
+//    OFF = 111         7
 
 // bits 3 to 7 are used in PTT function so can set to 0, they wil lbe ignored here.
 
@@ -510,10 +525,10 @@ enum band_idx { DUMMY,
   //#define DECODE_BAND70       (0x0000)    //70MHz
   #define DECODE_BAND6M       (0xF207)    //6M
   #define DECODE_BAND144      (0xF407)    //2M
-  #define DECODE_BAND222      (0x7102)    //222
+  #define DECODE_BAND222      (0x7103)    //222     0xZZZY y=3 for RF4 on SP6T (temp until new board arrives.  RF1-3 are broke on the TX swtich module.) Normally RF2 for easier wiring purposes.
   #define DECODE_BAND432      (0xF807)    //432
-  #define DECODE_BAND902      (0x9104)    //902  Turn on both 12V relays, 2 & 3 for 903 Xvtr and Amp
-  #define DECODE_BAND1296     (0xE105)    //1296
+  #define DECODE_BAND902      (0x9104)    //902     0xZZZY y=4 for RF5 on SP6T switch.   Turn on both 12V relays, relays 2 & 3 for 903 Xvtr and Amp.
+  #define DECODE_BAND1296     (0xE105)    //1296    0xZZZY y=5 for RF6 on SP6T switch.
   #define DECODE_BAND2400     (0xF207)    //2400
   #define DECODE_BAND3300     (0xF207)    //3400
   #define DECODE_BAND5760     (0xF207)    //5760M
@@ -599,57 +614,60 @@ enum band_idx { DUMMY,
   #endif
 #else  
   // For Xvtr Box with M5StampC3U
-  // bits 0-2 is IF switch for Xvtr bands, set in the Band Decode function, ignored here as pins are set to not used for PTT
+  // bit 0-2 no used (these are logical pins, not physical pins here)
   // bit 3  PTT to Xvtr 222 Brd  0 = TX  - This requires a open collector like ULN2803 - Xvtr PTT has +9V on it and connecting to 3.3V output puts Xvtr into Tx - sort of.  
   // bit 4  PTT to Xvtr 903 Brd  0 = TX  - Same as above
   // bit 5  PTT to Xvtr 1296 Brd 0 = TX  - same as above
   // bit 6  903  RF output T/R coax switch   1 = ON - Logic 1 and 0.   Check for pullup in the switch, if so can likely use open collecor like ULN2803
   // bit 7  1296 RF output T/R coax switch   1 = ON
-  // Example for any non Xvtr band (bits 0-2 are ignored for PTT so set to 0)
-  //   bit 7 6 5 4  3 210
-  //       0 0 1 1  1 000   = 0x38 for TX and RX
+  
+  // Example Module 1 values for any non Xvtr band (bits 0-2 are ignored for PTT so set to 0)
+  //  invert outputs when buffered
+  //   bit 7 6 54 3 210
+  //       0 0 | 00 0 | 000   = 0x00 for TX and RX
   // For Xvtr band 222
-  //   bit 7 6 5 4  3 210   
-  //       0 0 1 1  L 000   = 0x30 = PTT on TX, 0x38 = RX on 222
+  //   bit 7 6 54 3 210   
+  //       0 0 | 00 H | 000   = 0x08 = PTT on TX, 0x00 = RX on 222
   // For Xvtr band 903
-  //   bit 7 6 5 4  3 210
-  //       0 H 1 L  1 000   = 0x68 = PTT on TX, 0x38 = RX on 903
+  //   bit 7 6 54 3 210
+  //       0 H | 0H 0 | 000   = 0x50 = PTT on TX, 0x00 = RX on 903
   // For Xvtr band 1296
-  //   bit 7 6 5 4  3 210
-  //       H 0 L 1  1 000   = 0x98 = PTT on TX, 0x38 = RX on 1296
-  //   Ideally the 903/1296 T/R swtiches would be set before the PTT issued to the Xvtr board
+  //   bit 7 6 54 3 210
+  //       H 0 | H0 0 | 000   = 0xA0 = PTT on TX, 0x00 = RX on 1296
+  //   Ideally the 903/1296 T/R switches would be set before the PTT issued to the Xvtr board
 
   // 0x0138 passes PTT through on HF/6M PTT output jack on back panel for all bands on HF and 6M.  Also sets the intenral Xvtr PTTs to RX state.
-  #define DECODE_DUMMY_PTT        (0x0038)    //Dummy Row  This pattern is also used to set RX state.  All other rows are TX state only.
-  #define DECODE_BANDAM_PTT       (0x0138)   //16M_PTT 
-  #define DECODE_BAND160M_PTT     (0x0138)   //160M_PTT 
-  #define DECODE_BAND80M_PTT      (0x0138)    //80M_PTT
-  #define DECODE_BAND60M_PTT      (0x0138)    //60M_PTT
-  #define DECODE_BAND40M_PTT      (0x0138)    //40M_PTT
-  #define DECODE_BAND30M_PTT      (0x0138)    //30M_PTT
-  #define DECODE_BAND20M_PTT      (0x0138)    //20M_PTT
-  #define DECODE_BAND17M_PTT      (0x0138)    //17M_PTT      
-  #define DECODE_BAND15M_PTT      (0x0138)    //15M_PTT
-  #define DECODE_BAND12M_PTT      (0x0138)    //12M_PTT
-  #define DECODE_BAND10M_PTT      (0x0138)    //10M_PTT
-  #define DECODE_BANDFM_PTT       (0x0138)    //6M_PTT
-  #define DECODE_BANDAIR_PTT      (0x0138)    //6M_PTT
-  //#define DECODE_BAND70_PTT      (0x0138)    //70M_PTTHz
-  #define DECODE_BAND6M_PTT       (0x0138)    //6M_PTT
-  #define DECODE_BAND144_PTT      (0x0238)    //2M_PTT
-  #define DECODE_BAND222_PTT      (0x8430)    //222_PTT  Turn on highest bit for TC Board IF relay/attenuator
-  #define DECODE_BAND432_PTT      (0x0838)    //432_PTT
-  #define DECODE_BAND902_PTT      (0x9068)    //902_PTT  Turn on highest bit for TC Board IF relay/attenuator
-  #define DECODE_BAND1296_PTT     (0xA098)    //1296_PTT  Turn on highest bit for TC Board IF relay/attenuator
-  #define DECODE_BAND2400_PTT     (0x0138)    //2400_PTT
-  #define DECODE_BAND3300_PTT     (0x0138)    //3400_PTT
-  #define DECODE_BAND5760_PTT     (0x0138)    //5760_PTT
-  #define DECODE_BAND10G_PTT      (0x0138)    //10.368.1G_PTT
-  #define DECODE_BAND24G_PTT      (0x0138)    //24.192G_PTT
-  #define DECODE_BAND47G_PTT      (0x0138)    //47.1G_PTT
-  #define DECODE_BAND76G_PTT      (0x0138)    //76.1G_PTT
-  #define DECODE_BAND122G_PTT     (0x0138)    //122G_PTT
-  #define DECODE_B_GENERAL_PTT    (0x0138)    // Non-Ham Band
+  // Highest byte is PTT out pin
+  #define DECODE_DUMMY_PTT        (0x0000)    //Dummy Row  This pattern is also used to set RX state.  All other rows are TX state only.
+  #define DECODE_BANDAM_PTT       (0x0100)   //16M_PTT 
+  #define DECODE_BAND160M_PTT     (0x0100)   //160M_PTT 
+  #define DECODE_BAND80M_PTT      (0x0100)    //80M_PTT
+  #define DECODE_BAND60M_PTT      (0x0100)    //60M_PTT
+  #define DECODE_BAND40M_PTT      (0x0100)    //40M_PTT
+  #define DECODE_BAND30M_PTT      (0x0100)    //30M_PTT
+  #define DECODE_BAND20M_PTT      (0x0100)    //20M_PTT
+  #define DECODE_BAND17M_PTT      (0x0100)    //17M_PTT      
+  #define DECODE_BAND15M_PTT      (0x0100)    //15M_PTT
+  #define DECODE_BAND12M_PTT      (0x0100)    //12M_PTT
+  #define DECODE_BAND10M_PTT      (0x0100)    //10M_PTT
+  #define DECODE_BANDFM_PTT       (0x0100)    //6M_PTT
+  #define DECODE_BANDAIR_PTT      (0x0100)    //6M_PTT
+  //#define DECODE_BAND70_PTT      (0x0100)    //70M_PTT
+  #define DECODE_BAND6M_PTT       (0x0100)    //6M_PTT
+  #define DECODE_BAND144_PTT      (0x0200)    //2M_PTT
+  #define DECODE_BAND222_PTT      (0x8408)    //222_PTT   Turn on highest bit for TC Board IF relay/attenuator
+  #define DECODE_BAND432_PTT      (0x0800)    //432_PTT
+  #define DECODE_BAND902_PTT      (0x9050)    //902_PTT   Turn on highest bit for TC Board IF relay/attenuator
+  #define DECODE_BAND1296_PTT     (0xA0A0)    //1296_PTT  Turn on highest bit for TC Board IF relay/attenuator
+  #define DECODE_BAND2400_PTT     (0x0100)    //2400_PTT
+  #define DECODE_BAND3300_PTT     (0x0100)    //3400_PTT
+  #define DECODE_BAND5760_PTT     (0x0100)    //5760_PTT
+  #define DECODE_BAND10G_PTT      (0x0100)    //10.368.1G_PTT
+  #define DECODE_BAND24G_PTT      (0x0100)    //24.192G_PTT
+  #define DECODE_BAND47G_PTT      (0x0100)    //47.1G_PTT
+  #define DECODE_BAND76G_PTT      (0x0100)    //76.1G_PTT
+  #define DECODE_BAND122G_PTT     (0x0100)    //122G_PTT
+  #define DECODE_B_GENERAL_PTT    (0x0100)    // Non-Ham Band
 #endif
 
 #endif

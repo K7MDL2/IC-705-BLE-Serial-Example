@@ -200,49 +200,63 @@ void GPIO_Out(uint16_t pattern)
       //
       // mask each bit and apply the 1 or 0 to the assigned pin
 
-      // 24 outputs available - 8 are inputs, 8 are PTT outputs, 16 are control lines
-      
-      // PA0-7 on 1st module are buffered inputs - 0x03 to turn off IF ports
-      //   pin 0-2  - 3 Band select data inputs
-      //   pin 3    - 1 PTT input
-      //   pin 4-7  - 4 spare inputs
-      //   pin 8    - 1 GND
+      // 41 input/output pins available - 16 per MCP23017 module and 7 more GPIO on the CPU for inputs andf IF SP6T switch control.
+      // A virtual bank of pins is defines as generic BAND_DECODE_OUTPUT or BAND_XXX_PTT.  Physical pins are mapped into these.  
+      // Some special handling is involved to inorporate the CPU IO pins into the bank which can be confusing.
+   
+      // CPU GPIO
+      //   IO Mapping
+      //   OUTPUT_2   pin 3    - SP6T IF switch controol line A
+      //   OUTPUT_1   pin 4    - SP6T IF switch controol line B
+      //   OUTPUT_0   pin 5    - SP6T IF switch controol line C
+      //   INPUT_3   pin 6     - PTT input fromn Radio
+      //   INPUT_2   pin 7     - Band0 Decode Input 
+      //   INPUT_1   pin 8     - Band1 Decode Input 
+      //   INPUT_0   pin 10    - Band2 Decode Input 
 
-      // PB0-7 on 1st module are unbuffered TTL outputs - 0xF0 to turn them all off.
-      //   pin 0-2 - 3 IF solid state SP6T switch 0=A 1=B 2=C
-      //   pin 3   - 222 Xvtr PTT
-      //   pin 4   - 903 Xvtr PTT
-      //   pin 5   - 1296 Xvtr PTT
-      //   pin 6   - 903 RF Out T/R switch
-      //   pin 7   - 903 RF Out T/R switch
+      //   1st module PA0-7 are buffered outputs
+      //   IO Mapping
+      //   OUTPUT_3     pin 0   - 222 Xvtr PTT
+      //   OUTPUT_4     pin 1   - 903 Xvtr PTT
+      //   OUTPUT_5     pin 2   - 1296 Xvtr PTT
+      
+      //   PB0-7 on 1st module are unbuffered outputs
+      //   IO Mapping
+      //   OUTPUT_8-13  pin 0-5 - spare
+      //   OUTPUT_14    pin 6   - 903  RF Out T/R switch
+      //   OUTPUT_15    pin 7   - 1296 RF Out T/R switch
       
       // PA0-7 on 2nd module are buffered outputs for band specific PTT outputs for amps.  These should be sequenced.  - 0x0800 to set all idle
-      //   pin 0-5 - 6 HF/50 thru 1296
-      //   pin 6   - 1 spare - future TxInhibit
-      //   pin 7   - PTT out to TC board IF relay.  Switch this fast on incoming PTT change from Radio
+      //   IO Mapping
+      //   OUTPUT_    pin 0-5 - 6 HF/50 thru 1296
+      //   OUTPUT_14    pin 6   - 1 spare - future TxInhibit
+      //   OUTPUT_14    pin 7   - PTT out to TC board IF relay.  Switch this fast on incoming PTT change from Radio
       
       // PB0-7 on 2nd module are unbuffered TTL outputs.  - 0xF000 to set all to off
-      //   pin 0   - Port 1 (Xvtr mode) on SP4T coax switch These select IC-705 RF direct to antennas for HF/50, 144, 432 bands and the Xvtr box input
-      //   pin 1   - Port 2 (Xvtr mode) on SP4T coax switch
-      //   pin 2   - Port 3 (Xvtr mode) on SP4T coax switch
-      //   pin 3   - Port 4 (Xvtr mode) on SP4T coax switch
-      //   pin 4   - 12V Relay 1 - 1296 Xvtr Power
-      //   pin 5   - 12V Relay 2 - 903 Xvtr Power
-      //   pin 6   - 12V Relay 3 - 903 Amp Power
-      //   pin 7   - 12V Relay 4 - 222 Xvtr Power
+      //   IO Mapping
+      //   OUTPUT_8     pin 0   - Port 1 (Xvtr mode) on SP4T coax switch These select IC-705 RF direct to antennas for HF/50, 144, 432 bands and the Xvtr box input
+      //   OUTPUT_9     pin 1   - Port 2 (Xvtr mode) on SP4T coax switch
+      //   OUTPUT_10    pin 2   - Port 3 (Xvtr mode) on SP4T coax switch
+      //   OUTPUT_11    pin 3   - Port 4 (Xvtr mode) on SP4T coax switch
+      //   OUTPUT_12    pin 4   - 12V Relay 1 - 1296 Xvtr Power
+      //   OUTPUT_13    pin 5   - 12V Relay 2 - 903 Xvtr Power
+      //   OUTPUT_14    pin 6   - 12V Relay 3 - 903 Amp Power
+      //   OUTPUT_15    pin 7   - 12V Relay 4 - 222 Xvtr Power
+
+
 
       // send pattern (0xF8F3) before change to do a break before make effect
 
-      if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0
-      if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1
-      if (BAND_DECODE_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2
-      if (BAND_DECODE_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3
+      if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0   Bits 0-2 are loated on the CPU pins 3-5
+      if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1    
+      if (BAND_DECODE_OUTPUT_2  != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3   These are on the MCP23017
       if (BAND_DECODE_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_4,  (pattern & 0x0010) ? 1 : 0);  // bit 4
       if (BAND_DECODE_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_5,  (pattern & 0x0020) ? 1 : 0);  // bit 5
       if (BAND_DECODE_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_6,  (pattern & 0x0040) ? 1 : 0);  // bit 6
       if (BAND_DECODE_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_7,  (pattern & 0x0080) ? 1 : 0);  // bit 7
 
-      if (BAND_DECODE_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_8,  (pattern & 0x0100) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_8,  (pattern & 0x0100) ? 1 : 0);  // bit 0    2nd MCP23017 board
       if (BAND_DECODE_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_9,  (pattern & 0x0200) ? 1 : 0);  // bit 1
       if (BAND_DECODE_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_10, (pattern & 0x0400) ? 1 : 0);  // bit 2
       if (BAND_DECODE_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_11, (pattern & 0x0800) ? 1 : 0);  // bit 3
@@ -452,52 +466,23 @@ void GPIO_PTT_Out(uint16_t pattern, bool _PTT_state)
       if (BAND_DECODE_PTT_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_1,  (pattern & 0x0002 & PTT_state) ? 1 : 0);  // bit 1 144
       if (BAND_DECODE_PTT_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_2,  (pattern & 0x0004 & PTT_state) ? 1 : 0);  // bit 2 222
       if (BAND_DECODE_PTT_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_3,  (pattern & 0x0008 & PTT_state) ? 1 : 0);  // bit 3 432
+      
       if (BAND_DECODE_PTT_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_4,  (pattern & 0x0010 & PTT_state) ? 1 : 0);  // bit 4 902/903
       if (BAND_DECODE_PTT_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_5,  (pattern & 0x0020 & PTT_state) ? 1 : 0);  // bit 5 1296
       if (BAND_DECODE_PTT_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_6,  (pattern & 0x0040 & PTT_state) ? 1 : 0);  // bit 6 not used
       if (BAND_DECODE_PTT_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_7,  (pattern & 0x0080 & PTT_state) ? 1 : 0);  // bit 7 TxInhibit or not used
+      
       // mask each bit and apply the 1 or 0 to the assigned pin
       if (BAND_DECODE_PTT_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_8,  (pattern & 0x0100 & PTT_state) ? 1 : 0);  // bit 0 HF/50
       if (BAND_DECODE_PTT_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_9,  (pattern & 0x0200 & PTT_state) ? 1 : 0);  // bit 1 144
       if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400 & PTT_state) ? 1 : 0);  // bit 2 222
       if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800 & PTT_state) ? 1 : 0);  // bit 3 432
+      
       if (BAND_DECODE_PTT_OUTPUT_12 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_12, (pattern & 0x1000 & PTT_state) ? 1 : 0);  // bit 4 902/903
       if (BAND_DECODE_PTT_OUTPUT_13 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_13, (pattern & 0x2000 & PTT_state) ? 1 : 0);  // bit 5 1296
       if (BAND_DECODE_PTT_OUTPUT_14 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_14, (pattern & 0x4000 & PTT_state) ? 1 : 0);  // bit 6 not used
       if (BAND_DECODE_PTT_OUTPUT_15 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_15, (pattern & 0x8000 & PTT_state) ? 1 : 0);  // bit 7 TxInhibit or not used
-    #endif
-
-    /*  Not used for the 4-In/8-Out module, all are fixed direction
-    void Decoder_GPIO_Pin_Setup(void)
-    {
-    // using 8 bits since the ouput pattern is 1 byte.  Can use thenm any way you want. 
-    // The pins used here are defined in RadioConfig.  The one GPIO_SWx_PIN were designated as hardware switches in the Teensy SDR 
-    // If using the Teensy SDR motherboard and you have physical switch hardware on any of these then you need to pick alernate pins.
-    // Most pins are alrewady goiven a #define bname in RadioCOnfig, substitute the right ones in here.  Make sure they are free.
-
-    // set up our Decoder output pins if enabled
-    if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_0, OUTPUT);  // bit 0
-    if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_1, OUTPUT);  // bit 1
-    if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_2, OUTPUT);  // bit 2
-    if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_3, OUTPUT);  // bit 3
-    if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_4, OUTPUT);  // bit 4
-    if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_5, OUTPUT);  // bit 5
-    if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_6, OUTPUT);  // bit 6
-    if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_OUTPUT_7, OUTPUT);  // bit 7
-    
-    // set up our PTT breakout pins if enabled
-    if (BAND_DECODE_PTT_OUTPUT_0 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_0, OUTPUT);  // bit 0
-    if (BAND_DECODE_PTT_OUTPUT_1 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_1, OUTPUT);  // bit 1
-    if (BAND_DECODE_PTT_OUTPUT_2 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_2, OUTPUT);  // bit 2
-    if (BAND_DECODE_PTT_OUTPUT_3 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_3, OUTPUT);  // bit 3
-    if (BAND_DECODE_PTT_OUTPUT_4 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_4, OUTPUT);  // bit 4
-    if (BAND_DECODE_PTT_OUTPUT_5 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_5, OUTPUT);  // bit 5
-    if (BAND_DECODE_PTT_OUTPUT_6 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_6, OUTPUT);  // bit 6
-    if (BAND_DECODE_PTT_OUTPUT_7 != GPIO_PIN_NOT_USED) pinMode(BAND_DECODE_PTT_OUTPUT_7, OUTPUT);  // bit 7
-     
-    DPRINTLNF("Decoder_GPIO_Pin_Setup: Pin Mode Setup complete");
-    }
-    */
+    #endif  
 }
 
 void Module_4_Relay_setup()
@@ -677,11 +662,11 @@ uint8_t Module_4in_8out_Input_scan(void)
   uint8_t M5STAMPC3U_Input_scan(void) 
   {
     uint8_t pattern = 0;
-      pattern |= mcp0.digitalRead(0);       // BCD Band 0 
-      pattern |= mcp0.digitalRead(1) << 1;  // BCD Band 1
-      pattern |= mcp0.digitalRead(2) << 2;  // BCD Band 2 
-      pattern |= mcp0.digitalRead(3) << 3;  // PTT input
-    return pattern & 0x0F;  // will leave the upper 4 GPIO pins spare for now
+      pattern |= digitalRead(BAND_DECODE_INPUT_0);       // BCD Band 0 
+      pattern |= digitalRead(BAND_DECODE_INPUT_1) << 1;  // BCD Band 1
+      pattern |= digitalRead(BAND_DECODE_INPUT_2) << 2;  // BCD Band 2 
+      pattern |= digitalRead(BAND_DECODE_INPUT_3) << 3;  // PTT input
+    return pattern & 0x0F;  // upper 4 GPIO pins spare for now
   }
 
   void MCP23017_IO_setup()
@@ -706,23 +691,28 @@ uint8_t Module_4in_8out_Input_scan(void)
 
       // set up pin directions
       int i;
-      for (i = 0; i < 8; i++)   // PA0-7
+      for (i = 0; i < 16; i++)   // PA0-7, PB0-7 1st Module
       {
-        mcp0.pinMode(i, INPUT_PULLUP);   // PA0-7 buffered outputs on first module
+        mcp0.pinMode(i, OUTPUT);   // PA0-7 outputs on 1st module (0-2 used for Xvtr board internal PTT )  rest are spare
       }
-    
-      for (i = 8; i < 16; i++)  // PB0-7
-      {
-        mcp0.pinMode(i, OUTPUT);  // PB0-7 will be outputs mostly for internal PTT
-        // Outputs unbuffered for TTL 903 and 1296 output T/R (2 pins), 2x IF switches (3 pins)
-        // 3 Xvtr PTT (3 pins) need buffer, have 9V on them.
-      }
-    
+
       // Module 2, all are outputs    
       for (i = 0; i < 16; i++)   // PA0-7 and PB0-7
       {
         mcp1.pinMode(i, OUTPUT);   
       }
+
+      for (i = 3; i < 6; i++)   // C3U CPU GPIO pins 3,4,5 for IF SP6T Switch Control
+      {
+        pinMode(i, OUTPUT);   // CPU IO pins 3,4,5
+      }
+
+      for (i = 6; i < 9; i++)   // C3U CPU GPIO pins 6,7,8,10
+      {
+        pinMode(i, INPUT_PULLUP);   // CPU IO pins 6,7,8, 9 not used
+      }
+      pinMode(BAND_DECODE_INPUT_3, INPUT_PULLUP);   //  PTT IO pin on pin 10
+
       
       GPIO_PTT_Out(DECODE_DUMMY_PTT, true);   //initialize the PTT states.  Required since the ports are not all zero in RX but mixed state
 

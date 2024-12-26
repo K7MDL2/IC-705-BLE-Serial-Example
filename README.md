@@ -8,16 +8,45 @@ SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/
 
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
-Latest Update: Dec 24, 2024
-Changed the Display side controller UI to direclty select one of the 3 Xvtr bands.  Tap it again to exit Xvtr mode.  The 3 buttons are now assigned to 222, 903 and 1296.  To change bands tap one of the others.  To exit Xvtr mode, tap the active Xvtr band button.
+Latest Update: 25 Dec 2024
+My SP6T IF switch on the TX IF path has 3 bad ports out of the 6.  RF4-6 are good. I moved 222 TX IF input cable from RF3 to RF4 until a replacement board arrives.  The port assignments are arbitrary, chosen for the cleanest cabling.  RF3 for 222 is on the opposite side from RF4,5 & 6 which serves 903 and 1296.
 
-Optimized Wired PTT scanning time in both the display and Xvtr box (XVBox) controllers to not miss radio wired PTT events, balanced with increased noise from high speed i2c bus activity heard when on 222Mhz using the 21Mhz IF.  Switched both 903 and 222 to 28MHz IF since 903 is actually 22Mhz IF and is out of the ham band which an unmodified IC-705 won't transmit.  The 28Mhz IF also was relatively free of the i2c noise, especially with the scan timing and i2c bus speed choices applied.  After all that, I discovered I missed the primary source of radiated i2c bus noise, the 4" long i2c cable running down to the INA226 voltage and current sensor.  I plan to use a shielded cable but for now, I snapped a medium size ferrite on it which has solved 80% of the noise from that.  28Mhz IF has taken care of most of the the remaining 20% of i2c noise.
+I measured 2.4dB loss through the TC board (which is the IF T/R switch + RX and TX attenuators) and the active SP6T IF switch port for each band.  The transverters require -5dBm to +3dBm drive, 10dBm max.  The IC-705 can put output up to 40dBm. I used a 10W 30dB attenuator for 32.4 dB total attenuation and raised the 705 output power until I started to see the transverter output flatten out (compression point), around 40-70%.  Can set the 705's RF Output max power limit setting to the final value.
 
-I am pondering the physical solution to buffer the internal Xvtr PTT lines and external band decoder and PTT Input lines, add pullups, and RFI proof them.  Probably a new board mounted on top of the 903/1296 stack.  I am also considering laying out a control board PCB which with surface mount parts and ground planes for i2c bus radiated noise sheilding.  I can consolidate all this stuff and not require the space the MCP23017 and ULN2803 modules take up.
+I moved all input line to the CPU GPIO pins and the IF SP6T switch 3 control wires as well.  Could have left those 3 on the port expander.  The main goal was to move PTT, which is scanned every 4ms or so, onto the CPU, avoiding rapid i2c bus activity which generates excessive noise on HF bands.  Things are looking pretty clean now.  Only the 903 and 1296 TTL control lines are left on the MCP23017 PB0-7 range of pins.  PA0-7 range of pins on module #1 only has 3 lines left on it now, PTT for each of the 3 Xvtr boards. A ULN2803A module slips on the MCP23017 module pins for buffering.  The PTT lines have 9VDC on them.
+
+As of now the basic box is working on RX and TX except the internal 10W attenuator is not installed yet so TX requires special care.
+
+Items left to finish
+      1. Replace 1 SP6T RF switch board (TX IF)
+      2. Make final design decision about the PTT and 3 band decoder input lines.  They are direct to the CPU right now with weak 3.3V pullups enabled.  These should be buffered to minimize chance for CPU damage. A new pullup source facing the radio side will be needed on the buffer outputs.  This could be done in the Radio side display controller.  I have a "PLC Prototype" M5Stack module which has a 9-24VDc to 5V regulator, perf board and edge connector.   I  may be able to fit a port expander and buffer with pullup resistors in there.  I have a small space left on the control board to wire in a 4 pin connector and 4 transistors, caps and some resistors.  Can use the the bottom side of the control board for most of the likely SMD parts.  Already have connectors installed for the i2c connected display and current sensor.
+      3. Once the DC converter is mounted, install suitable heat sink solution to the back panel and mount the 50ohm RF terminating resistor, used to attenuate 10W down to < 10mW.
+      4. Install RF bypass caps on the 6 PTT outputs.
+
+These items add extra features like boosting RF output to more usable levels.
+      5. Await delivery of the 50W 903 RF pallet.
+      6. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.
+      7. Await delivery of the 2W 1296 amp module.  Required to boost 100mW Xvbtr output up to 1.5W for the external SG-Labs 25W 1296 amp/LNA unit.
+      8. Code for the INA226 V and I sensor.
+      9. code for the SSD1306 compatible OLED display
+      10. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
+      
+
+Dec 24, 2024
+
+Changed the Radio side controller UI to directly select one of the 3 Xvtr bands.  Tap it again to exit Xvtr mode.  The 3 buttons are now assigned to 222, 903 and 1296.  To change bands tap one of the others.  To exit Xvtr mode, tap the active Xvtr band button.
+
+Optimized Wired PTT scanning time in both the display and Xvtr box (XVBox) controllers to not miss radio wired PTT events, balanced with increased noise from high speed i2c bus activity heard when on 222Mhz using the 21Mhz IF.  Switched both 903 and 222 to 28MHz IF since 903 is actually 22Mhz IF and is out of the ham band which an unmodified IC-705 won't transmit.  The 28Mhz IF also was relatively free of the i2c noise, especially with the scan timing and i2c bus speed choices applied.  After all that, I discovered I missed the primary source of radiated i2c bus noise, the 4" long i2c cable running down to the INA226 voltage and current sensor.  I plan to use a shielded cable but for now, I snapped a medium size ferrite on it which has solved 80% of the noise from that.  Using  a 28Mhz IF has taken care of most of the the remaining 20% of i2c noise.
+
+*Noise Update*: Addressed the noise issue (mostly) by moving the band, PTT input, and SP6T IF switch control wiring to the unused CPU IO pins (3,4,5,6,7,8,10, +5V, GND).  PTT is the only pin requiring fast scanning.  Moving PTT to the CPU lets the I2c bus operate only on band and PTT change events so no noise of measure.  The +5V and GND may be useful for external pullups, TBD.
+
+I am pondering the physical solution to buffer the internal Xvtr PTT lines and external band decoder and PTT Input lines, add pullups, and RFI proof them.  Probably a new board mounted on top of the 903/1296 stack.  I am also considering laying out a control board PCB which with surface mount parts and ground planes for i2c bus radiated noise sheilding.  I can consolidate all this stuff and not require the space the MCP23017 and ULN2803 modules take up. 
 
 On the M5Core2 controller side I am looking at using the M5Stack prototype base module which has inside a 5V regulator, 12V coaxial power jack, proto board space and edge connectors.  Put a MCP23017 and ULN2803 on the board, tap into the bus for i2c pins, and I can eliminate the 4IN/8Out IO module.  Also do not need the 4-Relay module.  It will have 5V pullup and bypass caps al lconveniently inside with a simple multiconnector interface to a siongle 5 wire control cable to the XVBox
 
+
 Dec 23, 2024
+
 Several minor changes and setup for future module expansions.
 I fed -70dBm signal into each transverter and initially only 903 had the expected output (close to S9 with 705 preamp on).  Bypassed all cables, not the problem.  Had a partially bad SP6T solid state RF switch (used for the IF routing to the Xvtrs). I knew one of the 2 boards (RX and TX paths) was bad and it happened to be the one on the RX path.  I could move 1 Xvtr output cable but not the other so I swapped the TX board into the RX position.  RX is working but the outputs were still generally too low.  
 
@@ -29,6 +58,7 @@ Modified the wired inpout scanning to make Wired PTT much faster.  Wired PTT doe
 
 
 Dec 22, 2024
+
 I built a 3-band Transverter box adding missin VHF/UHF bands for 222, 902/3 and 1296 to the IC-705, or any other multiband radio with HF, 6, 144, and 432 bands, which there are many.  
 ![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Top View Front](https://github.com/user-attachments/assets/1c883ef0-376b-41ee-81da-cb7c4c26b37c)
 ![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Back View](https://github.com/user-attachments/assets/2dd7e8d9-e548-4fd3-b8d0-b0611b4c8bf5)
