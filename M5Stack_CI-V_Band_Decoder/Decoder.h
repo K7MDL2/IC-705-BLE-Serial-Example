@@ -172,9 +172,9 @@ enum band_idx { DUMMY,
 #define GPIO_C3U_BAND_1     8
 #define GPIO_C3U_BAND_2     7
 #define GPIO_C3U_PTT        6
-#define GPIO_C3U_IFSW_A     5
-#define GPIO_C3U_IFSW_B     4
-#define GPIO_C3U_IFSW_C     3
+#define GPIO_C3U_BAND_3     5
+#define GPIO_C3U_SPARE1     4
+#define GPIO_C3U_SPARE2     3
 
 
 // BAND DECODE INPUT (_INPUT_) PINS
@@ -240,26 +240,36 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_OUTPUT_15       GPIO_PIN_NOT_USED      // bit 7
 
 #else  // Transverter Box embedded controller config
-  // PA0-7 Module 1 has Xvtr internal PTT outputs.  PA0-7 Module 2 has external PTT outputs.  These are both buffered
-  // PB0-7 on each module (16 total) for general unbuffered outputs
-  // There are 32 IO ports total between the 2x MCP23017 port expanders.  7 more on the CPU.  Any can be mapped in teh IO bank
-  #define BAND_DECODE_OUTPUT_0        GPIO_C3U_IFSW_A         // bit 0  Bits 0-2 are mnapped top pins 3-5 on the M5StampC3U
-  #define BAND_DECODE_OUTPUT_1        GPIO_C3U_IFSW_B         // bit 1
-  #define BAND_DECODE_OUTPUT_2        GPIO_C3U_IFSW_C         // bit 2
-  #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED       // bit 3  These (3-7) are used for internal PTT so handled by PTT function, not here
-  #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED       // bit 4
-  #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED       // bit 5
-  #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED       // bit 6
-  #define BAND_DECODE_OUTPUT_7        GPIO_PIN_NOT_USED       // bit 7
+  
+  // PA0-7 Module 1 has 3 internal Xvtr PTT outputs.  Has ULN2803A buffer module.
+  // PA0-7 Module 2 has 6 external PTT outputs and 1 PTT to the TC board.  Has ULN2803A buffer module.
+  // Since they are all PTT they are mapped under the PTT section, not here
 
-  #define BAND_DECODE_OUTPUT_8        GPIO_MOD2_PE_PIN_8      // bit 0  PB Module 2
-  #define BAND_DECODE_OUTPUT_9        GPIO_MOD2_PE_PIN_9      // bit 1
-  #define BAND_DECODE_OUTPUT_10       GPIO_MOD2_PE_PIN_10     // bit 2
-  #define BAND_DECODE_OUTPUT_11       GPIO_MOD2_PE_PIN_11     // bit 3
-  #define BAND_DECODE_OUTPUT_12       GPIO_MOD2_PE_PIN_12     // bit 4
-  #define BAND_DECODE_OUTPUT_13       GPIO_MOD2_PE_PIN_13     // bit 5
-  #define BAND_DECODE_OUTPUT_14       GPIO_MOD2_PE_PIN_14     // bit 6
-  #define BAND_DECODE_OUTPUT_15       GPIO_MOD2_PE_PIN_15     // bit 7
+  // PA0-7 Module 2 are lised under PTT outputs, not here.
+  // PB0-7 Module 1 has 3 SP6T IF switch control lines PB0-2. PB6-7 are 903 and 1297 T/R switches (controlled under PTT lists, not here).
+ 
+  // There are 32 IO ports total between the 2x MCP23017 port expanders.  7 more on the CPU.  Any can be mapped in the IO bank.  
+  // The configuration uses a 16 bit integer to keep things manageable, so there are only 16 band outputs and 16 PTT outputs.  
+  // Pins can be assigned to any grouping but Module 1 pins must stay on outputs 0-7 and Modules 2 pins must stay in outputs 8-15
+  
+  // Module 1 grouping
+  #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_PE_PIN_8      // bit 0  Internal SP6T IF switch control A
+  #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_PE_PIN_9      // bit 1  Internal SP6T IF switch control B
+  #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_PE_PIN_10     // bit 2  Internal SP6T IF switch control C
+  #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED       // bit 3  Spare
+  #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED       // bit 4  Spare
+  #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED       // bit 5  Spare
+  #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED       // bit 6  This is 903 T/R so not used here
+  #define BAND_DECODE_OUTPUT_7        GPIO_PIN_NOT_USED       // bit 7  This is 1296 T/R so not used here
+// Module 2 grouping
+  #define BAND_DECODE_OUTPUT_8        GPIO_MOD2_PE_PIN_8      // bit 0  SP4T switch
+  #define BAND_DECODE_OUTPUT_9        GPIO_MOD2_PE_PIN_9      // bit 1  SP4T switch
+  #define BAND_DECODE_OUTPUT_10       GPIO_MOD2_PE_PIN_10     // bit 2  SP4T switch
+  #define BAND_DECODE_OUTPUT_11       GPIO_MOD2_PE_PIN_11     // bit 3  SP4T switch
+  #define BAND_DECODE_OUTPUT_12       GPIO_MOD2_PE_PIN_12     // bit 4  12V relays 222 Xvtr
+  #define BAND_DECODE_OUTPUT_13       GPIO_MOD2_PE_PIN_13     // bit 5  12V relays 903 Xvtr 
+  #define BAND_DECODE_OUTPUT_14       GPIO_MOD2_PE_PIN_14     // bit 6  12V relays 903 50W Amp
+  #define BAND_DECODE_OUTPUT_15       GPIO_MOD2_PE_PIN_15     // bit 7  12V relays 1296 XVtr and 2W amp
 #endif
 
 #ifndef M5STAMPC3U
@@ -302,9 +312,9 @@ enum band_idx { DUMMY,
   // PA0-7 on 2nd MCP23017 module for band specific PTT outputs for amp PTTs amnd is buffered
   // For the transverter internal PTT, there is 9V in RX state so a buffer is required.
   // Note: this is a mapping between virutal pins and physical pins.The actual pins can be assigned in any order *within* a module.
-  #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED    
-  #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED     
-  #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED    
+  #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED      // Spare
+  #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED      // Spare
+  #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED      // Spare
   #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_PE_PIN_2     // bit 3  222 Xvtr Brd PTT       0 = TX    
   #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD1_PE_PIN_3     // bit 4  902/903 Xvtr Brd PTT   0 = TX   
   #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD1_PE_PIN_4     // bit 5  1296 Xvtr Brd PTT      0 = TX 
@@ -486,14 +496,16 @@ enum band_idx { DUMMY,
 
 //  so upper byte for 222 band is 0111 0001 or 0x71
 
-// Moved these 3 pins from teh MCP23107 to the CPU GPIO to get them off the MCP23017 to reduce noise from i2c activity.
+// Moved 4 input pins from the MCP23107 to the CPU GPIO to get them off the MCP23017 to reduce noise from 
+//    i2c activity as a result of fast PTT scanning.
+
 // Lower byte, lowest bits are PTT out.  6 dedicated buffered 
 // bits 0-2 are IF SP6T switch.  A, B, C
 //          CBA
 //    RF1 = 000  NC     0
 //    RF2 = 001  NC     1
-//    RF3 = 010  222    2
-//    RF4 = 011  NC     3
+//    RF3 = 010  222    2  bad port RF3 on existing TX board so using RF4 for now
+//    RF4 = 011  NC     3  RF4 port is my 222 Xvtr until my replacement SP6T board arrives
 //    RF5 = 100  903    4
 //    RF6 = 101  1296   5
 //    OFF = 110         6

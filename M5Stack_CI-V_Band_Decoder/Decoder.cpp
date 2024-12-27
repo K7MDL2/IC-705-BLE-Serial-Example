@@ -206,21 +206,24 @@ void GPIO_Out(uint16_t pattern)
    
       // CPU GPIO
       //   IO Mapping
-      //   OUTPUT_2   pin 3    - SP6T IF switch controol line A
-      //   OUTPUT_1   pin 4    - SP6T IF switch controol line B
-      //   OUTPUT_0   pin 5    - SP6T IF switch controol line C
+      //   INPUT_6   pin 3     - unused IO line
+      //   INPUT_5   pin 4     - unused IO line
+      //   INPUT_4   pin 5     - unused IO line
       //   INPUT_3   pin 6     - PTT input fromn Radio
       //   INPUT_2   pin 7     - Band0 Decode Input 
       //   INPUT_1   pin 8     - Band1 Decode Input 
       //   INPUT_0   pin 10    - Band2 Decode Input 
 
-      //   1st module PA0-7 are buffered outputs
+      // 1st module PA0-7 are buffered outputs
       //   IO Mapping
-      //   OUTPUT_3     pin 0   - 222 Xvtr PTT
-      //   OUTPUT_4     pin 1   - 903 Xvtr PTT
-      //   OUTPUT_5     pin 2   - 1296 Xvtr PTT
+      //   OUTPUT_0   pin 0    - SP6T IF switch control line A
+      //   OUTPUT_1   pin 1    - SP6T IF switch control line B
+      //   OUTPUT_2   pin 2    - SP6T IF switch control line C
+      //   OUTPUT_3   pin 0    - 222 Xvtr PTT
+      //   OUTPUT_4   pin 1    - 903 Xvtr PTT
+      //   OUTPUT_5   pin 2    - 1296 Xvtr PTT
       
-      //   PB0-7 on 1st module are unbuffered outputs
+      // PB0-7 on 1st module are unbuffered outputs
       //   IO Mapping
       //   OUTPUT_8-13  pin 0-5 - spare
       //   OUTPUT_14    pin 6   - 903  RF Out T/R switch
@@ -243,14 +246,12 @@ void GPIO_Out(uint16_t pattern)
       //   OUTPUT_14    pin 6   - 12V Relay 3 - 903 Amp Power
       //   OUTPUT_15    pin 7   - 12V Relay 4 - 222 Xvtr Power
 
-
-
       // send pattern (0xF8F3) before change to do a break before make effect
 
-      if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0   Bits 0-2 are loated on the CPU pins 3-5
-      if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1    
-      if (BAND_DECODE_OUTPUT_2  != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2
-      if (BAND_DECODE_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3   These are on the MCP23017
+      if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0   These are on the 1st MCP23017
+      if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1    
+      if (BAND_DECODE_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3   
       if (BAND_DECODE_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_4,  (pattern & 0x0010) ? 1 : 0);  // bit 4
       if (BAND_DECODE_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_5,  (pattern & 0x0020) ? 1 : 0);  // bit 5
       if (BAND_DECODE_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_6,  (pattern & 0x0040) ? 1 : 0);  // bit 6
