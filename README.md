@@ -1,12 +1,14 @@
 # IC-705-BLE, BT Classic, and USB Host Serial Examples featuring a CI-V decoder and 3-Band Transverter Box
 
-Disclaimer: this is a work in progress!    I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
+This is a work in progress!  But almost done...   
+
+I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
 
 Be sure to check out project Wiki pages. There are now 2 related constructions using the same code
   1. CI-V Band decoder and Display  - see the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
-  2. BCD wired input Band decoder + 3 band transverter box. Has PTT and antenna breaksout for VHF bands 50, 144, 222, 432, 902/3, and 1296.  See [https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-band-Transverter-Box](https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-Band-Transverter-Box)
+  2. BCD wired input Band decoder embedded in a 3-band transverter box. Has PTT and antenna breakouts for VHF bands 50, 144, 222, 432, 902/3, and 1296.  See [https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-band-Transverter-Box](https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-Band-Transverter-Box)
 
-SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/SD-Card-Usage
+SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/SD-Card-Usage (for the radio side controller only)
 
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
@@ -14,7 +16,7 @@ The latest updates below are mostly related to the new 3-band Xvtr box build lev
 
 Latest Update: 26 Dec 2024
 
-Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.
+Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.  The INA226 had a 10ohm shunt resistor.  I soldered a short piece of wire across the shunt resitor and experimentally arrived at .0083 ohms which will read up to 8.2 amps.  At 50W the 900Mhz RF amp draws about 3.5amps@28VDC. This should be about 7.5A@14VDC. Combined with the regular 12VDC 1.5A consumption in Tx, that is 9A@14VDC which will exceed my limit of 8.2 so I will need to shorten the jumper wire a tad.
 
 Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each with 2 status icons (Tx status and Xvtr band active) on the left side updated 4 times a second and a rotating single row of large info changing every 1 second. If one of the 3 Xvtr bands is active then the X icon turns white backgrond with black X.  If PTT active the white R icon turns to white background with black T.
       
@@ -31,9 +33,17 @@ Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each w
   The 50W 28VDC 900Mhz amp arrived today.  Very compact.  This is just the RF deck, no bias control.  I have a dedicated 12V relay that will feed a 12 to 28V converter (still awaiting delivery).
 
 ![50W  28VDC 903MHz RF Amp pallet](https://github.com/user-attachments/assets/922704cf-ce4f-44a3-94a6-f040ee09770b)
+
 ![50W 28VDC 903MHz RF Amp pallet internal ](https://github.com/user-attachments/assets/c4cf713d-f114-4f7c-8c51-d1758c93cc3f)
 
+Here is the amp now mounted on the heat sink end panel
+![900Mhz 50W amp mounted on heat sinking end panel](https://github.com/user-attachments/assets/b80bb0b2-d74f-449a-8540-23425cefe24a)
 
+Now installed and tested, getting a full 50W out on 903.1MHz after tweaking the IF and Amp drive attenuation values a bit.  I ended up with 27dB attenuation between the radio and box (the IF drive).  There is an additional 2.4dB loss in the internal IF routing. This give the expected 30dB total to prevent overdriving the transverters.  For the 903 amp drive level, it want 7-8dBm for 50W out.  The Xvtr board an put out 20dBm so I installed 12dB attenuation which worked perfect, I can drive to just above 50W.  11dB would also work OK.
+
+![900Mhz 50W RF amp installed and working](https://github.com/user-attachments/assets/e8990ffa-105a-4493-9a62-b98034ca33fc)
+
+I can hold the key down for well over a minute and nothing gets too hot to touch.  The RF pallet metal near the output SMA is the warmest, but I can still hold my finger on it fine. The 12 to 28V DC converter and the 1296 2w amp are due to arrive tomorrow and Saturday.
 
 25 Dec 2024
 
