@@ -18,21 +18,23 @@ Latest Update: 27 Dec 2024
 
 Items left to finish:
 
-        1. Replace 1 SP6T RF switch board (TX IF)
-        
-        2. Make final design decision about the PTT and 3(optional 4) band decoder input lines.  They are direct to the CPU right now with weak 3.3V pullups enabled.  These should be buffered to minimize chance for CPU damage. A new pullup source facing the radio side will be needed on the buffer outputs.  This could be done in the Radio side display controller.  I have a "PLC Prototype" M5Stack module which has a 9-24VDc to 5V regulator, perf board and edge connector.   I  may be able to fit a port expander and buffer with pullup resistors in there.  I have space on the control board to wire in a 4 pin connector and 4 transistors, caps and some resistors.  Already have connectors installed for the i2c connected display and current sensor.
-        
-        3. Once the DC converter is mounted, install suitable heat sink solution to the back panel and mount the 50ohm RF terminating resistor, used to attenuate 10W down to < 10mW.
-        
-        4. Install RF bypass caps on the 6 PTT outputs.
+  1. Replace 1 SP6T RF switch board (TX IF)
   
-  These items add extra features like boosting RF output to more usable levels.
+  2. Make final design decision about the PTT and 3(optional 4) band decoder input lines.  They are direct to the CPU right now with weak 3.3V pullups enabled.  These should be buffered to minimize chance for CPU damage. A new pullup source facing the radio side will be needed on the buffer outputs.  This could be done in the Radio side display controller.  I have a "PLC Prototype" M5Stack module which has a 9-24VDc to 5V regulator, perf board and edge connector.   I  may be able to fit a port expander and buffer with pullup resistors in there.  I have space on the control board to wire in a 4 pin connector and 4 transistors, caps and some resistors.  Already have connectors installed for the i2c connected display and current sensor.
   
-        5. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.
-        
-        6. Await delivery of the 2W 1296 amp module.  Required to boost 100mW Xvtr output up to 1.5W for my external SG-Labs 25W 1296 amp/LNA unit.
-        
-        7. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
+  3. Once the DC converter is mounted, install suitable heat sink solution to the back panel and mount the 50ohm RF terminating resistor, used to attenuate 10W down to < 10mW.
+  
+  4. Install RF bypass caps on the 6 PTT outputs.
+
+These items add extra features like boosting RF output to more usable levels.
+
+  5. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.  ETA Dec 31.
+  
+  6. ETA for delivery of the 2W 1296 amp module is Dec 27.  Required to boost 100mW Xvtr output up to 1.5W for my external SG-Labs 25W 1296 amp/LNA unit.  Looking at the amp schematic and the part datasheets, I can bypass Q1 and drive Q2 PA stage directly.  20dBm is about perfect for the SHF-0589 part.  The 0589 part's Max RF input is 800mW and max voltage is 9V. Typically it runs on 7-8V.  I can remove the Q1 and the 5V regulator and save 75ma.   I might explore replacing the onboard 10-28V DC converter with a LM7808.  I plan to remove the heat sink and mount it on a sold aluminum spacer block to the heat sinking end panel next to the 2222 Xvtr board. With no SMA attenuators needed the cabling will be very clean.  I found great info here:
+Chinese 2W Amplifier 40-1200MHz 1v0.pdf
+https://www.dd1us.de/Downloads/Chinese%202W%20Amplifier%2040-1200MHz%201v0.pdf
+
+  7. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
 
 I moved the 3 control wires for the IF SP6T switches back onto the MCP23017 Module 1 PB0-2. There is now room on the CPU IO pin header to add a new Band_3 decode input wire permitting decoding of up to 16 bands, up from 8 max.  This would allow every HF band to display on the OLED and break out 6M from HF bands in case of a dedicated 6M amp and you still have a HF antenna(s).  It also adds friction to the 10 pin connector since only 2 wires were in it and reduces confusion when mapping IO pins in the code.
         
@@ -55,7 +57,7 @@ I can hold the key down for well over a minute and nothing gets too hot to touch
 
 26 Dec 2024
 
-Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.  The INA226 had a 10ohm shunt resistor.  I soldered a short piece of wire across the shunt resistor and experimentally arrived at .0083 ohms which will read up to 8.2 amps.  At 50W the 900Mhz RF amp draws about 3.5amps@28VDC. This should be about 7.5A@14VDC. Combined with the regular 12VDC 1.5A consumption in Tx, that is 9A@14VDC which will exceed my limit of 8.2 so I will need to shorten the jumper wire a tad.
+Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.  The INA226 had a 10ohm shunt resistor.  I soldered a short piece of wire across the shunt resistor and experimentally arrived at .0083 ohms which will read up to 8.2 amps.  At 50W the 900Mhz RF amp draws about 2.7amps@28VDC. This should be < 6A@14VDC. Combined with the regular 12VDC 1.5A consumption in Tx, that is 7.5A@14VDC which will be under the 8.2A measurement range so all good so far.
 
 Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each with 2 status icons (Tx status and Xvtr band active) on the left side updated 4 times a second and a rotating single row of large info changing every 1 second. If one of the 3 Xvtr bands is active then the X icon turns white background with black X.  If PTT is active, the white R icon turns to white background with black T.
       
