@@ -4,7 +4,7 @@ Disclaimer: this is a work in progress!    I have begun to rewrite this page mov
 
 Be sure to check out project Wiki pages. There are now 2 related constructions using the same code
   1. CI-V Band decoder and Display  - see the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
-  2. BCD wired input Band decoder + 3 band transverter box. Has PTT and antenna breaksout for VHF bands 50, 144, 222, 432, 902/3, and 1296.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-band-Transverter-Box
+  2. BCD wired input Band decoder + 3 band transverter box. Has PTT and antenna breaksout for VHF bands 50, 144, 222, 432, 902/3, and 1296.  See [https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-band-Transverter-Box](https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-Band-Transverter-Box)
 
 SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/SD-Card-Usage
 
@@ -17,9 +17,19 @@ Latest Update: 26 Dec 2024
 Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.
 
 Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each with 2 status icons (Tx status and Xvtr band active) on the left side updated 4 times a second and a rotating single row of large info changing every 1 second. If one of the 3 Xvtr bands is active then the X icon turns white backgrond with black X.  If PTT active the white R icon turns to white background with black T.
-      Info screen 1. Xvtr Box band labels = "HF/6M", "2M", "70cm", "1.25cm", "33cm", "23cm"
-      Info screen 2. voltage in VDC
-      Info screen 3. current in Amps DC
+      
+  Info screen 1. Xvtr Box band labels = "HF/6M", "2M", "70cm", "1.25cm", "33cm", "23cm"
+
+  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - Band](https://github.com/user-attachments/assets/441e9714-41d0-4f75-ba1d-e58c40822ac9)
+
+  Info screen 2. voltage in VDC
+  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - voltage](https://github.com/user-attachments/assets/928dcd27-cc0e-40e2-9262-44933bdb84a1)
+
+  Info screen 3. current in Amps DC
+  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - current](https://github.com/user-attachments/assets/cfd68921-a909-4d03-bfdf-6d77f47998e9)
+
+
+
 
 25 Dec 2024
 
