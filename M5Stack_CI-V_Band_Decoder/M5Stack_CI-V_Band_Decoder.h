@@ -187,6 +187,9 @@
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 #endif
 
+#define PTT_DELAY    30       // PTT sequencing delay.  At start of PTT -> TX event, turns OFF IF switch to prevent
+                              //   RF flowing while downstream relays are switching.
+
 #define POLL_PTT_DEFAULT 247  // poll the radio for PTT status odd numbers to stagger them a bit
                               // USB on both the 705 and 905 respond to PTT requests slower on USB than BT on the 705.
                               // Also polls the wired inputs  Can go down to 25-45.  When using wired PTT set this slow.

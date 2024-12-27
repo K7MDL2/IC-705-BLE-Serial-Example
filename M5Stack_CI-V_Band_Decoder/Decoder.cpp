@@ -74,7 +74,7 @@
 
 // Very basic - outputs a set pattern for each band.  Follows the Elecraft K3 pattern for combined HF and VHF used for transverters and antenna switching
 // This may control an external band decoder that accepts wired inputs.  Other decoder outputs can be serial or ethernet
-void Band_Decode_Output(uint8_t band)
+void Band_Decode_Output(uint8_t band, bool IF_Switch_OFF) // pass IF_Switch_OFF value to GPIO_out for sequencing usage
 {
     // Convert frequency band to a parallel wire GPIO output pattern.
     // On an Elecraft K3 this is equivalent to the HF-TRN mode.  DigOut is used in combo with Band Decode BCD 0-3 pins.  
@@ -88,43 +88,47 @@ void Band_Decode_Output(uint8_t band)
 
     switch (band)  // Now set them to the desired ON state
     {   
-        case  DUMMY     : GPIO_Out(0);   break;   //Dummy Band
-        case  BAND_AM   : GPIO_Out(DECODE_BANDAM);   break;   //AM
-        case  BAND_160M : GPIO_Out(DECODE_BAND160M); break;   //160M 
-        case  BAND_80M  : GPIO_Out(DECODE_BAND80M);  break;   //80M
-        case  BAND_60M  : GPIO_Out(DECODE_BAND60M);  break;   //60M
-        case  BAND_40M  : GPIO_Out(DECODE_BAND40M);  break;   //40M
-        case  BAND_30M  : GPIO_Out(DECODE_BAND30M);  break;   //30M
-        case  BAND_20M  : GPIO_Out(DECODE_BAND20M);  break;   //20M
-        case  BAND_17M  : GPIO_Out(DECODE_BAND17M);  break;   //17M      
-        case  BAND_15M  : GPIO_Out(DECODE_BAND15M);  break;   //15M
-        case  BAND_12M  : GPIO_Out(DECODE_BAND12M);  break;   //12M
-        case  BAND_10M  : GPIO_Out(DECODE_BAND10M);  break;   //10M
-        case  BAND_6M   : GPIO_Out(DECODE_BAND6M);   break;   //6M
-        case  BAND_FM   : GPIO_Out(DECODE_BANDFM);   break;   //6M
-        case  BAND_AIR  : GPIO_Out(DECODE_BANDAIR);  break;   //6M
+        case  DUMMY     : GPIO_Out(0,              IF_Switch_OFF);  break;   //Dummy Band
+        case  BAND_AM   : GPIO_Out(DECODE_BANDAM,  IF_Switch_OFF);  break;   //AM
+        case  BAND_160M : GPIO_Out(DECODE_BAND160M,IF_Switch_OFF);  break;   //160M 
+        case  BAND_80M  : GPIO_Out(DECODE_BAND80M, IF_Switch_OFF);  break;   //80M
+        case  BAND_60M  : GPIO_Out(DECODE_BAND60M, IF_Switch_OFF);  break;   //60M
+        case  BAND_40M  : GPIO_Out(DECODE_BAND40M, IF_Switch_OFF);  break;   //40M
+        case  BAND_30M  : GPIO_Out(DECODE_BAND30M, IF_Switch_OFF);  break;   //30M
+        case  BAND_20M  : GPIO_Out(DECODE_BAND20M, IF_Switch_OFF);  break;   //20M
+        case  BAND_17M  : GPIO_Out(DECODE_BAND17M, IF_Switch_OFF);  break;   //17M      
+        case  BAND_15M  : GPIO_Out(DECODE_BAND15M, IF_Switch_OFF);  break;   //15M
+        case  BAND_12M  : GPIO_Out(DECODE_BAND12M, IF_Switch_OFF);  break;   //12M
+        case  BAND_10M  : GPIO_Out(DECODE_BAND10M, IF_Switch_OFF);  break;   //10M
+        case  BAND_6M   : GPIO_Out(DECODE_BAND6M,  IF_Switch_OFF);  break;   //6M
+        case  BAND_FM   : GPIO_Out(DECODE_BANDFM,  IF_Switch_OFF);  break;   //6M
+        case  BAND_AIR  : GPIO_Out(DECODE_BANDAIR, IF_Switch_OFF);  break;   //6M
         
-        //case BAND70   : GPIO_Out(0x01); break;   //4M
-        case  BAND_2M   : GPIO_Out(DECODE_BAND144);  break;   //2M
-        case  BAND_1_25M: GPIO_Out(DECODE_BAND222);  break;   //222
-        case  BAND_70cm : GPIO_Out(DECODE_BAND432);  break;   //432
-        case  BAND_33cm : GPIO_Out(DECODE_BAND902);  break;   //902
-        case  BAND_23cm : GPIO_Out(DECODE_BAND1296); break;   //1296
-        case  BAND_13cm : GPIO_Out(DECODE_BAND2400); break;   //2400
-        case  BAND_9cm  : GPIO_Out(DECODE_BAND3300); break;   //3400
-        case  BAND_6cm  : GPIO_Out(DECODE_BAND5760); break;   //5760M
-        case  BAND_3cm  : GPIO_Out(DECODE_BAND10G);  break;   //10.368.1G
-        case  BAND_24G  : GPIO_Out(DECODE_BAND24G);  break;   //24.192G
-        case  BAND_47G  : GPIO_Out(DECODE_BAND47G);  break;   //47.1G
-        case  BAND_76G  : GPIO_Out(DECODE_BAND76G);  break;   //76.1G
-        case  BAND_122G : GPIO_Out(DECODE_BAND122G); break;   //122G
-        case  B_GENERAL : GPIO_Out(DECODE_B_GENERAL);  break;   //122G
+        //case BAND70   : GPIO_Out(0x01, IF_Switch_OFF, IF_Switch_OFF);  break;   //4M
+        case  BAND_2M   : GPIO_Out(DECODE_BAND144, IF_Switch_OFF);  break;   //2M
+        case  BAND_1_25M: GPIO_Out(DECODE_BAND222, IF_Switch_OFF);  break;   //222
+        case  BAND_70cm : GPIO_Out(DECODE_BAND432, IF_Switch_OFF);  break;   //432
+        case  BAND_33cm : GPIO_Out(DECODE_BAND902, IF_Switch_OFF);  break;   //902
+        case  BAND_23cm : GPIO_Out(DECODE_BAND1296,IF_Switch_OFF);  break;   //1296
+        case  BAND_13cm : GPIO_Out(DECODE_BAND2400,IF_Switch_OFF);  break;   //2400
+        case  BAND_9cm  : GPIO_Out(DECODE_BAND3300,IF_Switch_OFF);  break;   //3400
+        case  BAND_6cm  : GPIO_Out(DECODE_BAND5760,IF_Switch_OFF);  break;   //5760M
+        case  BAND_3cm  : GPIO_Out(DECODE_BAND10G, IF_Switch_OFF);  break;   //10.368.1G
+        case  BAND_24G  : GPIO_Out(DECODE_BAND24G, IF_Switch_OFF);  break;   //24.192G
+        case  BAND_47G  : GPIO_Out(DECODE_BAND47G, IF_Switch_OFF);  break;   //47.1G
+        case  BAND_76G  : GPIO_Out(DECODE_BAND76G, IF_Switch_OFF);  break;   //76.1G
+        case  BAND_122G : GPIO_Out(DECODE_BAND122G, IF_Switch_OFF); break;   //122G
+        case  B_GENERAL : GPIO_Out(DECODE_B_GENERAL,IF_Switch_OFF); break;   //122G
     }
 }
 
-void GPIO_Out(uint16_t pattern)
+void GPIO_Out(uint16_t pattern, bool IF_Switch_OFF) // pass IF_Switch_OFF value to GPIO_out for sequencing usage)
 {
-    DPRINTF("GPIO_Out: pattern:  DEC "); DPRINT(pattern);
+    if (IF_Switch_OFF)
+      pattern |= 0x0007;  // modify lower 3 bits to turn IF switch OFF (all 1s) for sequencing
+    DPRINTF("  IF_Switch is "); DPRINT(IF_Switch_OFF);
+    
+    DPRINTF("  GPIO_Out: pattern:  DEC "); DPRINT(pattern);
     DPRINTF("  HEX "); DPRINT(pattern, HEX);
     DPRINTF("  Binary "); DPRINTLN(pattern, BIN);
     
@@ -231,9 +235,9 @@ void GPIO_Out(uint16_t pattern)
       
       // PA0-7 on 2nd module are buffered outputs for band specific PTT outputs for amps.  These should be sequenced.  - 0x0800 to set all idle
       //   IO Mapping
-      //   OUTPUT_    pin 0-5 - 6 HF/50 thru 1296
+      //   OUTPUT_8-13  pin 0-5 - 6 HF/50 thru 1296
       //   OUTPUT_14    pin 6   - 1 spare - future TxInhibit
-      //   OUTPUT_14    pin 7   - PTT out to TC board IF relay.  Switch this fast on incoming PTT change from Radio
+      //   OUTPUT_15    pin 7   - PTT out to TC board IF relay.  Switch this fast on incoming PTT change from Radio
       
       // PB0-7 on 2nd module are unbuffered TTL outputs.  - 0xF000 to set all to off
       //   IO Mapping
@@ -277,7 +281,7 @@ void PTT_Output(uint8_t band, bool PTT_state)
 
     switch (band)
     {
-        case  DUMMY     : GPIO_PTT_Out(DECODE_DUMMY_PTT,    false);         break;   //Dummy Band
+        case  DUMMY     : GPIO_PTT_Out(DECODE_DUMMY_PTT,    false);     break;   //Dummy Band
         case  BAND_AM   : GPIO_PTT_Out(DECODE_BANDAM_PTT,   PTT_state); break;   //AM
         case  BAND_160M : GPIO_PTT_Out(DECODE_BAND160M_PTT, PTT_state); break;   //160M 
         case  BAND_80M  : GPIO_PTT_Out(DECODE_BAND80M_PTT,  PTT_state); break;   //80M
@@ -327,16 +331,12 @@ void PTT_Output(uint8_t band, bool PTT_state)
 void GPIO_PTT_Out(uint16_t pattern, bool _PTT_state)
 {   
     uint16_t PTT_state = _PTT_state ? 0xFFFF : 0;
-
+    
     #ifdef M5STAMPC3U
       if (pattern == DECODE_DUMMY_PTT && _PTT_state == true)
         DPRINTF("  PTT state is RX");
-      else
-        DPRINTF("  PTT state "); DPRINT(_PTT_state, BIN);
-    #else  
-      DPRINTF("  PTT state "); DPRINT(_PTT_state, BIN);
-    #endif
-
+    #endif 
+    DPRINTF("  PTT state "); DPRINT(_PTT_state, BIN);
     DPRINTF("  PTT Output Binary "); DPRINT(pattern, BIN);
     DPRINTF("  PTT Output Hex "); DPRINTLN(pattern, HEX);
     

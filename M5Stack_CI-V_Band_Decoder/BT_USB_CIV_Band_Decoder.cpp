@@ -1427,7 +1427,7 @@ void display_Band(uint8_t _band, bool _force) {
 
   if (_band != _prev_band || _force) {
     // Update our outputs
-    Band_Decode_Output(band);
+    Band_Decode_Output(band, false);
     //sendBand(band);   // change the IO pins to match band
     //Serial.printf("Band %s\n", bands[_band].band_name);
 
@@ -1935,13 +1935,13 @@ void draw_Xvtr_icon(bool active) {
 // called by main USBHost comms loop
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void app_loop(void) {
-  uint8_t decode_PTT_temp;
-  static uint8_t decode_PTT_temp_last = 0;
+  uint8_t decode_PTT;
+  static uint8_t decode_PTT_last = 0;
   static uint32_t last_input_poll = 0;
   static uint32_t last_ptt_input_poll = 0;
   static uint32_t last_disp_info = 0;
-  uint8_t decode_Band_temp;
-  static uint8_t decode_Band_temp_last = 0;
+  uint8_t decode_Band;
+  static uint8_t decode_Band_last = 0;
   uint8_t decode_in;
   static uint8_t xvtr_band_select = 0;  // rotate through a few transverter bands.  Temp until we get a select window
   int btn_state = 0;
@@ -2062,6 +2062,7 @@ void app_loop(void) {
     static uint8_t info_screen = 0;
     char Rx[3] = "Rx";
     char Tx[3] = "Tx";
+    static uint32_t PTT_Sequencer_delay_timer = false;
 
     if (millis() > last_disp_info + 250)
     { 
@@ -2073,7 +2074,7 @@ void app_loop(void) {
           DPRINT(bands[band].band_name);
         DPRINTF(" \t");
 
-        if (decode_PTT_temp_last)
+        if (decode_PTT_last)
           DPRINTF(Tx);
         else 
           DPRINTF(Rx);
@@ -2131,7 +2132,7 @@ void app_loop(void) {
           info_screen = 0;  // loop around the screens each second
       }
         
-      draw_PTT_icon(decode_PTT_temp_last);  // update TX and Xvtr status icons
+      draw_PTT_icon(decode_PTT_last);  // update TX and Xvtr status icons
       draw_Xvtr_icon(XVTR_Band);
            
       loop_ctr += 1;
@@ -2156,24 +2157,41 @@ void app_loop(void) {
         decode_in = M5STAMPC3U_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
       #endif
 
-      decode_PTT_temp = (~decode_in & 0x08) >> 3;  //extract 4th bit
-      decode_Band_temp = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
+      decode_PTT = (~decode_in & 0x08) >> 3;  //extract 4th bit
+      decode_Band = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
+
+      if (decode_Band != decode_Band_last)  // skip if nothing changed on the wired inputs
+      {
+        band_Selector(decode_Band);  // converts input pattern to band (real or virtual Xvtr band)
+        decode_Band_last = decode_Band;
+      }
 
       // 4th pin is wired PTT from radio.
       // extract the 4th input to pass on PTT through selected band's IO pin.
-      if ((decode_PTT_temp != decode_PTT_temp_last) && use_wired_PTT)  // only call when the state changes
-      {
-        PTT_Output(band, decode_PTT_temp);  // should add debounce but cpu in the IO module seems to be doing that already well enough
-        decode_PTT_temp_last = decode_PTT_temp;
-      }
+      if ((decode_PTT != decode_PTT_last) && use_wired_PTT)  // only call when the state changes
+      { 
+        if (decode_PTT) {  // RX -> TX
+          Band_Decode_Output(band, true);  // true = Force IF Switch bits 0-2 to 1s (OFF).  This turns the IF switch off in the Xv Box for sequencing.
+          //  Set IF switch delay timer
+          PTT_Sequencer_delay_timer = millis();  // set up for 20ms delay
+        } else {   // TX -> Rx
+          PTT_Sequencer_delay_timer = 0;  // turn off time in RX
+          //Band_Decode_Output(band, true);  // turn off IF switch during transition from TX to RX to mute receiver
+        }
+        
+        PTT_Output(band,  decode_PTT);
 
-      if (decode_Band_temp != decode_Band_temp_last)  // skip if nothing changed on the wired inputs
-      {
-        band_Selector(decode_Band_temp);  // converts input pattern to band (real or virtual Xvtr band)
-        decode_Band_temp_last = decode_Band_temp;
+        decode_PTT_last = decode_PTT;
       }
 
       last_input_poll = millis();
     }
+    
+    // if IN TX mode and PTT still applied, after 1st 20ms expires turn ON the IF Switch to let RF flow
+    if (decode_PTT_last && PTT_Sequencer_delay_timer && millis() > (PTT_Sequencer_delay_timer + PTT_DELAY)) {
+      Band_Decode_Output(band, false);  // restore normal IF switch path in the Xv Box after 20ms delay
+      PTT_Sequencer_delay_timer = 0;  // turn off timer after delay
+    }
+
   #endif
 }

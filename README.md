@@ -36,6 +36,8 @@ https://www.dd1us.de/Downloads/Chinese%202W%20Amplifier%2040-1200MHz%201v0.pdf
 
   7. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
 
+Added new #define PTT_DELAY mm (where mm = duration in ms).  This turns OFF the IF switch preventing RF Flow (both RX and TX paths) for the duraton specified in milliseconds.  This is applied to RX -> TX event transition.  Do not see a need for any delay on the TX->RX transition as the radio will have shut off RF flow before sending the PTT event out.
+
 I moved the 3 control wires for the IF SP6T switches back onto the MCP23017 Module 1 PB0-2. There is now room on the CPU IO pin header to add a new Band_3 decode input wire permitting decoding of up to 16 bands, up from 8 max.  This would allow every HF band to display on the OLED and break out 6M from HF bands in case of a dedicated 6M amp and you still have a HF antenna(s).  It also adds friction to the 10 pin connector since only 2 wires were in it and reduces confusion when mapping IO pins in the code.
         
 The 50W 28VDC 900Mhz amp arrived today.  Very compact.  This is just the RF deck, no bias control.  I have a dedicated 12V relay that will feed a 12 to 28V converter (still awaiting delivery).

@@ -4,8 +4,9 @@
 #include <stdint.h>
 #include "M5Stack_CI-V_Band_Decoder.h"
 
-void Band_Decode_Output(uint8_t band);
-void GPIO_Out(uint16_t pattern);
+
+void Band_Decode_Output(uint8_t band, bool IF_Switch_OFF);
+void GPIO_Out(uint16_t pattern, bool IF_Switch_OFF);
 void PTT_Output(uint8_t band, bool PTT_state);
 void GPIO_PTT_Out(uint16_t pattern, bool PTT_state);
 
@@ -498,6 +499,12 @@ enum band_idx { DUMMY,
 
 // Moved 4 input pins from the MCP23107 to the CPU GPIO to get them off the MCP23017 to reduce noise from 
 //    i2c activity as a result of fast PTT scanning.
+
+// **** Sequencing *****
+// Rx->Tx - The IF switch should be shut off and a 20ms delay should be inserted RX->TX after the relays and PTT are done.  This ensure no hot switching.
+// Tx->Rx - The IF switch shouls be shut off at the start and enabled at the end to prevent noise at the Radio from switching.  
+//           Delays are not required but can be added befoe the IF switch turn back on.
+// The IF switch action can be created by calling GPIO_Out twice, first with bits 0-2 forced to 0x7, then delay 20ms, then call again with normal pattern
 
 // Lower byte, lowest bits are PTT out.  6 dedicated buffered 
 // bits 0-2 are IF SP6T switch.  A, B, C
