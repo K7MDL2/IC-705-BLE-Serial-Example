@@ -4,7 +4,7 @@ This is a work in progress!  But almost done...
 
 I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
 
-Be sure to check out project Wiki pages. There are now 2 related constructions using the same code
+Be sure to check out project Wiki pages. There are now 2 related construction projects using the same code.  They work together.
   1. CI-V Band decoder and Display  - see the Hardware Reference page at https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Hardware
   2. BCD wired input Band decoder embedded in a 3-band transverter box. Has PTT and antenna breakouts for VHF bands 50, 144, 222, 432, 902/3, and 1296.  See [https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-band-Transverter-Box](https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/3-Band-Transverter-Box)
 
@@ -14,23 +14,29 @@ SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/
 
 The latest updates below are mostly related to the new 3-band Xvtr box build leveraging the same CI-V Decoder/Display code to make using the 705 as an IF rig even easier by making the Xvtrs appear highly integrated to the 705 as can be.
 
-Latest Update: 26 Dec 2024
+Latest Update: 27 Dec 2024
 
-Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.  The INA226 had a 10ohm shunt resistor.  I soldered a short piece of wire across the shunt resitor and experimentally arrived at .0083 ohms which will read up to 8.2 amps.  At 50W the 900Mhz RF amp draws about 3.5amps@28VDC. This should be about 7.5A@14VDC. Combined with the regular 12VDC 1.5A consumption in Tx, that is 9A@14VDC which will exceed my limit of 8.2 so I will need to shorten the jumper wire a tad.
+Items left to finish:
 
-Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each with 2 status icons (Tx status and Xvtr band active) on the left side updated 4 times a second and a rotating single row of large info changing every 1 second. If one of the 3 Xvtr bands is active then the X icon turns white backgrond with black X.  If PTT active the white R icon turns to white background with black T.
-      
-  Info screen 1. Xvtr Box band labels = "HF/6M", "2M", "70cm", "1.25cm", "33cm", "23cm"
+        1. Replace 1 SP6T RF switch board (TX IF)
+        
+        2. Make final design decision about the PTT and 3(optional 4) band decoder input lines.  They are direct to the CPU right now with weak 3.3V pullups enabled.  These should be buffered to minimize chance for CPU damage. A new pullup source facing the radio side will be needed on the buffer outputs.  This could be done in the Radio side display controller.  I have a "PLC Prototype" M5Stack module which has a 9-24VDc to 5V regulator, perf board and edge connector.   I  may be able to fit a port expander and buffer with pullup resistors in there.  I have space on the control board to wire in a 4 pin connector and 4 transistors, caps and some resistors.  Already have connectors installed for the i2c connected display and current sensor.
+        
+        3. Once the DC converter is mounted, install suitable heat sink solution to the back panel and mount the 50ohm RF terminating resistor, used to attenuate 10W down to < 10mW.
+        
+        4. Install RF bypass caps on the 6 PTT outputs.
+  
+  These items add extra features like boosting RF output to more usable levels.
+  
+        5. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.
+        
+        6. Await delivery of the 2W 1296 amp module.  Required to boost 100mW Xvtr output up to 1.5W for my external SG-Labs 25W 1296 amp/LNA unit.
+        
+        7. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
 
-  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - Band](https://github.com/user-attachments/assets/441e9714-41d0-4f75-ba1d-e58c40822ac9)
-
-  Info screen 2. voltage in VDC
-  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - voltage](https://github.com/user-attachments/assets/928dcd27-cc0e-40e2-9262-44933bdb84a1)
-
-  Info screen 3. current in Amps DC
-  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - current](https://github.com/user-attachments/assets/cfd68921-a909-4d03-bfdf-6d77f47998e9)
-
-  The 50W 28VDC 900Mhz amp arrived today.  Very compact.  This is just the RF deck, no bias control.  I have a dedicated 12V relay that will feed a 12 to 28V converter (still awaiting delivery).
+I moved the 3 control wires for the IF SP6T switches back onto the MCP23017 Module 1 PB0-2. There is now room on the CPU IO pin header to add a new Band_3 decode input wire permitting decoding of up to 16 bands, up from 8 max.  This would allow every HF band to display on the OLED and break out 6M from HF bands in case of a dedicated 6M amp and you still have a HF antenna(s).  It also adds friction to the 10 pin connector since only 2 wires were in it and reduces confusion when mapping IO pins in the code.
+        
+The 50W 28VDC 900Mhz amp arrived today.  Very compact.  This is just the RF deck, no bias control.  I have a dedicated 12V relay that will feed a 12 to 28V converter (still awaiting delivery).
 
 ![50W  28VDC 903MHz RF Amp pallet](https://github.com/user-attachments/assets/922704cf-ce4f-44a3-94a6-f040ee09770b)
 
@@ -45,28 +51,35 @@ Now installed and tested, getting a full 50W out on 903.1MHz after tweaking the 
 
 I can hold the key down for well over a minute and nothing gets too hot to touch.  The RF pallet metal near the output SMA is the warmest, but I can still hold my finger on it fine. The 12 to 28V DC converter and the 1296 2w amp are due to arrive tomorrow and Saturday.
 
+
+
+26 Dec 2024
+
+Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.  The INA226 had a 10ohm shunt resistor.  I soldered a short piece of wire across the shunt resistor and experimentally arrived at .0083 ohms which will read up to 8.2 amps.  At 50W the 900Mhz RF amp draws about 3.5amps@28VDC. This should be about 7.5A@14VDC. Combined with the regular 12VDC 1.5A consumption in Tx, that is 9A@14VDC which will exceed my limit of 8.2 so I will need to shorten the jumper wire a tad.
+
+Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each with 2 status icons (Tx status and Xvtr band active) on the left side updated 4 times a second and a rotating single row of large info changing every 1 second. If one of the 3 Xvtr bands is active then the X icon turns white background with black X.  If PTT is active, the white R icon turns to white background with black T.
+      
+  Info screen 1. Xvtr Box band labels = "HF/6M", "2M", "70cm", "1.25cm", "33cm", "23cm"
+
+  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - Band](https://github.com/user-attachments/assets/441e9714-41d0-4f75-ba1d-e58c40822ac9)
+
+  Info screen 2. voltage in VDC
+  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - voltage](https://github.com/user-attachments/assets/928dcd27-cc0e-40e2-9262-44933bdb84a1)
+
+  Info screen 3. current in Amps DC
+  ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - current](https://github.com/user-attachments/assets/cfd68921-a909-4d03-bfdf-6d77f47998e9)
+
+
 25 Dec 2024
 
-My SP6T IF switch on the TX IF path has 3 bad ports out of the 6.  RF4-6 are good. I moved 222 TX IF input cable from RF3 to RF4 until a replacement board arrives.  The port assignments are arbitrary, chosen for the cleanest cabling.  RF3 for 222 is on the opposite side from RF4,5 & 6 which serves 903 and 1296.
+My SP6T IF switch on the TX IF path has 3 bad ports out of the 6.  RF4-6 are good. I moved 222 TX IF input cable from RF3 to RF4 until a replacement board arrives.  The port assignments are arbitrary, chosen for the cleanest cabling.  RF3 for 222 is on the opposite side from RF4,5, & 6 which serves 903 and 1296.  The IO mapping table allows you to map in any pin to a 16 bit value.
 
-I measured 2.4dB loss through the TC board (which is the IF T/R switch + RX and TX attenuators) and the active SP6T IF switch port for each band.  The transverters require -5dBm to +3dBm drive, 10dBm max.  The IC-705 can put output up to 40dBm. I used a 10W 30dB attenuator for 32.4 dB total attenuation and raised the 705 output power until I started to see the transverter output flatten out (compression point), around 40-70%.  Can set the 705's RF Output max power limit setting to the final value.
+I measured 2.4dB loss through the TC board (which is the IF T/R switch + RX and TX attenuators) and the active SP6T IF switch port for each band.  The transverters require -5dBm to +3dBm drive, 10dBm max.  The IC-705 can put out up to 40dBm. I used a 10W 30dB attenuator for 32.4 dB total attenuation and raised the 705 output power until I started to see the transverter output flatten out (compression point), around 40-70%.  Can set the 705's RF Output max power limit setting to the final value.
 
 I moved all input line to the CPU GPIO pins and the IF SP6T switch 3 control wires as well.  Could have left those 3 on the port expander.  The main goal was to move PTT, which is scanned every 4ms or so, onto the CPU, avoiding rapid i2c bus activity which generates excessive noise on HF bands.  Things are looking pretty clean now.  Only the 903 and 1296 TTL control lines are left on the MCP23017 PB0-7 range of pins.  PA0-7 range of pins on module #1 only has 3 lines left on it now, PTT for each of the 3 Xvtr boards. A ULN2803A module slips on the MCP23017 module pins for buffering.  The PTT lines have 9VDC on them.
 
 As of now the basic box is working on RX and TX except the internal 10W attenuator is not installed yet so TX requires special care.
 
-Items left to finish
-      1. Replace 1 SP6T RF switch board (TX IF)
-      2. Make final design decision about the PTT and 3 band decoder input lines.  They are direct to the CPU right now with weak 3.3V pullups enabled.  These should be buffered to minimize chance for CPU damage. A new pullup source facing the radio side will be needed on the buffer outputs.  This could be done in the Radio side display controller.  I have a "PLC Prototype" M5Stack module which has a 9-24VDc to 5V regulator, perf board and edge connector.   I  may be able to fit a port expander and buffer with pullup resistors in there.  I have space on the control board to wire in a 4 pin connector and 4 transistors, caps and some resistors.  Already have connectors installed for the i2c connected display and current sensor.
-      3. Once the DC converter is mounted, install suitable heat sink solution to the back panel and mount the 50ohm RF terminating resistor, used to attenuate 10W down to < 10mW.
-      4. Install RF bypass caps on the 6 PTT outputs.
-
-These items add extra features like boosting RF output to more usable levels.
-      5. Await delivery of the 50W 903 RF pallet.
-      6. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.
-      7. Await delivery of the 2W 1296 amp module.  Required to boost 100mW Xvbtr output up to 1.5W for the external SG-Labs 25W 1296 amp/LNA unit.
-      8. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
-      
 
 Dec 24, 2024
 
@@ -76,9 +89,9 @@ Optimized Wired PTT scanning time in both the display and Xvtr box (XVBox) contr
 
 *Noise Update*: Addressed the noise issue (mostly) by moving the band, PTT input, and SP6T IF switch control wiring to the unused CPU IO pins (3,4,5,6,7,8,10, +5V, GND).  PTT is the only pin requiring fast scanning.  Moving PTT to the CPU lets the I2c bus operate only on band and PTT change events so no noise of measure.  The +5V and GND may be useful for external pullups, TBD.
 
-I am pondering the physical solution to buffer the internal Xvtr PTT lines and external band decoder and PTT Input lines, add pullups, and RFI proof them.  Probably a new board mounted on top of the 903/1296 stack.  I am also considering laying out a control board PCB which with surface mount parts and ground planes for i2c bus radiated noise sheilding.  I can consolidate all this stuff and not require the space the MCP23017 and ULN2803 modules take up. 
+I am pondering the physical solution to buffer the internal Xvtr PTT lines and external band decoder and PTT Input lines, add pullups, and RFI proof them.  Probably a new board mounted on top of the 903/1296 stack.  I am also considering laying out a control board PCB which with surface mount parts and ground planes for i2c bus radiated noise shielding.  I can consolidate all this stuff and not require the space the MCP23017 and ULN2803 modules take up. 
 
-On the M5Core2 controller side I am looking at using the M5Stack prototype base module which has inside a 5V regulator, 12V coaxial power jack, proto board space and edge connectors.  Put a MCP23017 and ULN2803 on the board, tap into the bus for i2c pins, and I can eliminate the 4IN/8Out IO module.  Also do not need the 4-Relay module.  It will have 5V pullup and bypass caps al lconveniently inside with a simple multiconnector interface to a siongle 5 wire control cable to the XVBox
+On the M5Core2 controller side I am looking at using the M5Stack prototype base module which has inside a 5V regulator, 12V coaxial power jack, proto board space and edge connectors.  Put a MCP23017 and ULN2803 on the board, tap into the bus for i2c pins, and I can eliminate the 4IN/8Out IO module.  Also do not need the 4-Relay module.  It will have 5V pullup and bypass caps all conveniently inside with a 5-wire control cable to the XV Box
 
 
 Dec 23, 2024
@@ -88,28 +101,28 @@ I fed -70dBm signal into each transverter and initially only 903 had the expecte
 
 The TC board has an optional MMIC (IC1) with 330ohm bias resistor I prepopulated during the build to add some IF stage RX path gain and also has a trim pot.  I cut the trace and installed a MAR3 (12dB gain), the existing 330ohm bias resistor on the max 15V supply is just about right, maybe a tad too high.  I think 280ohms is what the calculator called for.  Considered using a MAR6+ but that was over 20dB gain and felt like a bit much.  The IC-705 seems less sensitive on 144Mhz than my K3 144 internal Xvtr.  I also noted that the 1296 Xvtr conversion gain is less when configured for 50Mhz IF vs. 144Mhz IF.  So I configured the software for 144 IF.   Waiting for a new SP6T RF Switch board in early January.  This will effect my TX testing, still to be done.
 
-End result is I now have about S9 on 222 and 903 without preamps (21Mhz IF) and S7 on 1296 with 144 preamp on.  Before I was lucky to get S1 on 1296.  I also have a SG-Labs 1296 25W PA+LNA combo that buimps up the signal more so all looks proper now.
+End result is I now have about S9 on 222 and 903 without preamps (21Mhz IF) and S7 on 1296 with 144 preamp on.  Before I was lucky to get S1 on 1296.  I also have a SG-Labs 1296 25W PA+LNA combo that bumps up the signal more so all looks proper now.
 
-Modified the wired inpout scanning to make Wired PTT much faster.  Wired PTT does not poll the radio, clogging up the BT comm channel, so there is no issue to scan it at max possible rate.  I am generally seeing main loop times <10ms.  I slowed down some info and display update polling rates.  I should figure out how to set wired PTT up as an interrupt.
+Modified the wired input scanning to make wired PTT response much faster.  Wired PTT does not poll the radio, clogging up the BT comms channel, so there is no issue to scan it at max possible rates.  I am generally seeing main loop times <10ms.  I slowed down some info and display update polling rates.  I should figure out how to set wired PTT up as an interrupt.
 
 
 Dec 22, 2024
 
-I built a 3-band Transverter box adding missin VHF/UHF bands for 222, 902/3 and 1296 to the IC-705, or any other multiband radio with HF, 6, 144, and 432 bands, which there are many.  
+I built a 3-band Transverter box adding missing VHF/UHF bands for 222, 902/3 and 1296 to the IC-705, or any other multiband radio with HF, 6, 144, and 432 bands, which there are many.  
 ![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Top View Front](https://github.com/user-attachments/assets/1c883ef0-376b-41ee-81da-cb7c4c26b37c)
 ![K7MDL IC-705 3-Band Transverter Box - Dec 2024 - Back View](https://github.com/user-attachments/assets/2dd7e8d9-e548-4fd3-b8d0-b0611b4c8bf5)
 
-I used the latest transverter boards from UR3LM, all now have the option for a external 10Mhz reference and can select between 2 IF frequencies.  I used 21Mhz IF option for 222 and 903 which gives greater band coverage thean teh usual 28-30 many radios are limited to.  I am using 50Mhz for the 1296 Xvtr. Using SP6T switches you could easily handle 6 transverters.  If you only have a HF/6M or even a HJF only IF rig, you can use a unity gain xvtr board to convert IF outputs down to HF.  If I was just doing 6-7 bands covering 50-1296 I would just use a Q5 Signal multi-band converter.  It is more compact, higher power oputput (25 or 50W per band) and will be about the same cost.  With only 3 Xvtrs, the cost is worth the fun of the build.
+I used the latest transverter boards from UR3LM, all now have the option for a external 10Mhz reference and can select between 2 IF frequencies.  I used 21Mhz IF option for 222 and 903 which gives greater band coverage than the usual 28-30 many radios are limited to.  I am using 50Mhz for the 1296 Xvtr. Using SP6T switches you could easily handle 6 transverters.  If you only have a HF/6M or even a HF-only IF rig, you can use a unity gain xvtr board to convert IF outputs down to HF.  If I was just doing 6-7 bands covering 50-1296 I would just use a Q5 Signal multi-band converter.  It is more compact, higher power output (25 or 50W per band) and will be about the same cost.  With only 3 Xvtrs, the cost is worth the fun of the build.
 
-On order for January delivery are a mini-sized 28VDC 50W 903MHz enclosed RF pallet, a 12-28VDC converter for the 903 amp, and a 2W 1296 booster amp. These will all mount inside or on the back panel of my Cheval box which features thicker finned heat sinking end panels.  The 2W is jsut right to drive my SG-Labs 25W 1296 AMP+LNA combo. It requires 1.5W drive after coax losses.  The 903 and 1296 boards output 100mW max.  The 222 is about 8-10W.
+On order is a mini-sized 28VDC 50W 903MHz enclosed RF pallet, a 12-28VDC converter for the 903 amp, and a 2W 1296 booster amp. These will all mount inside or on the back panel of my Cheval box which features thicker finned heat sinking end panels.  The 2W is just right to drive my SG-Labs 25W 1296 AMP+LNA combo. It requires 1.5W drive after coax losses.  The 903 and 1296 boards output 100mW max.  The 222 is about 8-10W.
 
-I had a DEMI/Q5 4 port 10MHz distribution box in and enclosure that is mounted in teh bottom.  Stacked on top is a 10MHz OCXO and the control board which iis a few modules and mounted on vectorboard and minimal wiring run between the modules for i2c bus and 12, 5 and 3.3V.  There are jacks for other modules - OLED display for the front (not coded or installed yet) whcih will mount in a 3D printed surface-mount bezel.  ALso control for ht stacked pair of solid state SP6T RF coax switches for routing the attenuatoed IF ampongs teh 3 Xvtr boards.
+I had a DEMI/Q5 4 port 10MHz distribution box in and enclosure that is mounted in the bottom.  Stacked on top is a 10MHz OCXO and the control board which is a few modules and mounted on vector board and minimal bottom side point-to-point wiring run between the modules for i2c bus and 12, 5 and 3.3V.  There are jacks for other modules - OLED display for the front (not coded or installed yet) which will mount in a 3D printed surface-mount bezel.  Also control for the stacked pair of solid state SP6T RF coax switches for routing the attenuated IF among the 3 Xvtr boards.
 
-For control I embedded a M5STAMPC3U CPU module into the unit to control around 30 signals - power relays, PTT breakout internally and externally for amps, T/R relays, solid state and mechanical coax switches for IF and RF sides. I had an unbuilt 2005-era Downeast Microwave TC kit which does IF-side T/R and has an option for 28V boost if you have 28V relays. I found inexpensve nearly new surplus 18GHz rated TTL controlled 12V SP4T and SPDT switches fronm W5SWL eBay store so I did not use that feature.  The TC board has attenuation control on both the RX and TX paths, and will attenuate up to 10W - a good match for the IC-705.  It will knock down the 10W max possible about 30dB which does not exceed the safe maximum for the 3 transverter boards. The 705 RF power control is then  turned down to around 1W or less for the normal 1-3mW range usage. You can use the UR3LM attnuaor/TR board instead if you like.
+For control I embedded a M5STAMPC3U CPU module into the unit to control around 30 signals - power relays, PTT breakout internally and externally for amps, T/R relays, solid state and mechanical coax switches for IF and RF sides. I had an unbuilt 2005-era Downeast Microwave TC kit which does IF-side T/R and has an option for 28V boost if you have 28V relays. I found inexpensve nearly new surplus 18GHz rated TTL controlled 12V SP4T and SPDT switches from W5SWL eBay store so I did not use that feature.  The TC board has attenuation control on both the RX and TX paths, and will attenuate up to 10W - a good match for the IC-705.  It will knock down the 10W max possible about 30dB which does not exceed the safe maximum for the 3 transverter boards. The 705 RF power control is then  turned down to around 1W or less for the normal 1-3mW range usage. You can use the UR3LM attnuaor/TR board instead if you like.
 
 The M5STAMPC3U is using this same code with added #defines to account for minor changes, particularly the 2x MCP23017 16-port I2C connected port expander modules  This gives me over 40 IO ports total, most bi-directional.  I use off the shelf ULN2803 modules plugged onto the MCP23017 board for buffered input and outputs.  I also have installed and wired an I2C INA226 Bi-directional Voltage Current Monitor module.  Have not coded that up yet, same for the 0.91" OLED SSD1306 i2c display.   The biggest code changes for the M5StampC3U is expanding the IO - 8 inputs and 32 outputs.  This also meant upsizing the band config patterns for each band from 8bits to 16bits.
 
-I used a M5Core2 with 4-In/8-Out module at the radio for the BT band decoding and transverter control and frequency display.  It uses 4 wires run to the M5StampC3U in the box. 3 wires are BCD-coded band info and 1 wire is for PTT.  I used a separate controller in the box because this will be set in the back seat of my rover truck, or away from the operating position.  If you where just using box this at home and have desk space, you could mount the M5Core2 and add i2C IO modules to it and skip the M5StampC3U.   M5Stack has flush panel mount frames for the M5Core series.   Max 12V current draw should be < 10amp due to the 50W 903 amp.  Normally it is < 3A.   I am seeing about 1A for RX mode.  I chose to power only the Xvtr board in use, saving power and possible interference between them.
+I used a M5Core2 with 4-In/8-Out module at the radio for the BT band decoding and transverter control and frequency display.  It uses 4 wires run to the M5StampC3U in the box. 3 wires are BCD-coded band info and 1 wire is for PTT.  I used a separate controller in the box because this will be set in the back seat of my rover truck, or away from the operating position.  If you where just using box this at home and have desk space, you could mount the M5Core2 and add i2C IO modules to it and skip the M5StampC3U.   M5Stack has flush panel mount frames for the M5Core series.   Max 12V current draw should be < 10amp due to the 50W 903 amp.  Normally it is < 2A in TX without the 50W amp.  I am seeing about 1A in RX mode.  I chose to power only the Xvtr board in use, saving power and possible interference between them.
 
 The SP4T coax switch bypasses the Xvtr box while also breaking out the 705 common RF cable for dedicated band antennas.  HF/50, 144, and 432 pass through the SP4T coax switch bypassing the whole Xvtr system.  PTT breakout is provided for HF/6M, 144, 222, 432, 902/3 and 1296 bands for amp PTT.  Every band has its own antenna jack.  Except for the 222 RF output, all IF and RF outputs are split into Rx and TX.  You can easily add attenuators and LNAs as needed, or relocate the 903/1296 T/R switches outside the box such as on a mast with a preamp and split RF.  I have external RF amps for most of the bands.  This coax and PTT breakout make it easy.  
 
