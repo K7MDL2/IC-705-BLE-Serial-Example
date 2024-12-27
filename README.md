@@ -14,14 +14,12 @@ The latest updates below are mostly related to the new 3-band Xvtr box build lev
 
 Latest Update: 26 Dec 2024
 
-Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current 
-with my DVM and calibrated the current output.  Voltage is very close by default. Displays in debug every 1 second.  This will be displayed on the OLED display.
+Added code for the i2c INA226 voltage and current sensor that is wired in series with the front panel power switch.  Measured the current with my DVM and calibrated the current output. Displays in serial debug every 1 second and on the OLED display.
 
-Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 4 screens, each with a single row of large text.  
-      1. Xvtr Box bands = "HF/6M", "2M", "70cm", "1.25cm", "33cm", "23cm"
-      2. "Rx" or "Tx" on hte left side, "XVTR" on the right side if one of the 3 Xvtr bands is actve (222, 902/3 or 1296)
-      3. voltage in VDC
-      4. current in Amps DC
+Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each with 2 status icons (Tx status and Xvtr band active) on the left side updated 4 times a second and a rotating single row of large info changing every 1 second. If one of the 3 Xvtr bands is active then the X icon turns white backgrond with black X.  If PTT active the white R icon turns to white background with black T.
+      Info screen 1. Xvtr Box band labels = "HF/6M", "2M", "70cm", "1.25cm", "33cm", "23cm"
+      Info screen 2. voltage in VDC
+      Info screen 3. current in Amps DC
 
 25 Dec 2024
 

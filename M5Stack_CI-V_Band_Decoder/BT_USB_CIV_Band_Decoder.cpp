@@ -1895,6 +1895,42 @@ void app_setup(void) {
   // restart_USBH();
 }
 
+void draw_PTT_icon(bool Tx_On) {
+  display.setCursor(5, 4);
+  display.setTextSize(1); // Draw 3X-scale text
+  display.cp437(true);         // Use full 256 char 'Code Page 437' font
+  if (Tx_On) {
+    display.fillCircle(7, 7, 7, SSD1306_WHITE); // x, y, r, color
+    display.setTextColor(SSD1306_BLACK);
+    display.print("T");
+  }
+  else { 
+    display.fillCircle(7, 7, 7, SSD1306_BLACK); // x, y, r, color
+    display.drawCircle(7, 7, 7, SSD1306_WHITE); // x, y, r, color
+    display.setTextColor(SSD1306_WHITE);
+    display.print("R");
+  } 
+  display.display();
+}
+
+void draw_Xvtr_icon(bool active) {
+  display.setCursor(5, 22);
+  display.setTextSize(1); // Draw 3X-scale text
+  display.cp437(true);         // Use full 256 char 'Code Page 437' font
+  if (active) {
+    display.fillRoundRect(0, 18, 14, 14, 3, SSD1306_WHITE);  // x0, y0, w, h, r, color  
+    display.setTextColor(SSD1306_BLACK);
+  }
+  else
+  {
+    display.fillRoundRect(0, 18, 14, 14, 3, SSD1306_BLACK);  // x0, y0, w, h, r, color  
+    display.drawRoundRect(0, 18, 14, 14, 3, SSD1306_WHITE);  // x0, y0, w, h, r, color
+    display.setTextColor(SSD1306_WHITE);
+  }
+  display.print("X");
+  display.display();
+}
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // called by main USBHost comms loop
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2022,86 +2058,86 @@ void app_loop(void) {
   #else   // Xvtr box controller
     float volts = 0.0;
     float current = 0.0;
+    static uint8_t loop_ctr = 0;
+    static uint8_t info_screen = 0;
     char Rx[3] = "Rx";
     char Tx[3] = "Tx";
 
-    if (millis() > last_disp_info + 1000)
-    {
-      // print to serial if debug is on
-      if (band == 1)  // < 144MHz
-        DPRINTF("HF/6M");
-      else
-        DPRINT(bands[band].band_name);
-      DPRINTF(" \t");
+    if (millis() > last_disp_info + 250)
+    { 
+      // print out debug on serial if enabled
+      if (loop_ctr == 3) {
+        if (band == 1)  //  any band < 144MHz is represented as Band 1 but can be any band (AM) through 6M, ie HF/6M.
+          DPRINTF("HF/6M");
+        else
+          DPRINT(bands[band].band_name);
+        DPRINTF(" \t");
 
-      if (decode_PTT_temp_last)
-        DPRINTF(Tx);
-      else 
-        DPRINTF(Rx);
-      DPRINTF("\t");
-      
-      volts = INA.getBusVoltage();
-      DPRINT(volts, 3);
-      DPRINTF("V   \t");
-      DPRINT(INA.getShuntVoltage_mV(), 3);
-      DPRINTF("mV(shunt)   \t");
-      
-      current = INA.getCurrent_mA();
-      current /= 1000;
-      DPRINT(current , 3);
-      DPRINTF("A   \t");
-      
-      DPRINT(INA.getPower_mW()/1000, 3);
-      DPRINTLNF("W");
+        if (decode_PTT_temp_last)
+          DPRINTF(Tx);
+        else 
+          DPRINTF(Rx);
+        DPRINTF("\t");
+        
+        volts = INA.getBusVoltage();
+        DPRINT(volts, 3);
+        DPRINTF("V   \t");
+        DPRINT(INA.getShuntVoltage_mV(), 3);
+        DPRINTF("mV(shunt)   \t");
+        
+        current = INA.getCurrent_mA();
+        current /= 1000;
+        DPRINT(current , 3);
+        DPRINTF("A   \t");
+        
+        DPRINT(INA.getPower_mW()/1000, 3);
+        DPRINTLNF("W");
+      }
 
       // Show on OLED display
       // Rotate the info on the small OLED screen to keep font sizes larger
-      display.setTextSize(3); // Draw 3X-scale text
-      display.setTextColor(SSD1306_WHITE);
-      
-      if (screen == 0) {  
-        display.clearDisplay();
-        display.setCursor(0, 5);
-        if (band == 1)  // < 144MHz
-          display.print("HF/6M");
-        else
-          display.print(bands[band].band_name);
-        display.display();   // Update display
-      }
+      // paint the status icons for every screen
+      if (loop_ctr == 3) {
+        display.cp437(true);         // Use full 256 char 'Code Page 437' font
+        display.setCursor(20, 6);  // set up for Text Info
+        display.setTextSize(3); // Draw 3X-scale text
+        display.setTextColor(SSD1306_WHITE, SSD1306_BLACK); // Draw 'inverse' text
+        
+        // Update screen estate with band, current and volts in large text rotating every 1 second
+        if (info_screen == 0) {    // only change info on full 1 second
+          display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
+          if (band == 1)  // < 144MHz
+            display.print("HF/6M");
+          else
+            display.print(bands[band].band_name);
+          display.display();   // Update display
+        }
 
-      if (screen == 1) {
-        display.clearDisplay();
-        display.setCursor(0, 5);
-        if (decode_PTT_temp_last)
-          display.print(Tx);
-        else 
-          display.print(Rx);
-        display.print(" ");
-        if (XVTR_Band)
-          display.print("XVTR");
-        display.display();   // Update display
-      }
+        if (info_screen == 1) {  // only change info on full 1 second
+          display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
+          display.print(volts);
+          display.print("V");
+          display.display();   // Update display
+        }
 
-      if (screen == 2) {
-        display.clearDisplay();
-        display.setCursor(0, 5);
-        display.print(volts);
-        display.print("V");
-        display.display();   // Update display
+        if (info_screen == 2) {  // only change info on full 1 second
+          display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
+          display.print(current);
+          display.print("A");
+          display.display();   // Update display
+        }
+        info_screen += 1;  // rotate screen every 1 second
+        if (info_screen > 2) 
+          info_screen = 0;  // loop around the screens each second
       }
+        
+      draw_PTT_icon(decode_PTT_temp_last);  // update TX and Xvtr status icons
+      draw_Xvtr_icon(XVTR_Band);
+           
+      loop_ctr += 1;
+      if (loop_ctr > 3) 
+        loop_ctr = 0;  // loop update every 1/3rd second
 
-      if (screen == 3) {
-        display.clearDisplay();
-        display.setCursor(0, 5);
-        display.print(current);
-        display.print("A");
-        display.display();   // Update display
-      }
-      
-      screen += 1;
-      if (screen > 3) 
-        screen = 0;  // loop around the screens each second
-      
       last_disp_info = millis();
     }
   #endif  // M5STAMPC3U
