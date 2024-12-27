@@ -31,6 +31,7 @@ Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each w
   The 50W 28VDC 900Mhz amp arrived today.  Very compact.  This is just the RF deck, no bias control.  I have a dedicated 12V relay that will feed a 12 to 28V converter (still awaiting delivery).
 
 ![50W  28VDC 903MHz RF Amp pallet](https://github.com/user-attachments/assets/922704cf-ce4f-44a3-94a6-f040ee09770b)
+![50W 28VDC 903MHz RF Amp pallet internal ](https://github.com/user-attachments/assets/c4cf713d-f114-4f7c-8c51-d1758c93cc3f)
 
 
 
