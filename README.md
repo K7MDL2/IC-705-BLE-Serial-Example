@@ -28,6 +28,9 @@ Added code for SSD1306 type 0.91" 128x32 OLED display.  It has 3 screens, each w
   Info screen 3. current in Amps DC
   ![K7MDL IC-705 3-Band Transverter Box - Dec 2024  - current](https://github.com/user-attachments/assets/cfd68921-a909-4d03-bfdf-6d77f47998e9)
 
+  The 50W 28VDC 900Mhz amp arrived today.  Very compact.  This is just the RF deck, no bias control.  I have a dedicated 12V relay that will feed a 12 to 28V converter (still awaiting delivery).
+
+![50W  28VDC 903MHz RF Amp pallet](https://github.com/user-attachments/assets/922704cf-ce4f-44a3-94a6-f040ee09770b)
 
 
 
