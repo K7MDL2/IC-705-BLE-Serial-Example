@@ -16,7 +16,15 @@ Configuration parameters are explained here:  https://github.com/K7MDL2/IC-705-B
 
 The latest updates below are mostly related to the new 3-band Xvtr box build leveraging the same CI-V Decoder/Display code to make using the 705 as an IF rig even easier by making the Xvtrs appear highly integrated to the 705 as can be.
 
-Latest Update: 27 Dec 2024
+Latest Update: 29 Dec 2024
+
+The 2W 1296 amp module arrived and I tested it. It is required to boost the +14dBm 1296 Xvtr output up to 1.6W for my external SG-Labs 25W 1296 amp/LNA unit.  Looking at the amp schematic and the part datasheets, I can bypass Q1 and drive Q2 PA stage directly and 20dBm driove for the SHF-0589 part shoudl be enough.  The 0589 part's Max RF input is 800mW and max voltage is 9V and is rated for 2W up to 3Ghz. Typically it runs on 7-8V, I measured 7V.  I can remove the Q1 and its's 5V regulator and save 75ma. It draws half the current with higher supply voltage. I found great info here: Chinese 2W Amplifier 40-1200MHz 1v0.pdf https://www.dd1us.de/Downloads/Chinese%202W%20Amplifier%2040-1200MHz%201v0.pdf.  He measured 8.8V and maybe that is why he got 1.45W out.
+
+On the bench I only got 1W (+30dBm) out of it.  I bypassed the 1st stage and got +28dBm with 18dBm drive, and about 31dBm with 23dBm at 1100Mhz from my sig gen.  The Xvtr is +14dBm actual output.  This part is not going to work for me.  At least it was only $11.
+
+I have on order 2 1296 amps to try out.  A 5W and 50W.  The 5W is 12-18V which is handy but I will have to limit the power which takes attenuators and space. I am leaning toward the 50W unit on 28V.  Will add a relay to switch 28V between the 900 and 1296 PAs. 50W wil match well wit hte 50W 900 amp. I will need to put the 1296 where the 900 PA is now on the end panel since the 1296 deck is larger.  Then do a creative mount and heat sink solution with the 900M PA on the oppositeside of the chassis above the stack of Xvtr boards.  ETA for the 2 PA units are late January.  After ordering I realized no gain or input drive specs were listed on this amp.  Most similar amps were around 40dBm gain.  I am hopeful this is too.   
+
+27 Dec 2024
 
 Items left to finish:
 
@@ -30,13 +38,9 @@ Items left to finish:
 
 These items add extra features like boosting RF output to more usable levels.
 
-  5. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.  ETA Dec 31.
+  5. Await delivery of 120W DC-DC Converter, 12V to 28V @ 5A.  It is for the 50W 903 PA RF pallet.  ETA Jan 2.
   
-  6. ETA for delivery of the 2W 1296 amp module is Dec 27.  Required to boost 100mW Xvtr output up to 1.5W for my external SG-Labs 25W 1296 amp/LNA unit.  Looking at the amp schematic and the part datasheets, I can bypass Q1 and drive Q2 PA stage directly.  20dBm is about perfect for the SHF-0589 part.  The 0589 part's Max RF input is 800mW and max voltage is 9V. Typically it runs on 7-8V.  I can remove the Q1 and the 5V regulator and save 75ma.   I might explore replacing the onboard 10-28V DC converter with a LM7808.  I plan to remove the heat sink and mount it on a sold aluminum spacer block to the heat sinking end panel next to the 2222 Xvtr board. With no SMA attenuators needed the cabling will be very clean.  I found great info here:
-Chinese 2W Amplifier 40-1200MHz 1v0.pdf
-https://www.dd1us.de/Downloads/Chinese%202W%20Amplifier%2040-1200MHz%201v0.pdf
-
-  7. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
+  6. 3D print the surface mounted OLED display bezel and run i2c cable through the front panel.  Watch for RFI.
 
 Added new #define PTT_DELAY mm (where mm = duration in ms).  This turns OFF the IF switch preventing RF Flow (both RX and TX paths) for the duraton specified in milliseconds.  This is applied to RX -> TX event transition.  Do not see a need for any delay on the TX->RX transition as the radio will have shut off RF flow before sending the PTT event out.
 
