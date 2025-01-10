@@ -511,8 +511,8 @@ enum band_idx { DUMMY,
 //          CBA
 //    RF1 = 000  NC     0
 //    RF2 = 001  NC     1
-//    RF3 = 010  222    2  bad port RF3 on existing TX board so using RF4 for now
-//    RF4 = 011  NC     3  RF4 port is my 222 Xvtr until my replacement SP6T board arrives
+//    RF3 = 010  222    2  
+//    RF4 = 011  NC     3  
 //    RF5 = 100  903    4
 //    RF6 = 101  1296   5
 //    OFF = 110         6
@@ -544,7 +544,7 @@ enum band_idx { DUMMY,
   //#define DECODE_BAND70       (0x0000)    //70MHz
   #define DECODE_BAND6M       (0xF207)    //6M
   #define DECODE_BAND144      (0xF407)    //2M
-  #define DECODE_BAND222      (0x7103)    //222     0xZZZY y=3 for RF4 on SP6T (temp until new board arrives.  RF1-3 are broke on the TX swtich module.) Normally RF2 for easier wiring purposes.
+  #define DECODE_BAND222      (0x7102)    //222     0xZZZY y=2 for RF3 on SP6T
   #define DECODE_BAND432      (0xF807)    //432
   #define DECODE_BAND902      (0x9104)    //902     0xZZZY y=4 for RF5 on SP6T switch.   Turn on both 12V relays, relays 2 & 3 for 903 Xvtr and Amp.
   #define DECODE_BAND1296     (0xE105)    //1296    0xZZZY y=5 for RF6 on SP6T switch.

@@ -86,7 +86,9 @@
 #include "Decoder.h"
 #include "DebugPrint.h"
 #ifndef M5STAMPC3U
-  #include "M5_Max3421E_Usb.h"
+  #ifdef USBHOST
+    //#include "M5_Max3421E_Usb.h"
+  #endif
 #endif
 
 #if defined(ARDUINO_NRF52_ADAFRUIT) || defined(ARDUINO_ARCH_ESP32)
@@ -99,21 +101,21 @@
     #include "usbh_helper.h"
     // CDC Host object
     Adafruit_USBH_CDC SerialHost;
+
+    // Language ID: English
+    #define LANGUAGE_ID 0x0409
+
+    typedef struct {
+      tusb_desc_device_t desc_device;
+      uint16_t manufacturer[32];
+      uint16_t product[48];
+      uint16_t serial[16];
+      bool mounted;
+    } dev_info_t;
+
+    // CFG_TUH_DEVICE_MAX is defined by tusb_config header
+    dev_info_t dev_info[CFG_TUH_DEVICE_MAX] = { 0 };
   #endif
-
-  // Language ID: English
-  #define LANGUAGE_ID 0x0409
-
-  typedef struct {
-    tusb_desc_device_t desc_device;
-    uint16_t manufacturer[32];
-    uint16_t product[48];
-    uint16_t serial[16];
-    bool mounted;
-  } dev_info_t;
-
-  // CFG_TUH_DEVICE_MAX is defined by tusb_config header
-  dev_info_t dev_info[CFG_TUH_DEVICE_MAX] = { 0 };
 #else  // for M5STAMP{C3U which has a SK6812 RGB LED button. 
   Adafruit_NeoPixel pixel(NUM_PIXELS, PIXEL_PIN, NEO_GRBW + NEO_KHZ400);
   bool currentButtonPressed = false;
@@ -563,7 +565,7 @@ void loop() {
     ESP.restart();
   }
 
-  #ifndef EXTRAS
+  #ifdef USBHOST
     //--------------------------------------------------------------------+
     // TinyUSB Host callbacks
     //--------------------------------------------------------------------+
@@ -723,5 +725,5 @@ void loop() {
       _convert_utf16le_to_utf8(temp_buf + 1, utf16_len, (uint8_t *) temp_buf, buf_len);
       ((uint8_t *) temp_buf)[utf8_len] = '\0';
     }
-  #endif  // extras
+  #endif  // USBHOST
 #endif // M5STAMPC3U

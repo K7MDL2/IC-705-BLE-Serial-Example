@@ -98,10 +98,10 @@
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
-#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
+//#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
                       // Comment out and the CPU architecture is automatically selected for all others (AtomS3, Core, Core2, CoreS3/SE)
 
-#define XVBOX // set some data config specific to usage with the 705 transverter box
+//#define XVBOX // set some data config specific to usage with the 705 transverter box
 
 #ifdef M5STAMPC3U  
   //#include <M5Unified.h>  // kills off USB Host
@@ -122,11 +122,11 @@
 
 #elif defined ( CONFIG_IDF_TARGET_ESP32S3 )
   #ifdef __M5GFX_M5ATOMDISPLAY__
-  #include <M5AtomS3.h>
-  #define ATOMS3
+    #include <M5AtomS3.h>
+    #define ATOMS3
   #else
-  //#include <M5CoreS3.h>   // Mov 2024 latest M5Unified now supports M5CoreS3
-  #include <M5Unified.h>  // kills off USB Host
+    //#include <M5CoreS3.h>   // Mov 2024 latest M5Unified now supports M5CoreS3
+    #include <M5Unified.h>  // kills off USB Host
   #endif
   static m5::touch_state_t prev_state;
   #define SD_SPI_SCK_PIN  36
@@ -178,12 +178,12 @@
 
 #define CMD_READ_FREQ 0x03    // Read operating frequency data
 
-#ifdef M5STAMPC3U  // for embedded 705 Transveter solution
-  #define WIRED_PTT   1       // 1 = use ther wired input for fastest PTT
+#ifdef M5STAMPC3U  // for embedded 705 Transverter solution
+  #define WIRED_PTT   1       // 1 = use the wired input for fastest PTT response time
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 
 #else // choose for M5 Core or Atom CPUs
-  #define WIRED_PTT   1       // 1 = use ther wired input for fastest PTT
+  #define WIRED_PTT   0       // 1 = use the wired input for fastest PTT
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 #endif
 
@@ -208,7 +208,7 @@
 #define POLL_RADIO_PRE   3204 // poll radio for preamp status
 #define POLL_RADIO_SPLIT 3102 // poll radio for split status
 
-#ifndef M5STAMPC3U  // Non of these apply to the M5StampC3U as used in the 705 Transverter project
+#ifndef M5STAMPC3U  // None of these apply to the M5StampC3U as used in the 705 Transverter project
   // Chose the combination needed.  Note that at least one comm service must be enabled.
   #define BTCLASSIC   // Can define BTCLASSIC *** OR ***  BLE, not both.  No BT version is  OK if USB Host is enabled
                       // BT Classic does not work on Core3.  It might on Core2 (untested)
@@ -220,7 +220,7 @@
 
   //#define RELAY2_UNIT      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
   //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
-  //#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
+  #define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
 #endif
 
 //#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!

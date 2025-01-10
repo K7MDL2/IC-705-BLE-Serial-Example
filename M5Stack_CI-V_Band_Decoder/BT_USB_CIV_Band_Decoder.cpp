@@ -1895,6 +1895,7 @@ void app_setup(void) {
   // restart_USBH();
 }
 
+#ifdef M5STAMPC3U
 void draw_PTT_icon(bool Tx_On) {
   display.setCursor(5, 4);
   display.setTextSize(1); // Draw 3X-scale text
@@ -1930,6 +1931,7 @@ void draw_Xvtr_icon(bool active) {
   display.print("X");
   display.display();
 }
+#endif
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // called by main USBHost comms loop
@@ -2170,15 +2172,17 @@ void app_loop(void) {
       // extract the 4th input to pass on PTT through selected band's IO pin.
       if ((decode_PTT != decode_PTT_last) && use_wired_PTT)  // only call when the state changes
       { 
-        if (decode_PTT) {  // RX -> TX
-          Band_Decode_Output(band, true);  // true = Force IF Switch bits 0-2 to 1s (OFF).  This turns the IF switch off in the Xv Box for sequencing.
-          //  Set IF switch delay timer
-          PTT_Sequencer_delay_timer = millis();  // set up for 20ms delay
-        } else {   // TX -> Rx
-          PTT_Sequencer_delay_timer = 0;  // turn off time in RX
-          //Band_Decode_Output(band, true);  // turn off IF switch during transition from TX to RX to mute receiver
-        }
-        
+        #ifdef M5STAMPC3U  // for Xvtr box only
+          if (decode_PTT) {  // RX -> TX
+            Band_Decode_Output(band, true);  // true = Force IF Switch bits 0-2 to 1s (OFF).  This turns the IF switch off in the Xvtr Box for sequencing.
+            //  Set IF switch delay timer
+            PTT_Sequencer_delay_timer = millis();  // set up for 20ms delay
+          } else {   // TX -> Rx
+            PTT_Sequencer_delay_timer = 0;  // turn off time in RX
+            //Band_Decode_Output(band, true);  // turn off IF switch during transition from TX to RX to mute receiver
+          }
+        #endif
+
         PTT_Output(band,  decode_PTT);
 
         decode_PTT_last = decode_PTT;
@@ -2187,11 +2191,13 @@ void app_loop(void) {
       last_input_poll = millis();
     }
     
-    // if IN TX mode and PTT still applied, after 1st 20ms expires turn ON the IF Switch to let RF flow
-    if (decode_PTT_last && PTT_Sequencer_delay_timer && millis() > (PTT_Sequencer_delay_timer + PTT_DELAY)) {
-      Band_Decode_Output(band, false);  // restore normal IF switch path in the Xv Box after 20ms delay
-      PTT_Sequencer_delay_timer = 0;  // turn off timer after delay
-    }
+    #ifdef M5STAMPC3U  // for Xvtr box only
+      // if in TX mode and PTT still applied, after 1st 20ms expires turn ON the IF Switch to let RF flow
+      if (decode_PTT_last && PTT_Sequencer_delay_timer && millis() > (PTT_Sequencer_delay_timer + PTT_DELAY)) {
+        Band_Decode_Output(band, false);  // restore normal IF switch path in the Xv Box after 20ms delay
+        PTT_Sequencer_delay_timer = 0;  // turn off timer after delay
+      }
+    #endif
 
   #endif
 }
