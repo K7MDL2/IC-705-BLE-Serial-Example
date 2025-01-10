@@ -16,7 +16,11 @@ Configuration parameters are explained here:  https://github.com/K7MDL2/IC-705-B
 
 The latest updates below are mostly related to the new 3-band Xvtr box build leveraging the same CI-V Decoder/Display code to make using the 705 as an IF rig even easier by making the Xvtrs appear highly integrated to the 705 as can be.
 
-Latest Update: 29 Dec 2024
+Latest Update: 10 January 2025
+
+Some ofmy changes for the Xvtr Box configuration broke the build for the normalconfiguration. I uploaded fixes for those.   I am nearing completion of a IC-905 6 band compact USB band decoder.  Should work with IC-9700 also. That is a parallel project repo here.
+
+29 Dec 2024:
 
 The 2W 1296 amp module arrived and I tested it. It is required to boost the +14dBm 1296 Xvtr output up to 1.6W for my external SG-Labs 25W 1296 amp/LNA unit.  Looking at the amp schematic and the part datasheets, I can bypass Q1 and drive Q2 PA stage directly and 20dBm driove for the SHF-0589 part shoudl be enough.  The 0589 part's Max RF input is 800mW and max voltage is 9V and is rated for 2W up to 3Ghz. Typically it runs on 7-8V, I measured 7V.  I can remove the Q1 and its's 5V regulator and save 75ma. It draws half the current with higher supply voltage. I found great info here: Chinese 2W Amplifier 40-1200MHz 1v0.pdf https://www.dd1us.de/Downloads/Chinese%202W%20Amplifier%2040-1200MHz%201v0.pdf.  He measured 8.8V and maybe that is why he got 1.45W out.
 
