@@ -14,6 +14,9 @@ Configuration parameters are explained here:  https://github.com/K7MDL2/IC-705-B
 
 ![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
+The library dependencies are listed on this page:
+https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Library-Dependencies
+
 The latest updates below are mostly related to the new 3-band Xvtr box build leveraging the same CI-V Decoder/Display code to make using the 705 as an IF rig even easier by making the Xvtrs appear highly integrated to the 705 as can be.
 
 Latest Update: 10 January 2025
