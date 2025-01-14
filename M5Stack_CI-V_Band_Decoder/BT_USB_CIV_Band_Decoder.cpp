@@ -144,8 +144,12 @@ uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9, 0x00 };  // Mike's
 // ######################################################################
 
 #ifdef M5STAMPC3U
-  INA226 INA(0x40);    // Address on i2c bus is 0x40 by default.  
-  Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+  #ifdef INA226_I2C
+    INA226 INA(0x40);    // Address on i2c bus is 0x40 by default.  
+  #endif
+  #ifdef SSD1306_OLED
+    Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+  #endif
 #endif
 
 #ifdef USBHOST
@@ -1848,33 +1852,45 @@ void app_setup(void) {
   
   #ifdef M5STAMPC3U // For 705 Xvtr box controller
     MCP23017_IO_setup();
-    if (!INA.begin() )
-    {
-      Serial.println("could not connect. Fix and Reboot");
-    }
-    INA.setMaxCurrentShunt(8.2, 0.00836);  // Solders about a 3/8" piece of resistor lead across the 10 ohm shunt resistor supplied in my INA226 board
-    //  Did initial calculation which camne out at 0.0082ohms then tweaked the value to calibrate it to match my 5-digit Fluke DVM current reading.
-    // Also connected teh IN+ pin to the VBUS pin to masure voltage.   
-    // This board I installed in series with the 12V front panel power switch as a high side current measurement.
-  
-    Serial.println(F("Start SSD1306 OLED display Init"));
-    // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-    if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-      Serial.println(F("SSD1306 allocation failed"));
-      for(;;); // Don't proceed, loop forever
-    }
-    // Show initial display buffer contents on the screen --
-    // the library initializes this with an Adafruit splash screen.
-    display.display();
-    delay(500);
-    // Clear the buffer
-    display.clearDisplay();
-    // Draw a single pixel in white
-    display.drawPixel(10, 10, SSD1306_WHITE);
-    // Show the display buffer on the screen. You MUST call display() after
-    // drawing commands to make them visible on screen!
-    display.display();
-  #endif
+    
+    #ifdef INA226_I2C
+      uint8_t lctr = 0;
+      while (lctr < 4)
+      {
+        uint8_t r = INA.begin();
+        lctr++;
+        if (r) 
+          break;
+        Serial.println("**Error: Failed to connect to INA226 on i2c bus");
+        delay(50);
+      }
+      
+      INA.setMaxCurrentShunt(8.2, 0.00836);  // Solders about a 3/8" piece of resistor lead across the 10 ohm shunt resistor supplied in my INA226 board
+      // Did initial calculation which camne out at 0.0082ohms then tweaked the value to calibrate it to match my 5-digit Fluke DVM current reading.
+      // Also connected the IN+ pin to the VBUS pin to masure voltage.   
+      // This board is installed in series with the 12V front panel power switch as a high side current measurement.
+    #endif  // INA226
+    
+    #ifdef SSD1306_OLED
+      Serial.println(F("Start SSD1306 OLED display Init"));
+      // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+      if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+        Serial.println(F("SSD1306 allocation failed"));
+        for(;;); // Don't proceed, loop forever
+      }
+      // Show initial display buffer contents on the screen --
+      // the library initializes this with an Adafruit splash screen.
+      display.display();
+      delay(500);
+      // Clear the buffer
+      display.clearDisplay();
+      // Draw a single pixel in white
+      display.drawPixel(10, 10, SSD1306_WHITE);
+      // Show the display buffer on the screen. You MUST call display() after
+      // drawing commands to make them visible on screen!
+      display.display();
+    #endif // SSD1306_OLED
+  #endif  // M5STAMPC3U
   
   draw_new_screen();
 
@@ -1895,43 +1911,45 @@ void app_setup(void) {
   // restart_USBH();
 }
 
-#ifdef M5STAMPC3U
-void draw_PTT_icon(bool Tx_On) {
-  display.setCursor(5, 4);
-  display.setTextSize(1); // Draw 3X-scale text
-  display.cp437(true);         // Use full 256 char 'Code Page 437' font
-  if (Tx_On) {
-    display.fillCircle(7, 7, 7, SSD1306_WHITE); // x, y, r, color
-    display.setTextColor(SSD1306_BLACK);
-    display.print("T");
-  }
-  else { 
-    display.fillCircle(7, 7, 7, SSD1306_BLACK); // x, y, r, color
-    display.drawCircle(7, 7, 7, SSD1306_WHITE); // x, y, r, color
-    display.setTextColor(SSD1306_WHITE);
-    display.print("R");
-  } 
-  display.display();
-}
+#ifdef M5STAMPC3U 
+  #ifdef SSD1306_OLED
+    void draw_PTT_icon(bool Tx_On) {
+      display.setCursor(5, 4);
+      display.setTextSize(1); // Draw 3X-scale text
+      display.cp437(true);         // Use full 256 char 'Code Page 437' font
+      if (Tx_On) {
+        display.fillCircle(7, 7, 7, SSD1306_WHITE); // x, y, r, color
+        display.setTextColor(SSD1306_BLACK);
+        display.print("T");
+      }
+      else { 
+        display.fillCircle(7, 7, 7, SSD1306_BLACK); // x, y, r, color
+        display.drawCircle(7, 7, 7, SSD1306_WHITE); // x, y, r, color
+        display.setTextColor(SSD1306_WHITE);
+        display.print("R");
+      } 
+      display.display();
+    }
 
-void draw_Xvtr_icon(bool active) {
-  display.setCursor(5, 22);
-  display.setTextSize(1); // Draw 3X-scale text
-  display.cp437(true);         // Use full 256 char 'Code Page 437' font
-  if (active) {
-    display.fillRoundRect(0, 18, 14, 14, 3, SSD1306_WHITE);  // x0, y0, w, h, r, color  
-    display.setTextColor(SSD1306_BLACK);
-  }
-  else
-  {
-    display.fillRoundRect(0, 18, 14, 14, 3, SSD1306_BLACK);  // x0, y0, w, h, r, color  
-    display.drawRoundRect(0, 18, 14, 14, 3, SSD1306_WHITE);  // x0, y0, w, h, r, color
-    display.setTextColor(SSD1306_WHITE);
-  }
-  display.print("X");
-  display.display();
-}
-#endif
+    void draw_Xvtr_icon(bool active) {
+      display.setCursor(5, 22);
+      display.setTextSize(1); // Draw 3X-scale text
+      display.cp437(true);         // Use full 256 char 'Code Page 437' font
+      if (active) {
+        display.fillRoundRect(0, 18, 14, 14, 3, SSD1306_WHITE);  // x0, y0, w, h, r, color  
+        display.setTextColor(SSD1306_BLACK);
+      }
+      else
+      {
+        display.fillRoundRect(0, 18, 14, 14, 3, SSD1306_BLACK);  // x0, y0, w, h, r, color  
+        display.drawRoundRect(0, 18, 14, 14, 3, SSD1306_WHITE);  // x0, y0, w, h, r, color
+        display.setTextColor(SSD1306_WHITE);
+      }
+      display.print("X");
+      display.display();
+    }
+  #endif  // SSD1306_OLED
+#endif   // M5STAMPC3U
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // called by main USBHost comms loop
@@ -2065,81 +2083,85 @@ void app_loop(void) {
     char Rx[3] = "Rx";
     char Tx[3] = "Tx";
     static uint32_t PTT_Sequencer_delay_timer = false;
+    
+    #define SHOW_INFO 1
 
-    if (millis() > last_disp_info + 250)
-    { 
-      // print out debug on serial if enabled
-      if (loop_ctr == 3) {
-        if (band == 1)  //  any band < 144MHz is represented as Band 1 but can be any band (AM) through 6M, ie HF/6M.
-          DPRINTF("HF/6M");
-        else
-          DPRINT(bands[band].band_name);
-        DPRINTF(" \t");
-
-        if (decode_PTT_last)
-          DPRINTF(Tx);
-        else 
-          DPRINTF(Rx);
-        DPRINTF("\t");
-        
-        volts = INA.getBusVoltage();
-        DPRINT(volts, 3);
-        DPRINTF("V   \t");
-        DPRINT(INA.getShuntVoltage_mV(), 3);
-        DPRINTF("mV(shunt)   \t");
-        
-        current = INA.getCurrent_mA();
-        current /= 1000;
-        DPRINT(current , 3);
-        DPRINTF("A   \t");
-        
-        DPRINT(INA.getPower_mW()/1000, 3);
-        DPRINTLNF("W");
-      }
-
-      // Show on OLED display
-      // Rotate the info on the small OLED screen to keep font sizes larger
-      // paint the status icons for every screen
-      if (loop_ctr == 3) {
-        display.cp437(true);         // Use full 256 char 'Code Page 437' font
-        display.setCursor(20, 6);  // set up for Text Info
-        display.setTextSize(3); // Draw 3X-scale text
-        display.setTextColor(SSD1306_WHITE, SSD1306_BLACK); // Draw 'inverse' text
-        
-        // Update screen estate with band, current and volts in large text rotating every 1 second
-        if (info_screen == 0) {    // only change info on full 1 second
-          display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
-          if (band == 1)  // < 144MHz
-            display.print("HF/6M");
+      if (millis() > last_disp_info + 250) { 
+        // print out debug on serial if enabled
+        if (loop_ctr == 3  && SHOW_INFO) {
+          if (band == 1)  //  any band < 144MHz is represented as Band 1 but can be any band (AM) through 6M, ie HF/6M.
+            DPRINTF("HF/6M");
           else
-            display.print(bands[band].band_name);
-          display.display();   // Update display
+            DPRINT(bands[band].band_name);
+          DPRINTF(" \t");
+
+          if (decode_PTT_last)
+            DPRINTF(Tx);
+          else 
+            DPRINTF(Rx);
+          DPRINTF("\t");
+          #ifdef INA226_I2C
+            volts = INA.getBusVoltage();
+            DPRINT(volts, 3);
+            DPRINTF("V   \t");
+            DPRINT(INA.getShuntVoltage_mV(), 3);
+            DPRINTF("mV(shunt)   \t");
+            
+            current = INA.getCurrent_mA();
+            current /= 1000;
+            DPRINT(current , 3);
+            DPRINTF("A   \t");
+            
+            DPRINT(INA.getPower_mW()/1000, 3);
+            DPRINTLNF("W");
+          #endif
         }
 
-        if (info_screen == 1) {  // only change info on full 1 second
-          display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
-          display.print(volts);
-          display.print("V");
-          display.display();   // Update display
-        }
+        // Show on OLED display
+        // Rotate the info on the small OLED screen to keep font sizes larger
+        // paint the status icons for every screen
+        #ifdef SSD1306_OLED
+        if (loop_ctr == 3) {
+          display.cp437(true);         // Use full 256 char 'Code Page 437' font
+          display.setCursor(20, 6);  // set up for Text Info
+          display.setTextSize(3); // Draw 3X-scale text
+          display.setTextColor(SSD1306_WHITE, SSD1306_BLACK); // Draw 'inverse' text
+          
+          // Update screen estate with band, current and volts in large text rotating every 1 second
+          if (info_screen == 0) {    // only change info on full 1 second
+            display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
+            if (band == 1)  // < 144MHz
+              display.print("HF/6M");
+            else
+              display.print(bands[band].band_name);
+            display.display();   // Update display
+          }
 
-        if (info_screen == 2) {  // only change info on full 1 second
-          display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
-          display.print(current);
-          display.print("A");
-          display.display();   // Update display
+          if (info_screen == 1) {  // only change info on full 1 second
+            display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
+            display.print(volts);
+            display.print("V");
+            display.display();   // Update display
+          }
+
+          if (info_screen == 2) {  // only change info on full 1 second
+            display.fillRect(33, 0, 94, 32, SSD1306_BLACK); // x, y, w, h, color
+            display.print(current);
+            display.print("A");
+            display.display();   // Update display
+          }
+          info_screen += 1;  // rotate screen every 1 second
+          if (info_screen > 2) 
+            info_screen = 0;  // loop around the screens each second
         }
-        info_screen += 1;  // rotate screen every 1 second
-        if (info_screen > 2) 
-          info_screen = 0;  // loop around the screens each second
-      }
-        
-      draw_PTT_icon(decode_PTT_last);  // update TX and Xvtr status icons
-      draw_Xvtr_icon(XVTR_Band);
-           
-      loop_ctr += 1;
-      if (loop_ctr > 3) 
-        loop_ctr = 0;  // loop update every 1/3rd second
+          
+        draw_PTT_icon(decode_PTT_last);  // update TX and Xvtr status icons
+        draw_Xvtr_icon(XVTR_Band);
+      #endif  // 
+    
+     loop_ctr += 1;
+     if (loop_ctr > 3) 
+       loop_ctr = 0;  // loop update every 1/3rd second
 
       last_disp_info = millis();
     }
@@ -2163,7 +2185,7 @@ void app_loop(void) {
       decode_Band = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
 
       if (decode_Band != decode_Band_last)  // skip if nothing changed on the wired inputs
-      {
+      { // band changed, process it
         band_Selector(decode_Band);  // converts input pattern to band (real or virtual Xvtr band)
         decode_Band_last = decode_Band;
       }
@@ -2174,27 +2196,28 @@ void app_loop(void) {
       { 
         #ifdef M5STAMPC3U  // for Xvtr box only
           if (decode_PTT) {  // RX -> TX
-            Band_Decode_Output(band, true);  // true = Force IF Switch bits 0-2 to 1s (OFF).  This turns the IF switch off in the Xvtr Box for sequencing.
+            DPRINTLNF("PTT Sequence Delay Started BLOCK IF path");
+            Band_Decode_Output(band, false);  // false forces IF Switch bits 0-2 to 1s (OFF state).  This turns the IF switch RF path off in the Xvtr Box for sequencing.
             //  Set IF switch delay timer
             PTT_Sequencer_delay_timer = millis();  // set up for 20ms delay
           } else {   // TX -> Rx
             PTT_Sequencer_delay_timer = 0;  // turn off time in RX
-            //Band_Decode_Output(band, true);  // turn off IF switch during transition from TX to RX to mute receiver
+            Band_Decode_Output(band, true);  // turn IF OFF switch during transition from TX to RX to mute receiver
           }
         #endif
 
+        DPRINTLNF("Operating PTT I/O");
         PTT_Output(band,  decode_PTT);
-
         decode_PTT_last = decode_PTT;
       }
-
       last_input_poll = millis();
     }
     
     #ifdef M5STAMPC3U  // for Xvtr box only
       // if in TX mode and PTT still applied, after 1st 20ms expires turn ON the IF Switch to let RF flow
       if (decode_PTT_last && PTT_Sequencer_delay_timer && millis() > (PTT_Sequencer_delay_timer + PTT_DELAY)) {
-        Band_Decode_Output(band, false);  // restore normal IF switch path in the Xv Box after 20ms delay
+        DPRINTLNF("PTT Sequence Delay complete, set normal IF path");
+        Band_Decode_Output(band, true);  // restore normal IF switch path in the Xv Box after PTT_DELAY ms
         PTT_Sequencer_delay_timer = 0;  // turn off timer after delay
       }
     #endif

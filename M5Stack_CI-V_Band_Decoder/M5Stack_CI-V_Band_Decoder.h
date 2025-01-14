@@ -108,17 +108,10 @@
   #define MCP23017
   #define I2C_SDA 1
   #define I2C_SCL 0
-  #include "INA226.h"  //  https://github.com/RobTillaart/INA226
   #include <Adafruit_NeoPixel.h>
   //#define BUTTON_PIN 3
   #define PIXEL_PIN 2   // GPIO2 is Sk6812 RGB LED
   #define NUM_PIXELS 1  // Just 1 LED
-  #include <Adafruit_GFX.h>
-  #include <Adafruit_SSD1306.h>
-  #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-  #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-  #define SCREEN_WIDTH 128 // OLED display width, in pixels
-  #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
 #elif defined ( CONFIG_IDF_TARGET_ESP32S3 )
   #ifdef __M5GFX_M5ATOMDISPLAY__
@@ -166,6 +159,7 @@
 
 #define IC705 0xA4
 #define IC905 0xAC
+#define IC9700 0xA2
 #define RADIO_ADDR IC705
 
 // NOTE: With a single USB virtual Serial port to the PC, ANY debug on Serial will interfere with a program like WSJT-X passing through to teh radio.
@@ -187,7 +181,7 @@
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 #endif
 
-#define PTT_DELAY    30       // PTT sequencing delay.  At start of PTT -> TX event, turns OFF IF switch to prevent
+#define PTT_DELAY    50       // PTT sequencing delay.  At start of PTT -> TX event, turns OFF IF switch to prevent
                               //   RF flowing while downstream relays are switching.
 
 #define POLL_PTT_DEFAULT 247  // poll the radio for PTT status odd numbers to stagger them a bit
@@ -217,10 +211,13 @@
   #define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
   //#define EXT_IO2_UNIT  // EXT.IO2 UNIT GIO extender - plugs into Port A i2c Grove port on CPU module, adds 8 GPIO ports at 3.3V max.
   #define SD_CARD      // enable sd card features
-
-  //#define RELAY2_UNIT      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
+  
+  //#define RELAY2_UNIT    // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C  - Units are most useful on the AtomS3 or M5StampS3/C3U
   //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
   #define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
+#else
+  #define INA226_I2C   // Current and voltage monitor module via i2c bus. Info is displayed on the SSD1306_OLED so that must be enabled.
+  #define SSD1306_OLED // 128x32 OLED display, SSD1306 compatible.  Shows band, TX, Xvtr, voltage and current.  Band. Xvtr, Tx can be displayed without a INA226 installed
 #endif
 
 //#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
@@ -257,6 +254,19 @@
 #endif
 
 //#define SSP                           // use BT SSP - pair with a passkey
+
+#ifdef INA226_I2C  // Current and Voltage monitor module
+  #include "INA226.h"  //  https://github.com/RobTillaart/INA226
+#endif
+
+#ifdef SSD1306_OLED
+  #include <Adafruit_GFX.h>
+  #include <Adafruit_SSD1306.h>
+  #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+  #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+  #define SCREEN_WIDTH 128 // OLED display width, in pixels
+  #define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#endif
 
 // After #defines
 #include "DebugPrint.h"
