@@ -1,5 +1,5 @@
 | Boards Used | ![alt text][esp32s3] | ![alt text][M5AtomS3] | ![alt text][M5StampC3U] | ![alt text][M5Core] | ![alt text][M5Core2] | ![alt text][M5Core3SE] |
-| ----------- | -------------------- | --------------------- | ---------- | ------- | -------- | ------------ |
+| --- | --- | --- | --- | --- | --- | --- |
 
 [esp32s3]: https://img.shields.io/badge/-ESP32_S3-green "ESP32-S3"
 [M5AtomS3]: https://img.shields.io/badge/-M5AtomS3-orange "M5AtomS3"
