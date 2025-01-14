@@ -1538,7 +1538,7 @@ void band_Selector(uint8_t _band_input_pattern) {
       XVTR_band_before = band;                  // record the non-xvtr band before initial XVTR mode enabled.
     }
 
-    PTT_Output(DECODE_DUMMY_PTT, false);  // send PTT OFF with current band before changing to new band.
+    PTT_Output(DUMMY, false);  // send PTT OFF with current band before changing to new band.
     // On the 8In/4Out Digital IO module, the inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
     // translate input band pattern to band index then send to band Decode output
     
