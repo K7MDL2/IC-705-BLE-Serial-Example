@@ -134,6 +134,8 @@
 // Chose the combination needed.  Note that at least one service must be enabled.
 #define BLE         // Core 3.  Maybe works on Core 2, TBD
 //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.
+//#define RELAY2      // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C
+//#define RELAY4    // enable the i2c Relay-4 Unit, typically plugged into Port A (i2C).
 
 //#define PC_PASSTHROUGH   // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
