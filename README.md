@@ -8,14 +8,29 @@
 [M5Core2]: https://img.shields.io/badge/-M5Core2-yellow "M5Core2"
 [M5Core3SE]: https://img.shields.io/badge/-M5Core3SE-cyan "M5Core3SE"
 
+
+
+
 # IC-705-BLE, BT Classic, and USB Host Serial Examples featuring a CI-V decoder and 3-Band Transverter Box
 
-This is a work in progress!  But almost done...   
+This is a work in progress! 'But almost done...   
+
+The ongoing work is in the full application folder M5Stack_CI-V_Band_Decoder.  The others folder contain simple tech demos.
+https://github.com/K7MDL2/IC-705-BLE-Serial-Example/tree/main/M5Stack_CI-V_Band_Decoder
+
+The band decoder is run on any generation M5Core to connect to an IC-705 via BT or BLE to control antennas, amps and relays, acts as a PTT breakout. Here, via a BCD wired interface of any length, the decoder controls a 3-Band Transverter box adding missing bands (222, 902/3, and 1296) to the IC-705.  It uses a M5StampC3U.
+
+![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
+
+The 3-Band Transverter Box - still waiting for the 12-28V DC-DC Converter and the 50W 222 PA.  All is working otherwise.
+
+![K7MDL IC-705 3-Band Transverter Box - Jan 14 2024  -  Top View](https://github.com/user-attachments/assets/287c8f14-dce5-429a-ae31-859e4a3ff98d)
 
 Updated 13 January 2025
 
-The 50W 1296 28V amp module bench testing showed it can do 50W at 900 but only 30W after tuning attempts at 1296.  It is only rated for 45W for 700-1000Mhz.  I have a SG-Labs 25W PA+LNA+relays in a very compact package that runs on 13V. I can put that at the antenna if needed so I am going with that option.  It needs 1.6W drive, the 1296 and 900 Xvtrs are only 100mW output.  I installed a 5W 12V 1200-1600 PA, packaged in a very small milled box. Can easily hit 5W so added a 10dB attenutor to limit the output closer to 2W, a little extra to make up for cable losses.  No heat sink is needed at 2W but it is mounted on a 1/8" aluminum plate above the 1296 Xvtr for a little help.  Ran it near continous at 2W and it was just warm in my hand.  It is almost the same size as the Xvtr board.  A stick on heat sink can be added later if ever needed in case the inerior box ambient temp increases, quite possible in a vehicle on a summer day.  Added in a 2nd bank of 4 relays to switch power to the 12-28V DC-DC converter (still waiting for it) and switch 28V to the 222 50W Amp (still waiting for it) and the 50W 900 amps (does full 50W!).  Reworked the PTT decoder output code to deal with inverted pins properly, the relay board uses 0 to energize the relays. The 12V PA is now switched on during Tx only.  The 28V converter 12V supply relay is switched on while on 900 and 1296 bands only.  Each 28V amp is switching on for Tx.
+The 50W 1296 28V amp module bench testing showed it can do 50W at 900 but only 30W after tuning attempts at 1296.  It is only rated for 45W for 700-1000Mhz.  I have a SG-Labs 25W PA+LNA+relays in a very compact package that runs on 13V. I can put that at the antenna if needed so I am going with that option.  It needs 1.6W drive, the 1296 and 900 Xvtrs are only 100mW output.  I installed a 5W 12V 1200-1600 PA, packaged in a very small milled box. Can easily hit 5W so added a 10dB attenutor to limit the output closer to 2W, a little extra to make up for cable losses.  No heat sink is needed at 2W but it is mounted on a 1/8" aluminum plate above the 1296 Xvtr for a little help.  Ran it near continuous at 2W and it was just warm in my hand.  It is almost the same size as the Xvtr board.  A stick on heat sink can be added later if ever needed in case the inerior box ambient temp increases, quite possible in a vehicle on a summer day.  Added in a 2nd bank of 4 relays to switch power to the 12-28V DC-DC converter (still waiting for it) and switch 28V to the 222 50W Amp (still waiting for it) and the 50W 900 amps (does full 50W!).  Reworked the PTT decoder output code to deal with inverted pins properly, the relay board uses 0 to energize the relays. The 12V PA is now switched on during Tx only.  The 28V converter 12V supply relay is switched on while on 900 and 1296 bands only.  Each 28V amp is switching on for Tx.
 
+![K7MDL IC-705 3-Band Transverter Box - Jan 2025  -  5W 1296 PA](https://github.com/user-attachments/assets/fe7c3bb5-b7d6-4bc4-a194-c8a6a667ecdc)
  
 I have begun to rewrite this page moving usage, tech, and dev content to Wiki pages.  See https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki
 
@@ -27,16 +42,15 @@ SD card usage is here: https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/
 
 Configuration parameters are explained here:  https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Software-Configuration
 
-![K7MDL BT CI-V decoders](https://github.com/user-attachments/assets/d489833c-0e2d-4ca0-8f54-b16cf572a62b)
 
 The library dependencies are listed on this page:
 https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Library-Dependencies
 
 The latest updates below are mostly related to the new 3-band Xvtr box build leveraging the same CI-V Decoder/Display code to make using the 705 as an IF rig even easier by making the Xvtrs appear highly integrated to the 705 as can be.
 
-Latest Update: 10 January 2025
+10 January 2025
 
-Some ofmy changes for the Xvtr Box configuration broke the build for the normalconfiguration. I uploaded fixes for those.   I am nearing completion of a IC-905 6 band compact USB band decoder.  Should work with IC-9700 also. That is a parallel project repo here.
+Some of my changes for the Xvtr Box configuration broke the build for the normalconfiguration. I uploaded fixes for those.   I am nearing completion of a IC-905 6 band compact USB band decoder.  Should work with IC-9700 also. That is a parallel project repo here.
 
 29 Dec 2024:
 
