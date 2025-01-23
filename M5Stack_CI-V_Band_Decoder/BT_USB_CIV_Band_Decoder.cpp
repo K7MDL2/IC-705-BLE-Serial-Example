@@ -722,7 +722,7 @@ void sendBand(byte band) {
   }
 #endif
 
-  uint8_t Get_Radio_address(void) {
+uint8_t Get_Radio_address(void) {
   uint8_t retry_Count = 0;
   // if you do not see this print after a possible USB lockup
   //   then the app loop task, or USBHost task is stalled.  Btn often still runs.
@@ -1431,7 +1431,7 @@ void display_Band(uint8_t _band, bool _force) {
 
   if (_band != _prev_band || _force) {
     // Update our outputs
-    Band_Decode_Output(band, false);
+    Band_Decode_Output(band, true);
     //sendBand(band);   // change the IO pins to match band
     //Serial.printf("Band %s\n", bands[_band].band_name);
 

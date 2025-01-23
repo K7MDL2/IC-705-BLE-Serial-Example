@@ -526,12 +526,12 @@ enum band_idx { DUMMY,
 //    OFF = 111         7
 
 // Examples           relays   SP4T     zero   28V IF_Switch
-// HF/6M    0xF207   b'1111    0010     0000     1 111
-// 144      0xF407   b'1111    0100     0000     1 111
-// 222      0xE102   b'1110    0001     0000     0 010
-// 432      0xF807   b'1111    1000     0000     1 111
-// 903      0xD104   b'1101    0001     0000     0 100
-// 1296     0x7105   b'0111    0001     0000     1 101  - amp relay operated by PTT not here
+// HF/6M    0xF20F   b'1111    0010     0000     1 111    turn off 12 to 28V converter
+// 144      0xF40F   b'1111    0100     0000     1 111    turn off 12 to 28V converter
+// 222      0xE102   b'1110    0001     0000     0 010    turn on 12 to 28V converter
+// 432      0xF80F   b'1111    1000     0000     1 111    turn off 12 to 28V converter
+// 903      0xD104   b'1101    0001     0000     0 100    turn on 12 to 28V converter
+// 1296     0x710D   b'0111    0001     0000     1 101  - turn off 12 to 28V converter amp relay operated by PTT not here
 // All other bands same as HF/6M.  0xF207  1111 0010 0000 1111
 
 // 0xYYZZ where ZZ is typically 07 sets the IF SP6T switch to all off.  Only needed for Xvtr bands
