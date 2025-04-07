@@ -83,6 +83,7 @@
 // until there is USB host event.
 
 #include "M5Stack_CI-V_Band_Decoder.h"
+#include "Wire.h"
 #include "Decoder.h"
 #include "DebugPrint.h"
 #ifndef M5STAMPC3U
@@ -376,32 +377,36 @@ void setup() {
 
   #elif defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
     DPRINTLNF("Core2 defined");
-    Wire.begin(21,22);
+    #if defined (IO_MODULE) || defined (EXT_IO2_UNIT)
+      Wire.begin(21,22);
+    #endif
     //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
     
     #ifdef CORE2LIB
-    // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
-    M5.begin();
-    M5.Axp.begin();
-    DPRINTF("Power Status 0=external, 1=internal 2=max  "); DPRINTLN(M5.Axp.isACIN() ? 0 : 1);
-    M5.Touch.begin();
-    //if (M5.Touch.isEnabled())
-    M5.Touch.update();
+      // M5Core2.h stuff    USB Host sort of works, Touch Buttons not so much.
+      M5.begin();
+      M5.Axp.begin();
+      DPRINTF("Power Status 0=external, 1=internal 2=max  "); DPRINTLN(M5.Axp.isACIN() ? 0 : 1);
+      M5.Touch.begin();
+      //if (M5.Touch.isEnabled())
+      M5.Touch.update();
     #else
-    //// M5Unified.h stuff =  kills USB Host though, makes the touch buttons work.
-    auto cfg = M5.config();
-    M5.begin(cfg);
-    M5.Power.begin();
-    auto ms = millis();
-    if (M5.Touch.isEnabled()) {
-    M5.Touch.update(ms);
-    }
+      //// M5Unified.h stuff =  kills USB Host though, makes the touch buttons work.
+      auto cfg = M5.config();
+      M5.begin(cfg);
+      M5.Power.begin();
+      auto ms = millis();
+      if (M5.Touch.isEnabled()) {
+        M5.Touch.update(ms);
+      }
     #endif
 
   #else
     DPRINTLNF("Core Basic defined");
     M5.begin(); //(true, false, true, true);   // 2nd arg is enable SD card, off now.
-    Wire.begin(21,22);
+    #if defined (IO_MODULE) || defined (EXT_IO2_UNIT)
+      Wire.begin(21,22);
+    #endif
     //SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
   #endif
     
@@ -481,13 +486,13 @@ void loop() {
   #endif
   
   #ifdef _PC_PASSTHRU   // Unused code, save for reference or test
-  // allow a PC to talk o teh radio and opposite.  Need debug shuto    ff typically
+  // allow a PC to talk to the radio and opposite.  Need debug shutoff typically
     forward_serial();
   #endif  // _PC_PASSTHRU
   
   pass_PC_to_radio();
   
-  //Serial.print(".");   causes crashes on PC due to too high data rate
+  //Serial.print(".");   //causes crashes on PC due to too high data rate
   
   #ifdef BLE
     BLE_loop();

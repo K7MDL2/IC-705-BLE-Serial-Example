@@ -101,7 +101,7 @@
 //#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
                       // Comment out and the CPU architecture is automatically selected for all others (AtomS3, Core, Core2, CoreS3/SE)
 
-//#define XVBOX // set some data config specific to usage with the 705 transverter box
+#define XVBOX // set some data config specific to usage with the 705 transverter box
 
 #ifdef M5STAMPC3U  
   //#include <M5Unified.h>  // kills off USB Host
@@ -164,7 +164,7 @@
 
 // NOTE: With a single USB virtual Serial port to the PC, ANY debug on Serial will interfere with a program like WSJT-X passing through to teh radio.
 
-#define CONTROLLER_ADDRESS 0xE0  //Controller address
+#define CONTROLLER_ADDRESS 0xE5  //Controller address
 #define BROADCAST_ADDRESS 0x00
 
 #define START_BYTE 0xFE  // Start byte
@@ -177,7 +177,7 @@
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 
 #else // choose for M5 Core or Atom CPUs
-  #define WIRED_PTT   0       // 1 = use the wired input for fastest PTT
+  #define WIRED_PTT   1       // 1 = use the wired input for fastest PTT
                               // 0 = poll radio for TX status. Polling delay can be adjusted with parameters below.
 #endif
 
@@ -214,19 +214,20 @@
   
   //#define RELAY2_UNIT    // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C  - Units are most useful on the AtomS3 or M5StampS3/C3U
   //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
-  #define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
+  //#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26
 #else
   #define INA226_I2C   // Current and voltage monitor module via i2c bus. Info is displayed on the SSD1306_OLED so that must be enabled.
   #define SSD1306_OLED // 128x32 OLED display, SSD1306 compatible.  Shows band, TX, Xvtr, voltage and current.  Band. Xvtr, Tx can be displayed without a INA226 installed
 #endif
 
-//#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
+#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
 #ifndef PC_PASSTHROUGH        // shut off by default when PASSTHRU MODE is on
   #define PRINT_VFO_TO_SERIAL // uncomment to visually see VFO updates from the radio on Serial
   #define PRINT_PTT_TO_SERIAL // uncomment to visually see PTT updates from the radio on Serial
   #define NO_SEND  // block changes to radio from controller - used for PC pass thru
 #else
+  //#define SKIP_XVTR_FREQ_XLATE  // Skip frquency translation when in PC Pass-through mode.  Useful when extrnal apps handle Xvtr band offsets
   #undef NO_SEND  // block changes to radio from controller - used for PC pass thru
 #endif
 
@@ -283,7 +284,7 @@ void sendBit(int);
 void sendBand(byte);
 void printDirectory(File dir, int numTabs);
 void UpdateFromFS(fs::FS &fs);
-void read_Frequency(uint8_t data_len);
+void read_Frequency(uint64_t freq, uint8_t data_len);
 void draw_new_screen(void);
 unsigned int hexToDec(String hexString);
 void display_Freq(uint64_t _freq, bool _force);
@@ -292,7 +293,7 @@ void display_Xvtr(bool _band, bool _force);
 void display_PTT(bool _PTT_state, bool _force);
 void display_Band(uint8_t _band, bool _force);
 void display_Grid(char _grid[], bool _force);
-void SetFreq(uint64_t Freq);
+void SetFreq(uint64_t Freq, uint8_t cmd);
 uint8_t pass_PC_to_radio(void);
 
 //const uint64_t decMulti[] = { 100000000000, 10000000000, 1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1 };

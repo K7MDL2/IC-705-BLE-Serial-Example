@@ -7,6 +7,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <stdint.h>
+#include "Wire.h"
 
 #include "M5Stack_CI-V_Band_Decoder.h"
 #include "CIV.h"
@@ -24,6 +25,13 @@ void printDirectory(File dir, int numTabs);
 extern struct cmdList cmd_List[];
 extern struct Modes_List modeList[];
 uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]);
+uint8_t getBand(uint64_t _freq);
+extern void SendMessageBLE(uint8_t Message[], uint8_t len);
+void write_bands_data(void);
+void read_bands_data(void);
+void refesh_display(void);
+void band_Selector(uint8_t _band_input_pattern);
+void reply_to_PC(uint8_t cmd);
 
 /*  copy of struct here from header file for easy reference.
 struct Bands {
@@ -129,9 +137,9 @@ extern bool BtnA_pressed;
 extern bool BtnB_pressed;
 extern bool BtnC_pressed;
 extern uint64_t frequency;
-extern void SendMessageBLE(uint8_t Message[], uint8_t len);
-void write_bands_data(void);
-void read_bands_data(void);
+bool PC_to_Radio_Msg_Sent = false;
+uint8_t last_PC_cmd = 255;
+
 
 // ######################################################################
 // Enter the BD_ADDRESS of your IC-705. You can find it in the Bluetooth
@@ -241,6 +249,73 @@ void configRadioBaud(uint16_t baudrate) {
   #endif
 }
 
+void reply_to_PC(uint8_t cmd)
+{
+  uint8_t send_freq[15] = {};
+  uint8_t vfo_dec[7] = {};
+  uint8_t f_len;
+  uint8_t LEN;
+  
+  uint8_t len = formatFreq(frequency, vfo_dec);  // Convert to BCD string
+
+  if (cmd == 0x25)
+  {
+    send_freq[0] = 0xFE;
+    send_freq[1] = 0xFE;
+    send_freq[2] = read_buffer[2];
+    send_freq[3] = radio_address;
+    send_freq[4] = cmd;
+    send_freq[5] = read_buffer[5];
+    send_freq[6] = vfo_dec[0];
+    send_freq[7] = vfo_dec[1];
+    send_freq[8] = vfo_dec[2];
+    send_freq[9] = vfo_dec[3];
+    send_freq[10] = vfo_dec[4];
+    // Adjust for freq value length of 5bytes, or 6bytes for IC905
+    if (radio_address == IC905) {
+      send_freq[11] = vfo_dec[5];
+      send_freq[12] = 0xFD;
+      send_freq[13] = 0x00;
+      f_len = 13;
+    }
+    else {
+      send_freq[11] = 0xFD;
+      send_freq[12] = 0x00;
+      f_len = 12;
+    }   
+  }
+  else
+  {
+    send_freq[0] = 0xFE;
+    send_freq[1] = 0xFE;
+    if (read_buffer[4] == 0x00)
+      send_freq[2] = 0x00;
+    else
+      send_freq[2] = read_buffer[2];
+    send_freq[3] = radio_address;
+    send_freq[4] = cmd;
+    send_freq[5] = vfo_dec[0];
+    send_freq[6] = vfo_dec[1];
+    send_freq[7] = vfo_dec[2];
+    send_freq[8] = vfo_dec[3];
+    send_freq[9] = vfo_dec[4];
+    if (radio_address == IC905) {
+      send_freq[10] = vfo_dec[5];
+      send_freq[11] = 0xFD;
+      send_freq[12] = 0x00;
+      f_len = 12;
+    }
+    else {
+      send_freq[10] = 0xFD;
+      send_freq[11] = 0x00;
+      f_len = 11;
+    } 
+  }
+  // copy in frequency with xvtr offset appied, if any      
+  //memcpy(&send_freq[5], vfo_dec, len);
+  Serial.write(send_freq, f_len);
+}
+
 // ----------------------------------------
 //    Read incoming line from bluetooth
 // ----------------------------------------
@@ -248,23 +323,22 @@ uint8_t readLine(void) {
   uint8_t byte;
   uint8_t counter = 0;
   uint32_t ed = readtimeout;  // not initialized!
-  uint8_t vfo_dec[7] = {};
 
   if (BT_enabled) {
     #ifdef BTCLASSIC
-    while (btConnected) {
-      while (!SerialBT.available()) {
-        if (--ed == 0 || !btConnected) return 0;  // leave the loop if BT connection is lost
+      while (btConnected) {
+        while (!SerialBT.available()) {
+          if (--ed == 0 || !btConnected) return 0;  // leave the loop if BT connection is lost
+        }
+        ed = readtimeout;
+        byte = SerialBT.read();
+        if (byte == 0xFF) continue;  //TODO skip to start byte instead
+
+        read_buffer[counter++] = byte;
+        if (STOP_BYTE == byte) break;
+
+        if (counter >= sizeof(read_buffer)) return 0;
       }
-      ed = readtimeout;
-      byte = SerialBT.read();
-      if (byte == 0xFF) continue;  //TODO skip to start byte instead
-
-      read_buffer[counter++] = byte;
-      if (STOP_BYTE == byte) break;
-
-      if (counter >= sizeof(read_buffer)) return 0;
-    }
     #endif
   } else if (BLE_connected && BLE_buff_flag) {
     for (int i = 0; i < sizeof(read_buffer); i++) {
@@ -279,72 +353,221 @@ uint8_t readLine(void) {
     //DPRINTF("readLine: BLE read buffer length:"); DPRINTLN(counter);
   } else {
     #ifdef USBHOST
-    while (USBH_connected) {
-      while (!SerialHost.available()) {
-        if (--ed == 0 || !USBH_connected) return 0;  // leave the loop if connection is lost
-      }
-      ed = readtimeout;
-      byte = SerialHost.read();
-      if (byte == 0xFF) continue;  //TODO skip to start byte instead
+      while (USBH_connected) {
+        while (!SerialHost.available()) {
+          if (--ed == 0 || !USBH_connected) return 0;  // leave the loop if connection is lost
+        }
+        ed = readtimeout;
+        byte = SerialHost.read();
+        if (byte == 0xFF) continue;  //TODO skip to start byte instead
 
-      read_buffer[counter++] = byte;
-      if (STOP_BYTE == byte) break;
+        read_buffer[counter++] = byte;
+        if (STOP_BYTE == byte) break;
 
-      if (counter >= sizeof(read_buffer)) return 0;
-    }  // host
+        if (counter >= sizeof(read_buffer)) return 0;
+      }  // host
     #endif
   }  // usb host
+  //DPRINTF("readLine: read buffer"); DPRINT((char) read_buffer); 
+  //DPRINTF("readLine: read buffer length:"); DPRINTLN(counter);
+  
+  #ifdef PC_PASSTHROUGH
+    // ****************************************************
+    // SerialHost or SerialBT --> ***  PC side Serial  ***
+    // ****************************************************
+    // pass on to PC radio messages directed to other controllers than us
+    uint8_t cmd = read_buffer[4];
+    if (counter && read_buffer[0] == 0xFE && read_buffer[1] == 0xFE && read_buffer[2] != radio_address && read_buffer[2] != CONTROLLER_ADDRESS && read_buffer[3] != CONTROLLER_ADDRESS && read_buffer[counter-1] == 0xFD)
+    {
+      #ifndef SKIP_XVTR_FREQ_XLATE
+      if (XVTR_enabled && (cmd== 0x00 || (PC_to_Radio_Msg_Sent && last_PC_cmd == cmd && (cmd == 0x03 || cmd == 0x25))))
+      {
+        uint64_t ff;
+        // convert the radio reported frequency CI-V message to transverter frequency 
+        reply_to_PC(cmd);
+        PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
+
+        #ifdef DBG_TO_LCD
+          M5.Lcd.setCursor(1,180);
+          M5.Lcd.setTextSize(2);
+          M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+          M5.Lcd.printf("%02X %011llu", 0, frequency);
+          M5.Lcd.setCursor(1,180);
+          M5.Lcd.setTextColor(TFT_BLACK, TFT_YELLOW);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+          M5.Lcd.printf("%02X %011llu", read_buffer[4], frequency);
+        #endif
+      }
+      else  // not frequency related
+      #else
+      if (1)
+      #endif
+      {  
+        if (PC_to_Radio_Msg_Sent && (read_buffer[4] == 0x00 || read_buffer[4] == 0xFB || read_buffer[4] == 0xFA || read_buffer[4] == last_PC_cmd)) {
+          Serial.write(read_buffer, counter);
+          PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
+          #ifdef DBG_TO_LCD
+            M5.Lcd.setCursor(1,200);
+            M5.Lcd.setTextSize(2);
+            M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+            M5.Lcd.printf("%02X", 0);
+            M5.Lcd.setCursor(1,200);
+            M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+            M5.Lcd.printf("%02X", read_buffer[4]);
+          #endif
+        }
+      }
+      processCatMessages(); // To reduce polling needs, use the info other controllers are getting.
+      Serial.flush();
+      #ifdef DBG_TO_LCD
+        M5.Lcd.setCursor(1,220);
+        M5.Lcd.setTextSize(2);
+        M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.printf("%02X", 0);
+        M5.Lcd.setCursor(1,220);
+        M5.Lcd.setTextColor(TFT_BLACK, TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.printf("%02X", read_buffer[4]);
+      #endif
+    }
+  #endif
+ 
+  return counter;
+}
+
+// ----------------------------------------
+//    Read incoming line from PC and write to radio
+// ----------------------------------------
+uint8_t pass_PC_to_radio(void) {
+  uint8_t counter = 0;
 
   #ifdef PC_PASSTHROUGH
-  // SerialHost or SerialBT -> PC side Serial
-  if (counter) 
-  {
-    //if (XVTR_enabled && (read_buffer[4] == 0x00 || read_buffer[4] == 0x05 || read_buffer[4] == 0x03 || read_buffer[4] == 0x25 || read_buffer[4] == 0x26)) {
-    if (0)
-    //if (XVTR_enabled && (read_buffer[4] == 0x25 && read_buffer[5] == 0x00)) 
-    //if ((read_buffer[4] == 0x25 && read_buffer[5] == 0x00)) 
-    {
-      // convert the radio reported frequency CI-V message to transverter frequency 
-      frequency += bands[XVTR_Band].Xvtr_offset;
-      //uint64_t ff = 903174000;
-      uint8_t len = formatFreq(frequency, vfo_dec);  // Convert to BCD string
-      //uint8_t len = formatFreq(ff, vfo_dec);  // Convert to BCD string
-      uint8_t send_freq[15] = {};
-      send_freq[0] = 0xFE;
-      send_freq[1] = 0xFE;
-      send_freq[2] = 0xE0;
-      send_freq[3] = radio_address;
-      send_freq[4] = 0x25;
-      send_freq[5] = 0x00;
-      send_freq[6] = vfo_dec[0];
-      send_freq[7] = vfo_dec[1];
-      send_freq[8] = vfo_dec[2];
-      send_freq[9] = vfo_dec[3];
-      send_freq[10] = vfo_dec[4];
+    uint8_t byte;
+    uint8_t data_len;
+    uint32_t ed = readtimeout;  // not initialized!
+    static uint8_t r_buffer[64];  //Read buffer
+     uint8_t send_freq[15] = {};
+    uint8_t vfo_dec[7] = {};
+    uint8_t f_len;
 
-      // copy in frequency with xvtr offset appied, if any      
-      //memcpy(&send_freq[5], vfo_dec, len);
-
-      uint8_t f_len;
-      // Adjust for freq value length of 5bytes, or 6bytes for IC905
-      if (radio_address == IC905) {
-        send_freq[11] = vfo_dec[5];
-        send_freq[12] = 0xFD;
-        send_freq[13] = 0x00;
-        f_len = 13;
+    while (1) {
+      while (!Serial.available()) {
+        if (--ed == 0) return 0;  // leave the loop if BT connection is lost
       }
-      else {
-        send_freq[11] = 0xFD;
-        send_freq[12] = 0x00;
-        f_len = 12;
-      }      
-      Serial.write(send_freq, f_len);
-    }
-    else
-      Serial.write(read_buffer, counter);
+      ed = readtimeout;
+      byte = Serial.read();
+      if (byte == 0xFF) continue;  //TODO skip to start byte instead
 
-    Serial.flush();
-  }
+      r_buffer[counter++] = byte;
+      if (STOP_BYTE == byte) break;
+
+      if (counter >= sizeof(r_buffer)) return 0;
+    }
+
+    if (1) 
+    {
+      //if ( && r_buffer[2] == radio_address && (r_buffer[0] == 0xFE && r_buffer[1] == 0xFE)) {
+      uint64_t f;
+      uint64_t mul;
+      uint8_t k;
+      bool direct = true;
+
+      #ifndef SKIP_XVTR_FREQ_XLATE
+        uint8_t cmd = r_buffer[4];
+        if (STOP_BYTE == byte && counter > 10 && r_buffer[2] == radio_address && r_buffer[0] == 0xFE && r_buffer[1] == 0xFE && (cmd == 0x00 || cmd == 0x05 || cmd == 0x25))
+        {
+          mul = 1;
+          f = 0;
+          k = 0;
+          if (cmd == 0x25)
+            k=1; // data is 1 byte further down the msg - byte 5 is VFO , 0 is A, 1 is B
+          
+          data_len = counter - 6+k;   // subtract total msg length bytes for constant bytes fe fe e0 ac cmd xxxxxx fd  
+          
+          for (uint8_t i = 5+k; i < 5+k + data_len; i++) {
+            if (r_buffer[i] == 0xFD) continue;  //spike
+            f += (r_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
+            f += (r_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
+          }
+          
+          band = getBand(f);
+          frequency = f;
+          // switch to Xvtr mode
+          switch (band) {
+            case BAND_1_25M:band_Selector(DECODE_INPUT_BAND222); direct = false; break;
+            case BAND_33cm: band_Selector(DECODE_INPUT_BAND902); direct = false;  break;
+            case BAND_23cm: band_Selector(DECODE_INPUT_BAND1296); direct = false;  break;
+            default:        direct = true; 
+                            band_Selector(0);
+          }
+
+          if (!direct) {
+            send_freq[0] = 0xFE;
+            send_freq[1] = 0xFE;
+            send_freq[2] = read_buffer[2];
+            send_freq[3] = radio_address;
+            send_freq[4] = 0xFB;
+            send_freq[5] = 0xFD;
+            f_len = 6;
+            Serial.write(send_freq, f_len);  // send Accepted message back to radio
+          }
+
+          //reply_to_PC(cmd);
+          // this is to generate expected response from radio to PC side request, likely redundant otherwise
+          /*
+          switch (cmd){
+            case 0x25:  { if (r_buffer[5] == 0x01)
+                          { SetFreq(f, CIV_C_F25B_SEND);} //Send on to the radio the translated frequency.  The reply for the radio also needs to be translated to PC to work right.
+                        else 
+                          { SetFreq(f, CIV_C_F25A_SEND);}
+                        break; }  //Send on to the radio the translated frequency.  The reply for the radio also needs to be translated to PC to work right.
+            case 0x05:  { SetFreq(f, CIV_C_F1_SEND);
+                        break; }
+            case 0x00:  { SetFreq(f, CIV_C_F_SEND);
+                        break; }
+          }
+          */
+
+          #ifdef DBG_TO_LCD
+            M5.Lcd.setCursor(1,140);
+            M5.Lcd.setTextSize(2);
+            M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+            M5.Lcd.printf("%02X %011llu", 0, f);
+            M5.Lcd.setCursor(1,140);
+            M5.Lcd.setTextColor(TFT_WHITE, TFT_BLUE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+            M5.Lcd.printf("%02X %011llu", last_PC_cmd, f);
+          #endif
+        }
+      #endif
+
+      if (direct)  // pass on to radio without any frequency manipulations
+      {
+        #if defined ( BTCLASSIC )
+          if (btConnected && SerialBT.connected()) {
+            SerialBT.write(r_buffer, counter);    
+            SerialBT.flush();
+          }
+        #elif defined ( BLE )
+          if (BLE_connected) {
+            SendMessage(r_buffer, counter);
+          }
+        #endif
+        //Serial.flush();
+        
+        #ifdef DBG_TO_LCD
+        M5.Lcd.setCursor(1,160);
+          M5.Lcd.setTextSize(2);
+          M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+          M5.Lcd.printf("%02X %011llu", 0, frequency);
+          M5.Lcd.setCursor(1,160);
+          M5.Lcd.setTextColor(TFT_BLACK, TFT_GREEN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+          M5.Lcd.printf("%02X %011llu", last_PC_cmd, frequency);
+        #endif
+      }
+
+      PC_to_Radio_Msg_Sent = true;
+      last_PC_cmd = r_buffer[4];  // record the cmd byte sent to the radio for the PC.  
+                                  // Used to ensure only the reply is sent back, not other stuff, or out of order
+      //processCatMessages();  // this will extract stuff like mode, and for freqency will correct for Xvtr Offset if XVTR is enabled.
+    }
   #endif
  
   return counter;
@@ -376,7 +599,7 @@ bool searchRadio() {
 // ----------------------------------------
 //    get band from frequency
 // ----------------------------------------
-byte getBand(uint64_t _freq) {
+uint8_t getBand(uint64_t _freq) {
   for (uint8_t i = 0; i < NUM_OF_BANDS; i++) {
     if (_freq >= bands[i].edge_lower && _freq <= bands[i].edge_upper) {
       if (i >= B_GENERAL) return B_GENERAL;
@@ -588,12 +811,12 @@ void processCatMessages() {
       Serial.print(F(" msg_len = "));
       Serial.print(msg_len);
       Serial.println(F(" END"));
+      Serial.flush();
 #endif
-
       if (read_buffer[0] == START_BYTE && read_buffer[1] == START_BYTE) {
         if (read_buffer[3] == radio_address) {
-          if (read_buffer[2] == CONTROLLER_ADDRESS || read_buffer[2] == BROADCAST_ADDRESS) {
-
+          //if (read_buffer[2] == CONTROLLER_ADDRESS || read_buffer[2] == BROADCAST_ADDRESS) {
+          if ((read_buffer[2] >= 0xE0 && read_buffer[2] <=0xEF) || read_buffer[2] == BROADCAST_ADDRESS) {
             for (cmd_num = CIV_C_F_SEND; cmd_num < End_of_Cmd_List; cmd_num++)  // loop through the command list structure looking for a pattern match
             {
               //DPRINTF("processCatMessageslist: list index = "); DPRINTLN(cmd_num);
@@ -736,7 +959,7 @@ uint8_t Get_Radio_address(void) {
   {
     get_new_address_flag = false;
 
-    while (radio_address == 0x00 || radio_address == 0xFF || radio_address == 0xE0) {
+    while (radio_address == 0x00 || radio_address == 0xFF || (radio_address >= 0xE0 && radio_address <= 0xEF)) {
       if (!searchRadio()) {
         DPRINTF("Radio not found - retry count = ");
         DPRINTLN(retry_Count);
@@ -837,17 +1060,19 @@ void poll_radio(void) {
   static uint32_t time_last_attn = millis();
   static uint32_t time_last_pre = millis();
   static uint32_t time_last_split = millis();
-
-  if (radio_address != 0x00 && radio_address != 0xFF && radio_address != 0xE0) {
+  
+  if (!PC_to_Radio_Msg_Sent && radio_address != 0x00 && radio_address != 0xFF && radio_address != CONTROLLER_ADDRESS) {
+  
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
     {
+      DPRINTLN("poll freq");
       sendCatRequest(CIV_C_F_READ, 0, 0);  // Get current VFO
       vTaskDelay(2);
       processCatMessages();
       time_last_freq = millis();
     }
 
-    if (millis() >= time_last_ptt + poll_radio_ptt)  // poll every X ms
+    if (!use_wired_PTT && millis() >= time_last_ptt + poll_radio_ptt)  // poll every X ms if not wired PTT
     {
       sendCatRequest(CIV_C_TX, 0, 0);  // Get TX status
       vTaskDelay(2);
@@ -1268,7 +1493,6 @@ void draw_new_screen(void) {
   display_Grid(Grid_Square, true);
 }
 
-
 //  _UTC does nothing now but can be used to change a future clock label
 void display_Time(uint8_t _UTC, bool _force) {
   static uint32_t time_last_disp_UTC = millis();
@@ -1428,7 +1652,6 @@ void display_Band(uint8_t _band, bool _force) {
   int y = 150;
   int font_sz = 4;
 
-
   if (_band != _prev_band || _force) {
     // Update our outputs
     Band_Decode_Output(band, true);
@@ -1441,7 +1664,6 @@ void display_Band(uint8_t _band, bool _force) {
         x = 1;
         y= 118;
       }
-      M5.Lcd.setTextDatum(ML_DATUM);
       M5.Lcd.setTextDatum(ML_DATUM);
       M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
       M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
@@ -1468,6 +1690,7 @@ void display_Grid(char _grid[], bool _force) {
   int x = 8;
   int y = 184;
   int font_sz = 4;
+
   // call to convert the strings for Lat and long fronm CIV to floats and then caluclate grid
   if ((strcmp(_last_grid, _grid)) || _force) {
     //Serial.printf("Grid Square = %s\n",_grid);
@@ -1591,7 +1814,7 @@ void band_Selector(uint8_t _band_input_pattern) {
         vTaskDelay(10);
         SetAGC(XVTR_Band);
         vTaskDelay(10);
-        SetFreq(bands[XVTR_Band].VFO_last);  // This value always has Xvtr offset applied
+        SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied
         update_radio_settings_flag = true;
       }
 
@@ -1608,7 +1831,7 @@ void band_Selector(uint8_t _band_input_pattern) {
         vTaskDelay(10);
         SetAGC(XVTR_band_before);
         vTaskDelay(10);
-        SetFreq(bands[XVTR_band_before].VFO_last);  // set radio to that last non-XVTR band used.
+        SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25A_SEND);  // set radio to that last non-XVTR band used.
         update_radio_settings_flag = true;
       }
 
@@ -1668,7 +1891,7 @@ uint8_t formatFreq(uint64_t vfo, uint8_t vfo_dec[]) {
 // Send new frequency to radio, radio will change bands as needed.
 // ToDo:  Radio mode and other settings are not touched so stay the same as the last band used.  We are only changing the frequency, nothing else.
 //        Need to save mode, filter and other stuff to return each band to the last way it was used.
-void SetFreq(uint64_t Freq) {
+void SetFreq(uint64_t Freq, uint8_t cmd) {
   uint8_t vfo_dec[7] = {};
 
   if (XVTR_enabled) {
@@ -1679,83 +1902,8 @@ void SetFreq(uint64_t Freq) {
   uint8_t len = formatFreq(Freq, vfo_dec);  // Convert to BCD string
   //Serial.printf("SetFreq: Radio Freq = %llu  To radio (5 or 6 bytes) in BCD: %02X %02X %02X %02X %02X (%02X)\n", Freq, vfo_dec[0], vfo_dec[1], vfo_dec[2], vfo_dec[3], vfo_dec[4], vfo_dec[5]);
   //#ifndef PC_PASSTHROUGH
-    sendCatRequest(CIV_C_F1_SEND, vfo_dec, len);
+    sendCatRequest(cmd, vfo_dec, len);
   //#endif
-}
-
-// ----------------------------------------
-//    Read incoming line from bluetooth
-// ----------------------------------------
-uint8_t pass_PC_to_radio(void) {
-  uint8_t counter = 0;
-
-  #ifdef PC_PASSTHROUGH
-    uint8_t byte;
-    uint8_t data_len;
-    uint32_t ed = readtimeout;  // not initialized!
-    static uint8_t r_buffer[64];  //Read buffer
-    
-    while (1) {
-      while (!Serial.available()) {
-        if (--ed == 0) return 0;  // leave the loop if BT connection is lost
-      }
-      ed = readtimeout;
-      byte = Serial.read();
-      if (byte == 0xFF) continue;  //TODO skip to start byte instead
-
-      r_buffer[counter++] = byte;
-      if (STOP_BYTE == byte) break;
-
-      if (counter >= sizeof(r_buffer)) return 0;
-    }
-
-    //if (0) {
-    //if (STOP_BYTE == byte) {    
-      uint64_t f;
-      uint64_t mul;
-      uint8_t k;
-      
-      //if (0)
-      if ( counter && (r_buffer[0] == 0xFE && r_buffer[1] == 0xFE) && (r_buffer[4] == 0x09 || r_buffer[4] == 0x00 || r_buffer[4] == 0x05 || (r_buffer[4] == 0x25 && r_buffer[5] == 0x00)) )  
-      {
-        mul = 1;
-        f = 0;
-        k = 0;
-        
-        if (r_buffer[4] == 0x25 && r_buffer[5] == 0x00)
-          k=1; // data is 1 byte further down the msg - byte 5 is VFO , 0 is A, 1 is B
-        
-        data_len = counter - 6+k;   // subtract total msg length bytes for constant bytes fe fe e0 ac cmd xxxxxx fd  
-        
-        for (uint8_t i = 5+k; i < 5+k + data_len; i++) {
-          if (r_buffer[i] == 0xFD) continue;  //spike
-          f += (r_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
-          f += (r_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
-        }
-                     
-        read_Frequency(f, data_len);  // pick off frequency, translate for Xvtr if needed.
-        //SetFreq(frequency);   //Send on to the radio the translated frequency.  The reply for theradio also needs to be translated to PC to work right.
-        //processCatMessages();
-      }
-    //}
-    //else 
-    //if (1)
-    //{
-      #if defined ( BTCLASSIC )
-        if (btConnected && SerialBT.connected()) {
-          SerialBT.write(r_buffer, counter);    
-          SerialBT.flush();
-        }
-      #elif defined ( BLE )
-        if (BLE_connected) {
-          SendMessage(r_buffer, counter);
-        }
-      #endif
-      //Serial.flush();
-    //}
-  #endif
- 
-  return counter;
 }
 
 void refesh_display(void) {
@@ -1779,7 +1927,7 @@ void refesh_display(void) {
 void app_setup(void) {
   //Serial.printf("Begin App Setup, battery level = %d\n", M5.Power.getBatteryLevel());
   //M5.Power.setPowerVin(1);
-
+  PC_to_Radio_Msg_Sent = false;
   #ifndef M5STAMPC3U
     M5.Lcd.setBrightness(brightness);  // 0-255.  burns more power at full, but works in daylight decently
     //M5.Lcd.drawString(title, 5, 5, 4);
@@ -2053,9 +2201,9 @@ void app_loop(void) {
 
     Get_Radio_address();  // can autodiscover CI-V address if not predefined.
   
-    #ifndef PC_PASSTHROUGH
+    //#ifndef PC_PASSTHROUGH
       poll_radio();  // do not send stuff to radio when a PC app is doing the same
-    #endif
+    //#endif
 
     #ifdef USBHOST
       if (restart_USBH_flag) {

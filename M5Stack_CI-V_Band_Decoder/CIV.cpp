@@ -397,17 +397,18 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
   
   switch (cmd_num) 
   {
+    case CIV_C_F25A_SEND:
     case CIV_C_F_READ:
     case CIV_C_F_SEND:
     case CIV_C_F1_SEND: {
         uint64_t f;
         uint64_t mul;
 
-        if ((data_len == 5 || (radio_address == IC905 && data_len == 6)) && (rd_buffer[4] == 3 || rd_buffer[4] == 0 || rd_buffer[4] == 5)) {
+        if ((data_len == 5 || (radio_address == IC905 && data_len == 6)) && (rd_buffer[4] == 3 || rd_buffer[4] == 0 || rd_buffer[4] == 5 || (rd_buffer[4] == 0x25 && rd_buffer[5] == 0))) {
 
           mul = 1;
           f = 0;
-          for (uint8_t i = 5; i < 5 + data_len; i++) {
+          for (uint8_t i = data_start_idx; i < data_start_idx + data_len; i++) {
             if (rd_buffer[i] == 0xFD) continue;  //spike
             f += (rd_buffer[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
             f += (rd_buffer[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
