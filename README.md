@@ -13,7 +13,17 @@
 
 # IC-705-BLE, BT Classic, and USB Host Serial Examples featuring a CI-V decoder and 3-Band Transverter Box
 
-This is a work in progress! 'But almost done...   
+This is a work in progress! But it is almost done...   
+
+As of April 7, 2025 this now supports external CI-V CAT control over USB. This is set as default so you will not see debug messages after intial startup.  Most CI-V messages are passed between the PC and radio directly.  The decoder polls the radio for things it needs using controller address 0xE5 and the replies from the radio are filtered out so the PC side never sees them.  Incoming messages containing frequency info will put the decoder into, or out of, Xvtr mode.  Messages with frequency info outbound to the PC side substitute the radio (IF) data with the transverter RF data.  The PC side always sees it own controller address in replies.  The PC side requires no offsets defined.  WSJT-X works directly with the decoder.  Other programs may or may not work so well if they limit the bands to the stock radio bands.  PC side logging programs have their own interop issues with digi-mode programs, I cannot solve their problems.   
+
+A PC is not required for this to operate with transverters, just now when you opt to use a PC, you now get the Xvtr frequency instead of only the IF (radio side) frequency.  For a PC app to get a CAT connection, just connect to the decoder USB port.  This is CI-V only, no audio.  To get USB audio for a digi-mode app use a 2nd USB cable from the PC and connect it to the IC-705 USB port.  Ignore the 705 Cat port.  The decoder is using BT so the radio's USB port is free.  You can also use a program like wfView to connect to the 705 over USB or WiFi and get audio and spectrum that way.  Ignore the wfView frequency info, it will only show the IF frequency since it knows nothing about transverters today.
+
+This was tested with a M5Stack M5Core2 CPU module using Classic BT.  The M5Core should also work. I need to make some more changes to get BLE working.  The M5Core2 and M5Core3-SE support BLE.  For apps I used N3FJP AC log, N3FJP VHF Contest and WSJT-X.   VHF Contest and WSJT-X work pretty well standalone with the decoder.  Using them both together they have their issues between them, unrelated to the decoder.   
+
+As a reminder, most all comments here and below apply to the 'MStack_CI_V_Band_Decoder' folder.  The other folders are support or early test/example apps.
+
+________________________________________________________________________________________________
 
 The ongoing work is in the full application folder M5Stack_CI-V_Band_Decoder.  The other folders contain simple tech demos.
 https://github.com/K7MDL2/IC-705-BLE-Serial-Example/tree/main/M5Stack_CI-V_Band_Decoder
