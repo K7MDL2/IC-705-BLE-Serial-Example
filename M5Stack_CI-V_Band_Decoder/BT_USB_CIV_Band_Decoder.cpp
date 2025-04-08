@@ -30,7 +30,7 @@ extern void SendMessageBLE(uint8_t Message[], uint8_t len);
 void write_bands_data(void);
 void read_bands_data(void);
 void refesh_display(void);
-void band_Selector(uint8_t _band_input_pattern);
+void band_Selector(uint8_t _band_input_pattern, bool ext_input);
 void reply_to_PC(uint8_t cmd);
 
 /*  copy of struct here from header file for easy reference.
@@ -492,11 +492,11 @@ uint8_t pass_PC_to_radio(void) {
           frequency = f;
           // switch to Xvtr mode
           switch (band) {
-            case BAND_1_25M:band_Selector(DECODE_INPUT_BAND222); direct = false; break;
-            case BAND_33cm: band_Selector(DECODE_INPUT_BAND902); direct = false;  break;
-            case BAND_23cm: band_Selector(DECODE_INPUT_BAND1296); direct = false;  break;
+            case BAND_1_25M:band_Selector(DECODE_INPUT_BAND222, true); direct = false; break;
+            case BAND_33cm: band_Selector(DECODE_INPUT_BAND902, true); direct = false;  break;
+            case BAND_23cm: band_Selector(DECODE_INPUT_BAND1296, true); direct = false;  break;
             default:        direct = true; 
-                            band_Selector(0);
+                            band_Selector(0, true);
           }
 
           if (!direct) {
@@ -1746,7 +1746,7 @@ void restart_USBH(void) {
 #endif
 }
 
-void band_Selector(uint8_t _band_input_pattern) {
+void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
   static uint8_t _band_input_pattern_last = 0;
   static bool XVTR_enabled_last;
   static uint8_t XVTR_band_before;
@@ -1814,7 +1814,10 @@ void band_Selector(uint8_t _band_input_pattern) {
         vTaskDelay(10);
         SetAGC(XVTR_Band);
         vTaskDelay(10);
-        SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied
+        if (ext_input)
+          SetFreq(frequency, CIV_C_F25A_SEND);
+        else
+          SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied          
         update_radio_settings_flag = true;
       }
 
@@ -2132,9 +2135,9 @@ void app_loop(void) {
       #ifdef XVBOX
         // select band 222
         if (band != BAND_1_25M)
-          band_Selector(3);
+          band_Selector(3, false);
         else
-          band_Selector(0);
+          band_Selector(0, false);
       #else
         DPRINTLNF("BtnA pressed - Switch to BT mode");
         #ifdef BTCLASSIC
@@ -2150,9 +2153,9 @@ void app_loop(void) {
       #ifdef XVBOX
         // select band 903
         if (band != BAND_33cm)
-          band_Selector(5);
+          band_Selector(5, false);
         else
-          band_Selector(0);
+          band_Selector(0, false);
       #else
 
         radio_address = 0;
@@ -2166,9 +2169,9 @@ void app_loop(void) {
       #ifdef XVBOX
         // select band 1296
         if (band != BAND_23cm)
-          band_Selector(6);
+          band_Selector(6, false);
         else
-          band_Selector(0);
+          band_Selector(0, false);
       #else
         // Since the first version won't have USB Host (unreliable so far) reuse the button for a single Xvtr band for now
         #ifdef USBHOST
@@ -2182,11 +2185,11 @@ void app_loop(void) {
             DPRINTLN(xvtr_band_select);
             switch (xvtr_band_select)  // index our way through a curated list.
             {
-              case 1: band_Selector(DECODE_INPUT_BAND222); break;
-              case 2: band_Selector(DECODE_INPUT_BAND902); break;
-              case 3: band_Selector(DECODE_INPUT_BAND1296); break;
+              case 1: band_Selector(DECODE_INPUT_BAND222, false); break;
+              case 2: band_Selector(DECODE_INPUT_BAND902, false); break;
+              case 3: band_Selector(DECODE_INPUT_BAND1296, false); break;
               //case 4: band_Selector(DECODE_INPUT_BAND10G); break;
-              case 4: band_Selector(0);  // fall thru to reset counter to non-Xvtr band
+              case 4: band_Selector(0, false);  // fall thru to reset counter to non-Xvtr band
               default: xvtr_band_select = 0; break;
             }
           }
@@ -2334,7 +2337,7 @@ void app_loop(void) {
 
       if (decode_Band != decode_Band_last)  // skip if nothing changed on the wired inputs
       { // band changed, process it
-        band_Selector(decode_Band);  // converts input pattern to band (real or virtual Xvtr band)
+        band_Selector(decode_Band, false);  // converts input pattern to band (real or virtual Xvtr band)
         decode_Band_last = decode_Band;
       }
 
