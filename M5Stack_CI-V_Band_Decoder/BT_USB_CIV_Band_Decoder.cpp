@@ -8,6 +8,7 @@
 #include <SD.h>
 #include <stdint.h>
 #include "Wire.h"
+#include <BluetoothSerial.h>
 
 #include "M5Stack_CI-V_Band_Decoder.h"
 #include "CIV.h"
@@ -1065,14 +1066,14 @@ void poll_radio(void) {
   
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
     {
-      DPRINTLN("poll freq");
+      //DPRINTLN("poll freq");
       sendCatRequest(CIV_C_F_READ, 0, 0);  // Get current VFO
       vTaskDelay(2);
       processCatMessages();
       time_last_freq = millis();
     }
 
-    if (!use_wired_PTT && millis() >= time_last_ptt + poll_radio_ptt)  // poll every X ms if not wired PTT
+    if (millis() >= time_last_ptt + poll_radio_ptt)  // poll every X ms if not wired PTT
     {
       sendCatRequest(CIV_C_TX, 0, 0);  // Get TX status
       vTaskDelay(2);

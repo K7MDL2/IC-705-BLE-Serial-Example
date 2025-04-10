@@ -283,7 +283,8 @@ void PTT_Output(uint8_t band, bool PTT_state)
     // ToDo: Eventually create a local UI screen and SD card config file to edit and monitor pin states
 
     DPRINTF("PTT_Output: Band "); DPRINTLN(band);
-    if (PTT_state) {  // We are going to TX
+    if (1) {
+    //if (PTT_state) {  // We are going to TX
         switch (band)
         {
             case  DUMMY     : GPIO_PTT_Out(DECODE_DUMMY_PTT,    false);     break;   //Dummy Band
@@ -369,7 +370,7 @@ void GPIO_PTT_Out(uint16_t pattern, bool _PTT_state)
 
     //PTT_state = !PTT_state;  // Invert  PTT 1 = TX, IO needs 0 to gnd for TX.
     
-    //Serial.println((pattern & 0x10 & PTT_state) ? 0 : 1);
+    //Serial.println((pattern & 0x0008 & PTT_state) ? 0 : 1);
     
     #ifdef IO_MODULE
       // mask each bit and apply the 1 or 0 to the assigned pin

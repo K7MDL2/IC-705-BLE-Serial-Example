@@ -1,10 +1,14 @@
 /*************************************************************************
       ICOM CI-V Band Decoder and PTT breakout
-      Michael Lewis K7MDL Dec 2024
+      Michael Lewis K7MDL April 2025
+      https://github.com/K7MDL2/IC-705-BLE-Serial-Example/tree/main/M5Stack_CI-V_Band_Decoder
 
       BT Classic Serial or USB connection for IC-705
       USB for other models 
-      Runs on M5Stack Core Basic, Core2. All have issues with USB Host compatibility as of Aug 2024.
+      Runs on M5Stack Core Basic(BT), Core2(BT&BLE) and Core3-SE(BLE). All have issues with USB Host module compatibility as of Aug 2024.  
+      Use BLE or BT methods.
+      The USB port may be used to connect to a PC for logging and digi-mode progam usage to get the actual XVTR frequency
+      No USB audio is passed through.  Use the 705's USB port for that.
 
       This is very basic and very small self-contained CI-V band decoder that can display transverter frequency with suitable offsets, 
         change bands with touch or external input and output (switch, radio decoder outputs), 2, 4, 8, or more I/O outputs.  
@@ -18,7 +22,7 @@
         There is opportunity to do some fancy graphics, present some shortcut buttons for things like memories and a band select menu that knows about transverters.
 
         For this to work with the 705 Bluetooth, it must be run on a chipset and BT code library that supports BT Classic serial port profile. 
-        The newer M5Stack CoreS3 (ESPS3 based) and CoreS3SE apepar to only support BT , mesh and BLE, is not backward compatible with BT Classic SSP/
+        The newer M5Stack CoreS3 (ESPS3 based) and CoreS3SE only support BT5, mesh and BLE, is not backward compatible with BT Classic serial profile
         The profiles listed on the 705 BT Info page lists SPP and LE. I suspect the LE is for audio connections and not serial.  
         Maybe that will chanbge in the future, no one seems to have in insight into this.  I can discover the radio with BLE, but no connection yet,
         still working on it in my spare time.
@@ -42,7 +46,6 @@
             Press OK
             The Decoder will auto accept the passkey confirm from the radio and connect and start operating
             It is now paired and connected and will auto-reconnect as needed.
-
 
       Tested on the IC-705 (BT andf USB) and IC-905 (USB).  Should work with other models like the 9700.
 
@@ -101,7 +104,7 @@
 //#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
                       // Comment out and the CPU architecture is automatically selected for all others (AtomS3, Core, Core2, CoreS3/SE)
 
-#define XVBOX // set some data config specific to usage with the 705 transverter box
+#define XVBOX // set config specific to usage with the 705 transverter box
 
 #ifdef M5STAMPC3U  
   //#include <M5Unified.h>  // kills off USB Host

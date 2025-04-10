@@ -213,10 +213,10 @@ enum band_idx { DUMMY,
   // 8 are inputs, 8 are defined under PTT section, and remaining 16 are for general outputs
   #ifdef XVBOX  // Front end controller talking to Xvtr box embedded controller
 
-    #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_IO_PIN_0     // bit 0 
+    #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_IO_PIN_0     // bit 0  0-2 are band decoder, 3 is ptt to Xvtr Box
     #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_IO_PIN_1     // bit 1
     #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_IO_PIN_2     // bit 2
-    #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED     // bit 3
+    #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED      // bit 3
     #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED      // bit 4
     #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED      // bit 5
     #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED      // bit 6
@@ -570,7 +570,7 @@ enum band_idx { DUMMY,
 #endif
 
 // Band Decoder Output patterns for PTT routing.
-// BAn example would be the BCD pattern following the Elecraft K3 HF-TRN table.  5 bits are used. Bit 4 =1 is VHF+ group
+// An example would be the BCD pattern following the Elecraft K3 HF-TRN table.  5 bits are used. Bit 4 =1 is VHF+ group
 // here we have only 1 4-IN/8-Out module installed configured as 4x decode outputs and 4 PTT outputs for PTT routing to 4 amps/xvtrs
 // Here the PTT lines are on the upper half of the group of 8 module outputs so we set values on the upper nibble, the lower will be ignored.
 // if not used enter 0x00 
@@ -578,9 +578,9 @@ enum band_idx { DUMMY,
   #ifdef XVBOX  // patterns sent to transverter box controller.  3 BCD band decode outputs and single PTT wire.  
                 // Xvtr Box breaks out PTT in this case, not here as usual.  Single PTT on the 4th Output port so 0x0008
 
-    #define DECODE_DUMMY_PTT        (0x0008)    //Dummy Row
-    #define DECODE_BANDAM_PTT       (0x0008)   //16M_PTT 
-    #define DECODE_BAND160M_PTT     (0x0008)   //160M_PTT 
+    #define DECODE_DUMMY_PTT        (0x0000)    //Dummy Row - acts as a reset as well.
+    #define DECODE_BANDAM_PTT       (0x0000)    //AM_PTT 
+    #define DECODE_BAND160M_PTT     (0x0008)    //160M_PTT 
     #define DECODE_BAND80M_PTT      (0x0008)    //80M_PTT
     #define DECODE_BAND60M_PTT      (0x0008)    //60M_PTT
     #define DECODE_BAND40M_PTT      (0x0008)    //40M_PTT
@@ -590,8 +590,8 @@ enum band_idx { DUMMY,
     #define DECODE_BAND15M_PTT      (0x0008)    //15M_PTT
     #define DECODE_BAND12M_PTT      (0x0008)    //12M_PTT
     #define DECODE_BAND10M_PTT      (0x0008)    //10M_PTT
-    #define DECODE_BANDFM_PTT       (0x0008)    //6M_PTT
-    #define DECODE_BANDAIR_PTT      (0x0008)    //6M_PTT
+    #define DECODE_BANDFM_PTT       (0x0000)    //6M_PTT
+    #define DECODE_BANDAIR_PTT      (0x0000)    //6M_PTT
     //#define DECODE_BAND70_PTT    (0x0008)    //70M_PTTHz
     #define DECODE_BAND6M_PTT       (0x0008)    //6M_PTT
     #define DECODE_BAND144_PTT      (0x0008)    //2M_PTT
@@ -607,7 +607,7 @@ enum band_idx { DUMMY,
     #define DECODE_BAND47G_PTT      (0x0008)    //47.1G_PTT
     #define DECODE_BAND76G_PTT      (0x0008)    //76.1G_PTT
     #define DECODE_BAND122G_PTT     (0x0008)    //122G_PTT
-    #define DECODE_B_GENERAL_PTT    (0x0008)     // Non-Ham Band
+    #define DECODE_B_GENERAL_PTT    (0x0000)     // Non-Ham Band
 
   #else // default pattern, no Xvtr box so break out PTT here
     #define DECODE_DUMMY_PTT        (0x0000)    //Dummy Row

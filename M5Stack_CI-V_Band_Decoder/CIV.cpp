@@ -420,14 +420,21 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     }
 
     case CIV_C_TX: { // Used to request RX TX status from radio
+        bool pc;
+        #ifdef PC_PASSTHROUGH;
+          pc = true;
+        #else 
+          pc = false;
+        #endif
+        
         if (data_len != 1 || !(rd_buffer[4] == 0x1C && rd_buffer[5] == 0x00))
           break;
-
+        
         PTT = rd_buffer[6] == 1 ? true : false;
         if (TX_last != PTT)
         {
-          if (!use_wired_PTT)        // normally the wired input will pass thru the PTT from radio hardware PTT. 
-          PTT_Output(band, PTT);   //  If that is not available, then use the radio polled TX state .
+          if (!use_wired_PTT || pc == true)        // normally the wired input will pass thru the PTT from radio hardware PTT. 
+            PTT_Output(band, PTT);   //  If that is not available, then use the radio polled TX state .
           //Serial.printf("CIV_Action: TX Status = %d\n", PTT);
           TX_last = PTT;
         }        
