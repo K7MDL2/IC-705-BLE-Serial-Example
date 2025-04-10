@@ -283,8 +283,8 @@ void PTT_Output(uint8_t band, bool PTT_state)
     // ToDo: Eventually create a local UI screen and SD card config file to edit and monitor pin states
 
     DPRINTF("PTT_Output: Band "); DPRINTLN(band);
-    if (1) {
-    //if (PTT_state) {  // We are going to TX
+
+    if (PTT_state) {  // We are going to TX
         switch (band)
         {
             case  DUMMY     : GPIO_PTT_Out(DECODE_DUMMY_PTT,    false);     break;   //Dummy Band

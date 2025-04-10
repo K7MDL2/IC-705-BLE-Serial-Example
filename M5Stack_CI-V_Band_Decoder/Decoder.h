@@ -138,7 +138,7 @@ enum band_idx { DUMMY,
 #define GPIO_MOD1_PE_PIN_8    8  // IF SW A (BAND)
 #define GPIO_MOD1_PE_PIN_9    9  // IF SW B (BAND)
 #define GPIO_MOD1_PE_PIN_10   10 // IF SW C (BAND)
-#define GPIO_MOD1_PE_PIN_11   11 // Relay Module 2 - 12V power to 28VDC converter for 222 and 903 bands (BAND) 
+#define GPIO_MOD1_PE_PIN_11   11 // Relay Module 2 - 12V power to 1296 Amp fan
 #define GPIO_MOD1_PE_PIN_12   12 // Relay Module 2 - 28V to 222 amp (PTT)
 #define GPIO_MOD1_PE_PIN_13   13 // Relay Module 2 - 28V to 903 Amp  (PTT)
 #define GPIO_MOD1_PE_PIN_14   14 //  903 T/R coax switch (PTT)
@@ -261,7 +261,7 @@ enum band_idx { DUMMY,
   #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_PE_PIN_8      // bit 0  Internal SP6T IF switch control A
   #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_PE_PIN_9      // bit 1  Internal SP6T IF switch control B
   #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_PE_PIN_10     // bit 2  Internal SP6T IF switch control C
-  #define BAND_DECODE_OUTPUT_3        GPIO_MOD1_PE_PIN_11     // bit 3  Relay Module 2 - Relay #1 - 12V to 28V DC-DC converter power.  Turn on for 222 and 903 bands.
+  #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED       // bit 3  Relay Module 2 - Relay #1 - 12V Fan for 1296 Amp.
   #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED       // bit 4  Spare
   #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED       // bit 5  Spare
   #define BAND_DECODE_OUTPUT_6        GPIO_PIN_NOT_USED       // bit 6  Spare
@@ -318,9 +318,9 @@ enum band_idx { DUMMY,
   // For the transverter internal PTT, there is 9V in RX state so a buffer is required.
   // Note: this is a mapping between virutal pins and physical pins.The actual pins can be assigned in any order *within* a module.
   // Pins mus be within MOD1 group (ie first buffer/IO board)
-  #define BAND_DECODE_PTT_OUTPUT_0    GPIO_MOD1_PE_PIN_12    // bit 0  222 28V Amp via relay module #2 - Relay 2
-  #define BAND_DECODE_PTT_OUTPUT_1    GPIO_MOD1_PE_PIN_13    // bit 1  903 28V Amp via relay module #2 - Relay 3
-  #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED    // bit 2  12-28V DC DC Converter 12V supply
+  #define BAND_DECODE_PTT_OUTPUT_0    GPIO_MOD1_PE_PIN_12    // bit 0  222 28V Amp Pwr via relay module #2 - Relay 2 0 = On in X
+  #define BAND_DECODE_PTT_OUTPUT_1    GPIO_MOD1_PE_PIN_13    // bit 1  903 28V Amp Pwr via relay module #2 - Relay 3 0 = On in TX
+  #define BAND_DECODE_PTT_OUTPUT_2    GPIO_MOD1_PE_PIN_11    // bit 2  1296 Fan 12V supply  0 = On in TX
   #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_PE_PIN_2     // bit 3  222 Xvtr Brd PTT       0 = TX    
   #define BAND_DECODE_PTT_OUTPUT_4    GPIO_MOD1_PE_PIN_3     // bit 4  902/903 Xvtr Brd PTT   0 = TX   
   #define BAND_DECODE_PTT_OUTPUT_5    GPIO_MOD1_PE_PIN_4     // bit 5  1296 Xvtr Brd PTT      0 = TX 
@@ -350,7 +350,7 @@ enum band_idx { DUMMY,
 
 #ifndef M5STAMPC3U
   // For normal usage with M5Stack CoreXX modules
-  #ifdef XVBOX  // COnfig to talk to Xvtrt box controller
+  #ifdef XVBOX  // Config to talk to Xvtrt box controller
 
     #define DECODE_INPUT_DUMMY        (0xFF)    //Dummy Row
     #define DECODE_INPUT_BANDAM       (0x01)    //AM
@@ -486,7 +486,7 @@ enum band_idx { DUMMY,
 // on relay module Relay 1 is 1296 but is wired PB4.  Relay 2 is 903, PB-5, 222 is relay 4, PB-7
 //  bit 7 1296 12V ON to 1296 Xvtr  - binary 0111 or 0x7xyz
 //  bit 6 Spare - binary 1011 of 0xBxyz  
-//  bit 5 903 12V ON to 903 Xvtr   - binary 1101 or 0xDxyz  (but also need 903 amp when installed)
+//  bit 5 903 12V ON to 903 Xvtr    - binary 1101 or 0xDxyz  (but also need 903 amp when installed)
 //  bit 4 222 12V ON to 222 Xvtr    - binary 1110 or 0xExyz
 //  All non-Xvtr bands set top-most nibble to 0xFxxx
 
@@ -512,7 +512,7 @@ enum band_idx { DUMMY,
 // bit 7-4 are spare 
 
 // Lower Byte lower nibble 
-// bit 3 - 12V to DC DC converter for 222 and 903 28V 50W amps
+// bit 3 is unused
 // Lower byte, lowest bits are PTT out.  6 dedicated buffered 
 // bits 2-0 are IF SP6T switch.  C, B, A
 //          CBA
@@ -525,13 +525,13 @@ enum band_idx { DUMMY,
 //    OFF = 110         6
 //    OFF = 111         7
 
-// Examples           relays   SP4T     zero   28V IF_Switch
-// HF/6M    0xF20F   b'1111    0010     0000     1 111    turn off 12 to 28V converter
-// 144      0xF40F   b'1111    0100     0000     1 111    turn off 12 to 28V converter
-// 222      0xE102   b'1110    0001     0000     0 010    turn on 12 to 28V converter
-// 432      0xF80F   b'1111    1000     0000     1 111    turn off 12 to 28V converter
-// 903      0xD104   b'1101    0001     0000     0 100    turn on 12 to 28V converter
-// 1296     0x710D   b'0111    0001     0000     1 101  - turn off 12 to 28V converter amp relay operated by PTT not here
+// Examples           relays   SP4T     zero     1   IF_Switch
+// HF/6M    0xF20F   b'1111    0010     0000     1  111    my choice of relay modue 1 is off, 0 is on.
+// 144      0xF40F   b'1111    0100     0000     1  111    
+// 222      0xE10A   b'1110    0001     0000     1  010    
+// 432      0xF80F   b'1111    1000     0000     1  111    
+// 903      0xD10C   b'1101    0001     0000     1  100    
+// 1296     0x7105   b'0111    0001     0000     1  101    amp relay operated by PTT not here
 // All other bands same as HF/6M.  0xF207  1111 0010 0000 1111
 
 // 0xYYZZ where ZZ is typically 07 sets the IF SP6T switch to all off.  Only needed for Xvtr bands
@@ -554,10 +554,10 @@ enum band_idx { DUMMY,
   //#define DECODE_BAND70       (0xF20F)    //70MHz
   #define DECODE_BAND6M       (0xF20F)    //6M
   #define DECODE_BAND144      (0xF40F)    //2M
-  #define DECODE_BAND222      (0xE102)    //222     0xZZZY y=2 for RF3 on SP6T
+  #define DECODE_BAND222      (0xE10A)    //222     0xZZZY y=2 for RF3 on SP6T
   #define DECODE_BAND432      (0xF80F)    //432
-  #define DECODE_BAND902      (0xD104)    //902     0xZZZY y=4 for RF5 on SP6T switch.   Turn on both 12V relays, relays 2 & 3 for 903 Xvtr and Amp.
-  #define DECODE_BAND1296     (0x710D)    //1296    0xZZZY y=5 for RF6 on SP6T switch.
+  #define DECODE_BAND902      (0xD10C)    //902     0xZZZY y=4 for RF5 on SP6T switch.   Turn on both 12V relays, relays 2 & 3 for 903 Xvtr and Amp.
+  #define DECODE_BAND1296     (0x7105)    //1296    0xZZZY y=5 for RF6 on SP6T switch.
   #define DECODE_BAND2400     (0xF20F)    //2400
   #define DECODE_BAND3300     (0xF20F)    //3400
   #define DECODE_BAND5760     (0xF20F)    //5760M
@@ -663,9 +663,9 @@ enum band_idx { DUMMY,
   // bit 4  PTT to Xvtr 903 Brd  0 = TX  - This requires a open collector like ULN2803 - Xvtr PTT has +9V on it and connecting to 3.3V output puts Xvtr into Tx - sort of.  
   
   // bit 3  PTT to Xvtr 222 Brd  0 = TX  - This requires a open collector like ULN2803 - Xvtr PTT has +9V on it and connecting to 3.3V output puts Xvtr into Tx - sort of.  
-  // bit 2  PTT 12V to 28V via relay for 28V converter - wire to Relay Module #2 relay 1 - power on for 222 and 903
-  // bit 1  PTT 28V to 903 Amp via relay  - wire to Relay Module #2 relay 3
-  // bit 0  PTT 28V to 222 Amp via relay  - wire to Relay Module #2 relay 2
+  // bit 2  PTT 12V to 1296 Fan via relay - wire to Relay Module #2 relay 1 - 0 = power on for 1296
+  // bit 1  PTT 28V to 903 Amp via relay  - wire to Relay Module #2 relay 3 - 0 = power on for 903
+  // bit 0  PTT 28V to 222 Amp via relay  - wire to Relay Module #2 relay 2 - 0 = power on for 222
  
  // all together a HF/6M pattern is 0x4107 for PTT
   
@@ -675,13 +675,13 @@ enum band_idx { DUMMY,
   //       0 0 | 00 0 | 111   = 0x07 for TX and RX
   // For Xvtr band 222
   //   bit 7 6   54 3   210   
-  //       0 0 | 00 H | 11L   = 0x0E = PTT on TX, 0x0E = RX on 222
+  //       0 0 | 00 H | 11L   = 0x0E = PTT on TX, 0x07 = RX on 222
   // For Xvtr band 903
   //   bit 7 6   54 3   210
-  //       0 H | 0H 0 | 1L1   = 0x55 = PTT on TX, 0x05 = RX on 903
+  //       0 H | 0H 0 | 1L1   = 0x55 = PTT on TX, 0x07 = RX on 903
   // For Xvtr band 1296
   //   bit 7 6   54 3   210
-  //       H 0 | H0 0 | L11   = 0xA3 = PTT on TX, 0x03 = RX on 1296
+  //       H 0 | H0 0 | L11   = 0xA3 = PTT on TX, 0x07 = RX on 1296
   
   //   Ideally the 903/1296 T/R switches would be set before the PTT issued to the Xvtr board
 

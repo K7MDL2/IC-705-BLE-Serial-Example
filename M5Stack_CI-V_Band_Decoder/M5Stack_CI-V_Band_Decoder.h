@@ -106,6 +106,8 @@
 
 #define XVBOX // set config specific to usage with the 705 transverter box
 
+//#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  Turn off Debug in DebugPrint.h
+
 #ifdef M5STAMPC3U  
   //#include <M5Unified.h>  // kills off USB Host
   #define MCP23017
@@ -222,8 +224,6 @@
   #define INA226_I2C   // Current and voltage monitor module via i2c bus. Info is displayed on the SSD1306_OLED so that must be enabled.
   #define SSD1306_OLED // 128x32 OLED display, SSD1306 compatible.  Shows band, TX, Xvtr, voltage and current.  Band. Xvtr, Tx can be displayed without a INA226 installed
 #endif
-
-#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  All debug must be off!
 
 #ifndef PC_PASSTHROUGH        // shut off by default when PASSTHRU MODE is on
   #define PRINT_VFO_TO_SERIAL // uncomment to visually see VFO updates from the radio on Serial

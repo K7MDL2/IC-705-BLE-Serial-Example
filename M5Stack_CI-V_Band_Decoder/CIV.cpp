@@ -421,7 +421,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
 
     case CIV_C_TX: { // Used to request RX TX status from radio
         bool pc;
-        #ifdef PC_PASSTHROUGH;
+        #ifdef PC_PASSTHROUGH
           pc = true;
         #else 
           pc = false;

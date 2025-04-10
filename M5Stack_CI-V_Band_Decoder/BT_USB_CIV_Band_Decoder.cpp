@@ -2059,7 +2059,10 @@ void app_setup(void) {
   //else
   #endif
 
-  poll_radio();  // do not send stuff to radio when a PC app is doing the same
+  #ifndef M5STAMPC3U 
+    poll_radio();  // do not send stuff to radio when a PC app is doing the same
+  #endif
+
   // restart_USBH();
 }
 
