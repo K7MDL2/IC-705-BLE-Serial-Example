@@ -13,7 +13,13 @@
 
 # IC-705-BLE, BT Classic, and USB Host Serial Examples featuring a CI-V decoder and 3-Band Transverter Box
 
-This is a work in progress! But it is almost done...   
+This project is complete as of May 2025. At lEast as any software ever is.   
+
+The 3-Band transveRter box is working with the IC-705 on all bands through 1296.  A PC can connect to the M5 Stack controller and see all transverter bands natively, as if the 705 had them built in.   The collection of VHF amps, Xvtr box and M5 stack controller, and the IC-705, are now being installed in my truck as the primary mobile radio supporting easy digital mode operation.  
+
+I am modifying the hamlib N3FJP AC Log rig driver for cleaner operation allowing the logging program AC Log to take rig control and have WSJT-X interface through it.  WSJT-X will then follow the rig AC Log is swtiched to, it supports 3 rigs.  The May 2, 2025 hamlib release supports frequencies above 1GHz.  There are some missing modes and possibly PTT issues to sort out.   You can use WSJT-X direct, that all works well and proper so far.
+
+May 2 - I believe it is all working now and ready to install in my truck.  Fixed an issue where PTT would not turn off. Different external CI-V controller addresses can be used.  0xE0 is used by WSJT-X and others, 0xE1 by wfView, and I use 0xE5 for radio polling and frequency translation on Xvtr bands.  Frequency translation performance is also improved.  I have not dealt with frequency values inside the radio band stack registers (BSR).  wfView uses BSR heavily.  BSR should work normally for non-Xvtr bands.  On Xvtr bands used for multiple Xvtrs there will be no accounting for differences but can still work (mostly) just setting the IF frequencies.
 
 April 9, working on completing the 3-band Xvtr box for the 705.  Minor firmware changes, mostly reassigning a relay for a 12V fan and heat sink to cool the 1296 2W amp. Fan runs ony in TX.  I added it assuming the internal closed case temperature will cause it to overheat over time, and it could be in a high ambient environment while in a truck.  PC CI-V passthrough is working well on the M5Stack controller.  The M5Core module talks to the M5StackC3U inside the 3-band Xvtr using 3 wire BCD.  PTT is the 4th wired input.   The 705 Send line runs to the M5Core IO module digital input.
 
