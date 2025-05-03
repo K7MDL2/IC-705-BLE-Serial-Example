@@ -1,36 +1,32 @@
 /*************************************************************************
       ICOM CI-V Band Decoder and PTT breakout
-      Michael Lewis K7MDL April 2025
+      Michael Lewis K7MDL May 2025
       https://github.com/K7MDL2/IC-705-BLE-Serial-Example/tree/main/M5Stack_CI-V_Band_Decoder
 
-      BT Classic Serial or USB connection for IC-705
+      BT/BLE Classic Serial or USB connection for IC-705
       USB for other models 
-      Runs on M5Stack Core Basic(BT), Core2(BT&BLE) and Core3-SE(BLE). All have issues with USB Host module compatibility as of Aug 2024.  
+      Runs on M5Stack Core Basic(BT Classic only), Core2(BT&BLE) and Core3-SE(BLE only). All have issues with M5 USB Host stacking module compatibility as of Aug 2024.  
       Use BLE or BT methods.
       The USB port may be used to connect to a PC for logging and digi-mode progam usage to get the actual XVTR frequency
       No USB audio is passed through.  Use the 705's USB port for that.
 
-      This is very basic and very small self-contained CI-V band decoder that can display transverter frequency with suitable offsets, 
+      This a small self-contained CI-V band decoder that can display transverter frequency with suitable offsets, 
         change bands with touch or external input and output (switch, radio decoder outputs), 2, 4, 8, or more I/O outputs.  
         Depending on the stacking module(s) chosen, can be relays, MOSFETs (1A @ 24VDC), or a proto board for DIY interfaces.  
         They also have a 9 to 24VDC power supply input and batteries of various sized.  
         With the small size you can stick it on the back of a radio or the back of a dish on a tropid.  
         Generally no hardware packaging is required. Just plug together and wire up to the connectors.
         There are several code projects that are similar, some do not have the IO., this is a customization of one of them.  
-        My 905-CIV project is Teensy based and I have not added WFi or BT to it yet.  This M5Stack approach is a quick no-build mini solution
-        enhanced to do some multi-byte CI-V messages and monitor PTT status to echo it out to the seledcted band's amps and/or Xvtrs and antenna relays
-        There is opportunity to do some fancy graphics, present some shortcut buttons for things like memories and a band select menu that knows about transverters.
-
+        
         For this to work with the 705 Bluetooth, it must be run on a chipset and BT code library that supports BT Classic serial port profile. 
         The newer M5Stack CoreS3 (ESPS3 based) and CoreS3SE only support BT5, mesh and BLE, is not backward compatible with BT Classic serial profile
-        The profiles listed on the 705 BT Info page lists SPP and LE. I suspect the LE is for audio connections and not serial.  
-        Maybe that will chanbge in the future, no one seems to have in insight into this.  I can discover the radio with BLE, but no connection yet,
-        still working on it in my spare time.
+        The profiles listed on the 705's BT Info page lists SPP and LE. 
 
-      This will Pair BT with a Passkey, no action required on teeh decoder for passkey or for radio address 
+      This will Pair BT with a Passkey, no action required on the decoder for passkey or for radio address 
 
-      To use this with BT on the IC-705 you first pair it on the 705.  
-      Once paired, this device will auto-(re)connect.  
+      To use this with BT on the IC-705 you first pair it on the 705.  YOu need to configure teh Radio BT address (6 bytes) eitehr in 
+      the code or in a config.ini file on the SD card.  See project Wiki for details.
+      Once paired, this device will auto-(re)connect.  BT Classic reconects very fast.
       This device operates in Master mode so power up order does not matter.
       On first connection after pairing the radio's CI-V address is discovered and used so there is no configuraton required
 
@@ -52,13 +48,14 @@
       This M5Stack decoder is a mini version of my large USB CI-V Band Decoder for the 905 and 705 which is built on a Teensy and passes both of radio's 2 
           USB serial port data (CI-V and GPS) on to a optional PC. It has options for 7" or 4.3" touch display or encoders and can do radio control allowing
           for transverter control with each Xvtr band keeping its own parameters.
-          https://github.com/K7MDL2/ICOM_IC-905_CIV
+          https://github.com/K7MDL2/ICOM_IC-905_CIV.  There are multiple band decoder solutions, some for the 905, most will support 905/705 and 9700, and more.
       
-      I have a hardware/softaare big Band decoder at https://github.com/K7MDL2/RF-Power-Meter-V1
+      I have a hardware/software big Band decoder at https://github.com/K7MDL2/RF-Power-Meter-V1 .  It also measures power with an external bi-directional
+       coupler up to 10GHz.
       
-      The Teensy based 905 decoder uses the UI and control framewark from my Teensy SDR project at https://github.com/K7MDL2/KEITHSDR 
+      The Teensy based 905 decoder uses the UI and control framework from my Teensy SDR project at https://github.com/K7MDL2/KEITHSDR 
       
-      Derived from the following project, thanks!
+      Some BT parts are derived from the following project, thanks!
       _________________________________________________
       T1 Interface
       V2.0 (12.09.2023)
@@ -106,7 +103,9 @@
 
 #define XVBOX // set config specific to usage with the 705 transverter box
 
-//#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  Turn off Debug in DebugPrint.h
+#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  Turn off Debug in DebugPrint.h
+
+//#define DBG_TO_LCD  // used to print frequency and CI-V commands to the LCD to debug PC Passthrough
 
 #ifdef M5STAMPC3U  
   //#include <M5Unified.h>  // kills off USB Host
@@ -206,6 +205,7 @@
 #define POLL_RADIO_ATTN  3305 // poll radio for atten status
 #define POLL_RADIO_PRE   3204 // poll radio for preamp status
 #define POLL_RADIO_SPLIT 3102 // poll radio for split status
+#define POLL_RADIO_RFPWR 3713 // poll radio for RF power for active band
 
 #ifndef M5STAMPC3U  // None of these apply to the M5StampC3U as used in the 705 Transverter project
   // Chose the combination needed.  Note that at least one comm service must be enabled.
@@ -319,6 +319,7 @@ struct Bands {
   uint8_t preamp;         // some bands there is no preamp (2.4G+ on 905).  Some radios/bands/modes combos have 1 preamp level, others have 2 levels.
   uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
   uint8_t split;          // Split mode on or off
+  uint8_t rfpwr;          // RF Power set 0-255 range = 0-100%
   uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
 };
 

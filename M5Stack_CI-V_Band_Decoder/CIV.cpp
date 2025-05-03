@@ -61,7 +61,7 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_SPLIT_ON_SEND,   {2,0x0F,0x01}},                 // Set split ON
     {CIV_C_RFGAIN,          {2,0x14,0x02}},                 // send/read RF Gain
     {CIV_C_AFGAIN,          {2,0x14,0x01}},                 // send/read AF Gain
-    {CIV_C_RFPOWER,         {2,0x14,0x0A}},                 // send/read selected bands RF power
+    {CIV_C_RFPOWER,         {2,0x14,0x0A}},                 // send / read max RF power setting (0..255 == 0 .. 100%)
     {CIV_C_S_MTR_LVL,       {2,0x15,0x02}},                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
     {CIV_C_PREAMP_READ,     {2,0x16,0x02}},             	  // read preamp state
     {CIV_C_PREAMP_OFF,      {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
@@ -78,7 +78,6 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
                                                                     // to read 432 band stack register 1 use 0x1A,0x01,0x02,0x01
     {CIV_C_MY_POSIT_READ,   {2,0x23,0x00}},          	    // read my GPS Position
     {CIV_C_MY_POSIT_DATA,   {1,0x23}},          	    	  // read my GPS Position
-    {CIV_C_RF_POW,          {2,0x14,0x0A}},            		// send / read max RF power setting (0..255 == 0 .. 100%)
     {CIV_C_TRX_ON_OFF,      {1,0x18}},                 		// switch radio ON/OFF
     {CIV_C_TRX_ID,          {2,0x19,0x00}},            		// ID query
     {CIV_C_TX,              {2,0x1C,0x00}},            		// query of TX-State 00=OFF, 01=ON
@@ -95,7 +94,12 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_RIT_ON_OFF,		  {2,0x21,0x01}},	          	  // send or send RIT ON or Off status 00 = , 01 = t
     {CIV_C_XIT_ON_OFF,		  {2,0x21,0x02}},	          	  // send or send XIT Offset
     {CIV_C_RADIO_OFF,		    {2,0x18,0x00}},	          	  // Turn Off the radio
-    {CIV_C_RADIO_ON,		    {2,0x18,0x01}}	          	  // Turn on the radio
+    {CIV_C_RADIO_ON,		    {2,0x18,0x01}},	          	  // Turn on the radio
+    {CIV_C_SCOPE_ON,        {3,0x27,0x11,0x01}},          // send/read Scope wave data output ON
+    {CIV_C_SCOPE_OFF,       {3,0x27,0x11,0x00}},          // send/read Scope wave data output OFF
+    {CIV_C_SCOPE_ALL,       {1,0x27}},                    // send/read Scope catch all to avoid no match found error outputs
+    {CIV_R_NO_GOOD,         {1,0xFA}},                    // Message received from radio was no good
+    {CIV_R_GOOD,            {1,0xFB}}                    // Message received from radio was good
 };
 
 //
@@ -338,7 +342,7 @@ void SetAGC(uint8_t  _band) {
   };
 }
 
-// set attenuaor on radio
+// set split on radio
 void SetSplit(uint8_t  _band) {
   if (bands[_band].split)
     sendCatRequest(CIV_C_SPLIT_ON_SEND, 0, 0);
@@ -346,7 +350,23 @@ void SetSplit(uint8_t  _band) {
     sendCatRequest(CIV_C_SPLIT_OFF_SEND, 0, 0);
 }
 
-// set attenuaor on radio
+// set RF Power on radio
+void SetRFPwr(uint8_t  _band) {
+  uint8_t r[3];
+  uint8_t r1[3] = {0,0,0};
+  uint8_t a = bands[_band].rfpwr;
+  DPRINTF("Set RF Power: "); DPRINTLN(a);
+  uint8_t b = bcdByteEncode((uint8_t) a/100);
+  uint8_t c = bcdByteEncode((uint8_t) a % 100);
+  r1[0] = b;
+  r1[1] = c;
+  r1[2] = 0;
+  DPRINTF("Set RF Power1a: 0x"); DPRINTLN(r1[0],HEX);
+  DPRINTF("Set RF Power1b: 0x"); DPRINTLN(r1[1],HEX);
+  sendCatRequest(CIV_C_RFPOWER, r1, 2);
+}
+
+// set attenuator on radio
 void SetAttn(uint8_t  _band) {
   if (bands[_band].atten)
     sendCatRequest(CIV_C_ATTN_ON, 0, 0);
@@ -670,6 +690,14 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
     }
 
+    case CIV_C_RFPOWER: {
+        int _val = bcdByte(rd_buffer[data_start_idx]) *100;
+        _val += bcdByte(rd_buffer[data_start_idx+1]);
+        bands[band].rfpwr = (uint8_t) _val & 0x00FF;
+        DPRINTF("CIV_Action:  CI-V Returned RF Power Setting value (0-255): "); DPRINTLN(bands[band].rfpwr);
+        break;
+    }
+
     case CIV_C_ATTN_READ:	
 		case CIV_C_ATTN_ON:
     case CIV_C_ATTN_OFF: {
@@ -756,7 +784,21 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
 		}  // XIT On/Off
 
-    default: DPRINTLNF("CIV_Action: *** default action"); break;
+    case CIV_C_TRX_ID: 
+        DPRINTF("CIV Action: *** Rig ID 0x"); DPRINTLN(rd_buffer[3], HEX);
+        break;
+
+    case CIV_R_GOOD: //DPRINTLNF("CIV_Action *** Command Accepted by Radio"); 
+        break;
+
+    case CIV_R_NO_GOOD: DPRINTLNF("CIV_Action  *** Command Rejected by Radio"); 
+        break;
+    
+    case CIV_C_SCOPE_OFF:
+    case CIV_C_SCOPE_ON:
+    case CIV_C_SCOPE_ALL: break; // do nothing
+
+    default: DPRINTF("CIV_Action: *** Unknown command "); DPRINTLN(cmd_num); break;
           //knowncommand = false;
   }
   #ifdef DBG_CIV2

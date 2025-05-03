@@ -284,7 +284,11 @@ void PTT_Output(uint8_t band, bool PTT_state)
 
     DPRINTF("PTT_Output: Band "); DPRINTLN(band);
 
+    #ifdef M5STAMPC3U
     if (PTT_state) {  // We are going to TX
+    #else
+    if (1) {  // Do this for RX and TX if not the Xvtr controller
+    #endif
         switch (band)
         {
             case  DUMMY     : GPIO_PTT_Out(DECODE_DUMMY_PTT,    false);     break;   //Dummy Band

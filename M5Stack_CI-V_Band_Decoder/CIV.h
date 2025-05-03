@@ -63,6 +63,7 @@ void SetAGC(uint8_t  _band);
 void SetPre(uint8_t  _band);
 void SetAttn(uint8_t  _band);
 void SetSplit(uint8_t  _band);
+void SetRFPwr(uint8_t  _band);
 
 // command "body" of the CIV commands currently in use
 // Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.
@@ -108,7 +109,6 @@ enum cmds {
     CIV_C_BSTACK,
     CIV_C_MY_POSIT_READ,
     CIV_C_MY_POSIT_DATA,
-    CIV_C_RF_POW,
     CIV_C_TRX_ON_OFF,
     CIV_C_TRX_ID,
     CIV_C_TX,
@@ -123,6 +123,11 @@ enum cmds {
     CIV_C_XIT_ON_OFF,
     CIV_C_RADIO_OFF,
     CIV_C_RADIO_ON,
+    CIV_C_SCOPE_ON,
+    CIV_C_SCOPE_OFF,
+    CIV_C_SCOPE_ALL,
+    CIV_R_NO_GOOD,
+    CIV_R_GOOD,
     End_of_Cmd_List
 };
 
