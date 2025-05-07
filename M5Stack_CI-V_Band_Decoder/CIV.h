@@ -62,7 +62,7 @@ void SetMode(uint8_t _band);
 void SetAGC(uint8_t  _band);
 void SetPre(uint8_t  _band);
 void SetAttn(uint8_t  _band);
-void SetSplit(uint8_t  _band);
+void SetSplit(uint8_t  _band, bool force_off);
 void SetRFPwr(uint8_t  _band);
 
 // command "body" of the CIV commands currently in use
@@ -128,6 +128,7 @@ enum cmds {
     CIV_C_SCOPE_ALL,
     CIV_R_NO_GOOD,
     CIV_R_GOOD,
+    CIV_R_SEL_VFO,
     End_of_Cmd_List
 };
 

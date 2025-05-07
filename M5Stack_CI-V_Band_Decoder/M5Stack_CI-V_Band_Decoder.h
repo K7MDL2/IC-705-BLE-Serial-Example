@@ -205,7 +205,7 @@
 #define POLL_RADIO_ATTN  3305 // poll radio for atten status
 #define POLL_RADIO_PRE   3204 // poll radio for preamp status
 #define POLL_RADIO_SPLIT 3102 // poll radio for split status
-#define POLL_RADIO_RFPWR 3713 // poll radio for RF power for active band
+#define POLL_RADIO_RFPWR 1713 // poll radio for RF power for active band
 
 #ifndef M5STAMPC3U  // None of these apply to the M5StampC3U as used in the 705 Transverter project
   // Chose the combination needed.  Note that at least one comm service must be enabled.

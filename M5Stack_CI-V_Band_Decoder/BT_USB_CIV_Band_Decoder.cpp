@@ -163,9 +163,9 @@ uint8_t bd_address[7] = { 0x30, 0x31, 0x7d, 0xBA, 0x44, 0xF9, 0x00 };  // Mike's
 #endif
 
 #ifdef USBHOST
-// CDC Host object
-#include "M5_Max3421E_Usb.h"
-extern Adafruit_USBH_CDC SerialHost;
+  // CDC Host object
+  #include "M5_Max3421E_Usb.h"
+  extern Adafruit_USBH_CDC SerialHost;
 #endif
 
 #ifdef EXT_IO2_UNIT
@@ -173,61 +173,61 @@ extern Adafruit_USBH_CDC SerialHost;
 #endif
 
 #ifdef SSP
-bool confirmRequestPending = true;
+  bool confirmRequestPending = true;
 #endif
 
 // if no BT option chosen then set BT_enabled to 0;
 #if !defined(BTCLASSIC) && !defined(BLE)
-bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+  bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
 #endif
 
 #ifdef BTCLASSIC  // can set to BT on or off at startup
-#include "BluetoothSerial.h"
-bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
-bool BLE_enabled = 0;
+  #include "BluetoothSerial.h"
+  bool BT_enabled = 1;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+  bool BLE_enabled = 0;
 #endif
 
 #ifdef BLE  // can set to BT on or off at startup
-//#include "BLE.h"
-bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
-bool BLE_enabled = 1;
-extern void BLE_loop(void);
-extern void BLE_Setup(void);
-extern void Scan_BLE_Servers(void);
+  //#include "BLE.h"
+  bool BT_enabled = 0;  // configuration toggle between BT and USB - Leave this 0, must start on USB Hoset first, then can switch over.
+  bool BLE_enabled = 1;
+  extern void BLE_loop(void);
+  extern void BLE_Setup(void);
+  extern void Scan_BLE_Servers(void);
 #endif
 
 #ifdef BTCLASSIC
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+  #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+  #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
 
 #if !defined(CONFIG_BT_SPP_ENABLED)
-#error Serial Bluetooth not available or not enabled. It is only available for the ESP32 chip.
+  #error Serial Bluetooth not available or not enabled. It is only available for the ESP32 chip.
 #endif
 
 #define BT_DISCOVER_TIME 10000
-esp_spp_sec_t sec_mask = ESP_SPP_SEC_NONE;  // or ESP_SPP_SEC_ENCRYPT|ESP_SPP_SEC_AUTHENTICATE to request pincode confirmation
-//esp_spp_role_t role=ESP_SPP_ROLE_SLAVE; // or ESP_SPP_ROLE_MASTER
-esp_spp_role_t role = ESP_SPP_ROLE_MASTER;  // or ESP_SPP_ROLE_MASTER
+  esp_spp_sec_t sec_mask = ESP_SPP_SEC_NONE;  // or ESP_SPP_SEC_ENCRYPT|ESP_SPP_SEC_AUTHENTICATE to request pincode confirmation
+  //esp_spp_role_t role=ESP_SPP_ROLE_SLAVE; // or ESP_SPP_ROLE_MASTER
+  esp_spp_role_t role = ESP_SPP_ROLE_MASTER;  // or ESP_SPP_ROLE_MASTER
 #endif
 
 #ifdef BTCLASSIC
-void callback(esp_spp_cb_event_t, esp_spp_cb_param_t *);
-BluetoothSerial SerialBT;
-// ------------------------------------------
-//   Callback to get info about connection
-// ------------------------------------------
-void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
-  if (event == ESP_SPP_SRV_OPEN_EVT) {  // 34
-    btConnected = true;
-    btPaired = true;
-    Serial.println("BT Client Connected");
-  } else if (event == ESP_SPP_CLOSE_EVT)  // 27
-  {
-    btConnected = false;
-    if (btPaired) Serial.println("BT Client disconnected");  // suppress when we are not paired yet
+  void callback(esp_spp_cb_event_t, esp_spp_cb_param_t *);
+  BluetoothSerial SerialBT;
+  // ------------------------------------------
+  //   Callback to get info about connection
+  // ------------------------------------------
+  void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
+    if (event == ESP_SPP_SRV_OPEN_EVT) {  // 34
+      btConnected = true;
+      btPaired = true;
+      Serial.println("BT Client Connected");
+    } else if (event == ESP_SPP_CLOSE_EVT)  // 27
+    {
+      btConnected = false;
+      if (btPaired) Serial.println("BT Client disconnected");  // suppress when we are not paired yet
+    }
   }
-}
 #endif
 
 // ----------------------------------------
@@ -253,18 +253,18 @@ void configRadioBaud(uint16_t baudrate) {
 
 void reply_to_PC(uint8_t cmd)
 {
-  uint8_t send_freq[15] = {};
-  uint8_t vfo_dec[7] = {};
+  uint8_t send_freq[15] = {0};
+  uint8_t vfo_dec[7] = {0};
   uint8_t f_len;
-  uint8_t LEN;
+  uint8_t len;
   
-  uint8_t len = formatFreq(frequency, vfo_dec);  // Convert to BCD string
+  len = formatFreq(frequency, vfo_dec);  // Convert to BCD string
 
   if (cmd == 0x25)
   {
     send_freq[0] = 0xFE;
     send_freq[1] = 0xFE;
-    send_freq[2] = read_buffer[2];
+    send_freq[2] = Ext_Controller; //read_buffer[2];
     send_freq[3] = radio_address;
     send_freq[4] = cmd;
     send_freq[5] = read_buffer[5];
@@ -274,7 +274,7 @@ void reply_to_PC(uint8_t cmd)
     send_freq[9] = vfo_dec[3];
     send_freq[10] = vfo_dec[4];
     // Adjust for freq value length of 5bytes, or 6bytes for IC905
-    if (radio_address == IC905) {
+    if (radio_address == IC905 && frequency >= 10000000000) {   // > 1GHz is 6 bytes
       send_freq[11] = vfo_dec[5];
       send_freq[12] = 0xFD;
       send_freq[13] = 0x00;
@@ -285,15 +285,23 @@ void reply_to_PC(uint8_t cmd)
       send_freq[12] = 0x00;
       f_len = 12;
     }   
-  }
-  else
-  {
+  } else if (cmd == 0xFA || cmd == 0xFB) {  // translate controller address from 0xE5 to external user
+    send_freq[0] = 0xFE;
+    send_freq[1] = 0xFE;
+    send_freq[2] = Ext_Controller; //read_buffer[2];
+    send_freq[3] = radio_address;
+    send_freq[4] = cmd;
+    send_freq[5] = 0xFD;
+    send_freq[6] = 0x00;
+    f_len = 6;
+    Serial.write(send_freq, f_len);  // send Accepted message back to radio
+  } else { // 00, 03. 05
     send_freq[0] = 0xFE;
     send_freq[1] = 0xFE;
     if (read_buffer[4] == 0x00)
       send_freq[2] = 0x00;
     else
-      send_freq[2] = read_buffer[2];
+      send_freq[2] = Ext_Controller; //read_buffer[2];
     send_freq[3] = radio_address;
     send_freq[4] = cmd;
     send_freq[5] = vfo_dec[0];
@@ -379,9 +387,11 @@ uint8_t readLine(void) {
     // ****************************************************
     // pass on to PC radio messages directed to other controllers than us
     uint8_t cmd = read_buffer[4];
-    if (counter && read_buffer[0] == 0xFE && read_buffer[1] == 0xFE && read_buffer[2] != radio_address && read_buffer[2] != CONTROLLER_ADDRESS && read_buffer[3] != CONTROLLER_ADDRESS && read_buffer[counter-1] == 0xFD)
+    // ensure it is a full valid formatted CI-V command
+    if (counter && read_buffer[0] == 0xFE && read_buffer[1] == 0xFE && read_buffer[counter-1] == 0xFD)
     {
       #ifndef SKIP_XVTR_FREQ_XLATE
+      // cmd 0x05 changes freq, returns FB/FA.  03 and 25 return frequency.  00 is unsolicited frequency change from radio (turnging dial)
       if (XVTR_enabled && (cmd== 0x00 || (PC_to_Radio_Msg_Sent && last_PC_cmd == cmd && (cmd == 0x03 || cmd == 0x25))))
       {
         uint64_t ff;
@@ -406,7 +416,7 @@ uint8_t readLine(void) {
       if (read_buffer[2] != CONTROLLER_ADDRESS)
       #endif
       {  
-        if (PC_to_Radio_Msg_Sent && (read_buffer[4] == 0x00 || read_buffer[4] == 0xFB || read_buffer[4] == 0xFA || read_buffer[4] == last_PC_cmd)) {
+        if (PC_to_Radio_Msg_Sent && (cmd == 0x00 || cmd == 0xFB || cmd == 0xFA || cmd == last_PC_cmd)) {
           Serial.write(read_buffer, counter);
           PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
           #ifdef DBG_TO_LCD
@@ -448,8 +458,8 @@ uint8_t pass_PC_to_radio(void) {
     uint8_t data_len;
     uint32_t ed = readtimeout;  // not initialized!
     static uint8_t r_buffer[64];  //Read buffer
-     uint8_t send_freq[15] = {};
-    uint8_t vfo_dec[7] = {};
+    uint8_t send_freq[15] = {0};
+    uint8_t vfo_dec[7] = {0};
     uint8_t f_len;
 
     while (1) {
@@ -472,11 +482,12 @@ uint8_t pass_PC_to_radio(void) {
       uint64_t f;
       uint64_t mul;
       uint8_t k;
-      bool direct = true;
+      bool pass_on = true;
       static uint8_t band_last = 255;
 
       #ifndef SKIP_XVTR_FREQ_XLATE
         uint8_t cmd = r_buffer[4];
+        // if inbound frequency change command then translate it if it is for a transverter band
         if (STOP_BYTE == byte && counter > 10 && r_buffer[2] == radio_address && r_buffer[0] == 0xFE && r_buffer[1] == 0xFE && (cmd == 0x05 || cmd == 0x25))
         {
           mul = 1;
@@ -497,51 +508,29 @@ uint8_t pass_PC_to_radio(void) {
           
           band = getBand(f);
           frequency = f;
-          // switch to Xvtr mode
-          switch (band) {
-            case BAND_1_25M:band_Selector(DECODE_INPUT_BAND222, true); direct = false; break;
-            case BAND_33cm: band_Selector(DECODE_INPUT_BAND902, true); direct = false;  break;
-            case BAND_23cm: band_Selector(DECODE_INPUT_BAND1296, true); direct = false;  break;
-            default:        direct = true; 
-                            band_Selector(0, true);
+
+          // If band has changed, last known values will be restored.
+          // If the band is a XVTR band, then the XVTR_enabled is set and frequency offsets are applied 
+          
+          if (band_last != band) {
+            band_Selector(bands[band].InputMap, true);
+            band_last = band;
+          }
+
+          if (XVTR_enabled) {
+            pass_on = false; // IF a Xvtr bnd then translate 
+            
+            // pass on frequency.  If it is for a Xvtr band SetFreq() will add the offset
+            switch (cmd) {
+                case 0x25: if (r_buffer[5] == 0x00)
+                              SetFreq(frequency, CIV_C_F25A_SEND);   // vfo A 
+                            else
+                              SetFreq(frequency, CIV_C_F25B_SEND);  // vfo B
                             break;
+                case 0x05: SetFreq(frequency, CIV_C_F1_SEND);  // send 0x05
+                            break;
+            }
           }
-          switch (cmd) {
-            case 0x25: if (r_buffer[5] == 0x00)
-                          SetFreq(frequency, CIV_C_F25A_SEND);   // vfo A 
-                        else
-                          SetFreq(frequency, CIV_C_F25B_SEND);  // vfo B
-                        break;
-            case 0x05: SetFreq(frequency, CIV_C_F1_SEND);  // send 0x05
-                        break;
-          }
-
-          if (!direct) {
-            send_freq[0] = 0xFE;
-            send_freq[1] = 0xFE;
-            send_freq[2] = Ext_Controller;
-            send_freq[3] = radio_address;
-            send_freq[4] = 0xFB;
-            send_freq[5] = 0xFD;
-            f_len = 6;
-            Serial.write(send_freq, f_len);  // send Accepted message back to radio
-          }
-
-          //reply_to_PC(cmd);
-          // this is to generate expected response from radio to PC side request, likely redundant otherwise
-          /*
-          switch (cmd){
-            case 0x25:  { if (r_buffer[5] == 0x01)
-                          { SetFreq(f, CIV_C_F25B_SEND);} //Send on to the radio the translated frequency.  The reply for the radio also needs to be translated to PC to work right.
-                        else 
-                          { SetFreq(f, CIV_C_F25A_SEND);}
-                        break; }  //Send on to the radio the translated frequency.  The reply for the radio also needs to be translated to PC to work right.
-            case 0x05:  { SetFreq(f, CIV_C_F1_SEND);
-                        break; }
-            case 0x00:  { SetFreq(f, CIV_C_F_SEND);
-                        break; }
-          }
-          */
 
           #ifdef DBG_TO_LCD
             M5.Lcd.setCursor(1,140);
@@ -555,7 +544,7 @@ uint8_t pass_PC_to_radio(void) {
         }
       #endif
 
-      if (direct)  // pass on to radio without any frequency manipulations
+      if (pass_on)  // pass on to radio without any frequency manipulations
       {
         #if defined ( BTCLASSIC )
           if (btConnected && SerialBT.connected()) {
@@ -570,7 +559,7 @@ uint8_t pass_PC_to_radio(void) {
         //Serial.flush();
         
         #ifdef DBG_TO_LCD
-        M5.Lcd.setCursor(1,160);
+          M5.Lcd.setCursor(1,160);
           M5.Lcd.setTextSize(2);
           M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
           M5.Lcd.printf("%02X %011llu", 0, frequency);
@@ -732,7 +721,11 @@ void read_Frequency(uint64_t freq, uint8_t data_len) {  // This is the displayed
     frequency += bands[XVTR_Band].Xvtr_offset;
 
   band = getBand(frequency);
-
+  //if (!update_radio_settings_flag) {  //  ignore changes from radio initiated from gpio changes
+  //  DPRINTF("Band Change from Radio for "); DPRINTLN(bands[band].band_name);
+  //  band_Selector(band, true);
+  //}
+  
   //Serial.printf("read_Frequency: Freq %-13llu  band =  %d  Xvtr_Offset = %llu  datalen = %d   btConnected %d   USBH_connected %d   BT_enabled %d   BLE_connected %d  radio_address %X\n", frequency, band, bands[XVTR_Band].Xvtr_offset, data_len, btConnected, USBH_connected, BT_enabled, BLE_connected, radio_address);
   // On exit from this function we have a new displayed frequency that has XVTR_Offset added, if any.
 }
@@ -882,59 +875,6 @@ void processCatMessages() {
       }      // is preamble
     }        // readline
   }          // while
-}
-
-// ----------------------------------------
-//         sendBand
-// ----------------------------------------
-void sendBand(byte band) {
-
-  unsigned long previousTime = 0;
-  const long maxWaitTime = 50;
-
-  // Pull the TUNE_PIN line high for half a second
-  //digitalWrite(TUNE_PIN, HIGH);
-  vTaskDelay(500);
-  //digitalWrite(TUNE_PIN, LOW);
-
-  // The ATU will pull the DATA_PIN line HIGH for 50ms
-
-  previousTime = millis();
-  //while(digitalRead(DATA_PIN) == LOW) {
-  // Measure time the while loop is active, and jump out after maxWaiTime.
-  // This ensures that the program does not lock in case the communication
-  // with the ATU is temporarly broken
-
-  //unsigned long currentTime = millis();
-  //if (currentTime - previousTime > maxWaitTime) {
-  //  DPRINTLNF("Error: No positive pulse from T1 detected!");
-  //  return;
-  //}
-  //}
-
-  //while(digitalRead(DATA_PIN) == HIGH) {
-  //}
-  // Wait 10ms
-  //vTaskDelay(10);
-
-  // and then send data on the DATA line
-  //pinMode(DATA_PIN, OUTPUT);
-
-  // 1 bits are HIGH for 4ms
-  // 0 bits are HIGH for 1.5ms
-  // Gap between digits is 1.5ms LOW
-
-  // 1st bit
-  //sendBit(band & 8);
-  //sendBit(band & 4);
-  //sendBit(band & 2);
-  //sendBit(band & 1);
-
-  // Leave the line LOW
-  //digitalWrite(DATA_PIN, LOW);
-
-  // and switch it back to an input
-  //pinMode(DATA_PIN, INPUT);
 }
 
 #ifdef BTCLASSIC
@@ -1170,277 +1110,277 @@ void poll_radio(void) {
 
 #ifdef SD_CARD
 
-char line_buffer[80] = { 0 };
-
-void printLineN(uint16_t lineNumber) {
-  File myFile = SD.open("/config.ini", FILE_READ);  // Open the file "/hello.txt" in read mode.
-  myFile.seek(0);
-  char cr;
-
-  for (uint16_t i = 0; i < (lineNumber - 1);) {
-    cr = myFile.read();
-    if (cr == '\n') {
-      i++;
-    }
-  }
-
-  Serial.print("printLineN: ");
-  //Now we are at the right line
-  while (true) {
-    cr = myFile.read();
-    Serial.write(cr);
-    if (cr == '\n') {
-      break;
-    }
-  }
-  //a for loop with a read limit might be a good idea
-}
-
-// returns the value part of a string found with "desired_name"
-// Returns NULL if nothing valid found
-char *read_string(char *line_buffer, char const *desired_name) {
-  static char name[64];
-  static char val[64];
-  char seperator[2];
-
-  Serial.print(F("\nread_string: Line Buffer: "));
-  Serial.println(line_buffer);
-  uint8_t i = 0;
-
-  while (sscanf(line_buffer, "%s %s %127[^\n]*%*s", name, seperator, val) != 0) {
-    if (0 == strcmp(name, desired_name)) {
-      Serial.print(F("read_string2: Name:"));
-      Serial.print(name);
-      Serial.print(F("   seperator:"));
-      Serial.print(seperator);
-      Serial.print(F("   val:"));
-      Serial.println(val);
-
-      return strdup(val);
-    }
-  }
-  return NULL;
-}
-
-void write_bands_data(void) {
-  if (SD.exists("/bands.dat")) {
-    SD.remove("/bands.dat");  // delete old file and replace with new stuff
-    DPRINTLNF("write_bands_data: Deleted old bands table file on SD card");
-  }
-  File myFile = SD.open("/bands.dat", FILE_WRITE);  // Create if needed and open the file for write
-  if (myFile) {
-    DPRINTLNF("write_bands_data: Writing bands table to SD card");
-    // Write bands data table to the SD car
-    myFile.write((uint8_t *)&bands, sizeof(bands));
-  }
-  myFile.close();
-  DPRINTLNF("write_bands_data: Done writing file");
-}
-
-void read_bands_data(void) {
-  Serial.println("read_bands_data: Opening /bands.data file for read");
-  File myFile = SD.open("/bands.dat", FILE_READ);
-  if (myFile) {
-    myFile.read((uint8_t *)&bands, sizeof(bands) / sizeof(uint8_t));
-    Serial.println("read_bands_data: Done reading file");
-    myFile.close();
-  } else {
-    Serial.println("read_bands_data: Failed to open /bands.data file for read");
-  }
-}
-
-uint16_t read_SD_Card(void) {
-  char cr;
-  uint16_t cnt = 0;
-  uint8_t i = 0;
-  char *line_buffer_temp;
   char line_buffer[80] = { 0 };
-  char *token;
-  char *rest = line_buffer;
-  char address_temp[22] = { 0 };
-  uint8_t bd_address_temp[7] = { 0 };
-  uint8_t j = 0;
-  uint8_t k;
 
-  File myFile = SD.open("/config.ini", FILE_READ);  // Open the file in read mode.
-  if (myFile) {
-    Serial.println(F("config.ini Content:"));
-    // Read the data from the file and print it until the reading is complete.
-    while (myFile.available()) {
+  void printLineN(uint16_t lineNumber) {
+    File myFile = SD.open("/config.ini", FILE_READ);  // Open the file "/hello.txt" in read mode.
+    myFile.seek(0);
+    char cr;
 
-      //Serial.write(myFile.read());
+    for (uint16_t i = 0; i < (lineNumber - 1);) {
       cr = myFile.read();
-      line_buffer[i++] = cr;
+      if (cr == '\n') {
+        i++;
+      }
+    }
 
-      if (cr == '\n')  // Got a full line
-      {
-        cnt++;  // count the total lines in the file
-        line_buffer[i - 1] = '\0';
-        Serial.println(line_buffer);  // Got 1 whole line. print it out for a look-see
+    Serial.print("printLineN: ");
+    //Now we are at the right line
+    while (true) {
+      cr = myFile.read();
+      Serial.write(cr);
+      if (cr == '\n') {
+        break;
+      }
+    }
+    //a for loop with a read limit might be a good idea
+  }
 
-        if (line_buffer[0] != ';' && isAlphaNumeric(line_buffer[0])) {  // skip comment and non-content lines
-          //Serial.print(F("Before match function: line Number: ")); Serial.print(cnt); Serial.print(F("  line buffer is ")); Serial.print(line_buffer);
+  // returns the value part of a string found with "desired_name"
+  // Returns NULL if nothing valid found
+  char *read_string(char *line_buffer, char const *desired_name) {
+    static char name[64];
+    static char val[64];
+    char seperator[2];
 
-          line_buffer_temp = read_string(line_buffer, "bd_address");
+    Serial.print(F("\nread_string: Line Buffer: "));
+    Serial.println(line_buffer);
+    uint8_t i = 0;
 
-          int l = strlen(line_buffer_temp);
-          Serial.print("Number digits read in for bd_address - len:");
-          Serial.println(l);
-          if (l != 18) {
-            Serial.print("Wrong number of digits for bd_address - len:");
+    while (sscanf(line_buffer, "%s %s %127[^\n]*%*s", name, seperator, val) != 0) {
+      if (0 == strcmp(name, desired_name)) {
+        Serial.print(F("read_string2: Name:"));
+        Serial.print(name);
+        Serial.print(F("   seperator:"));
+        Serial.print(seperator);
+        Serial.print(F("   val:"));
+        Serial.println(val);
+
+        return strdup(val);
+      }
+    }
+    return NULL;
+  }
+
+  void write_bands_data(void) {
+    if (SD.exists("/bands.dat")) {
+      SD.remove("/bands.dat");  // delete old file and replace with new stuff
+      DPRINTLNF("write_bands_data: Deleted old bands table file on SD card");
+    }
+    File myFile = SD.open("/bands.dat", FILE_WRITE);  // Create if needed and open the file for write
+    if (myFile) {
+      DPRINTLNF("write_bands_data: Writing bands table to SD card");
+      // Write bands data table to the SD car
+      myFile.write((uint8_t *)&bands, sizeof(bands));
+    }
+    myFile.close();
+    DPRINTLNF("write_bands_data: Done writing file");
+  }
+
+  void read_bands_data(void) {
+    Serial.println("read_bands_data: Opening /bands.data file for read");
+    File myFile = SD.open("/bands.dat", FILE_READ);
+    if (myFile) {
+      myFile.read((uint8_t *)&bands, sizeof(bands) / sizeof(uint8_t));
+      Serial.println("read_bands_data: Done reading file");
+      myFile.close();
+    } else {
+      Serial.println("read_bands_data: Failed to open /bands.data file for read");
+    }
+  }
+
+  uint16_t read_SD_Card(void) {
+    char cr;
+    uint16_t cnt = 0;
+    uint8_t i = 0;
+    char *line_buffer_temp;
+    char line_buffer[80] = { 0 };
+    char *token;
+    char *rest = line_buffer;
+    char address_temp[22] = { 0 };
+    uint8_t bd_address_temp[7] = { 0 };
+    uint8_t j = 0;
+    uint8_t k;
+
+    File myFile = SD.open("/config.ini", FILE_READ);  // Open the file in read mode.
+    if (myFile) {
+      Serial.println(F("config.ini Content:"));
+      // Read the data from the file and print it until the reading is complete.
+      while (myFile.available()) {
+
+        //Serial.write(myFile.read());
+        cr = myFile.read();
+        line_buffer[i++] = cr;
+
+        if (cr == '\n')  // Got a full line
+        {
+          cnt++;  // count the total lines in the file
+          line_buffer[i - 1] = '\0';
+          Serial.println(line_buffer);  // Got 1 whole line. print it out for a look-see
+
+          if (line_buffer[0] != ';' && isAlphaNumeric(line_buffer[0])) {  // skip comment and non-content lines
+            //Serial.print(F("Before match function: line Number: ")); Serial.print(cnt); Serial.print(F("  line buffer is ")); Serial.print(line_buffer);
+
+            line_buffer_temp = read_string(line_buffer, "bd_address");
+
+            int l = strlen(line_buffer_temp);
+            Serial.print("Number digits read in for bd_address - len:");
             Serial.println(l);
-            break;
-          }
+            if (l != 18) {
+              Serial.print("Wrong number of digits for bd_address - len:");
+              Serial.println(l);
+              break;
+            }
 
-          if (line_buffer_temp != NULL) {
-            Serial.print(F("Found address line:"));
-            Serial.println(line_buffer_temp);
-            strcpy(address_temp, line_buffer_temp);
+            if (line_buffer_temp != NULL) {
+              Serial.print(F("Found address line:"));
+              Serial.println(line_buffer_temp);
+              strcpy(address_temp, line_buffer_temp);
 
-            // replace : with \0
-            for (uint8_t k = 0; k < 18;) {
-              //Serial.print("  addr_temp zero cnt:"); Serial.print(k); Serial.print("  val:"); Serial.println(address_temp[k]);
-              if (address_temp[k] == ':') {
-                address_temp[k] = '\0';
-                //Serial.print("  addr_temp zero cnt sub:"); Serial.println(k);
+              // replace : with \0
+              for (uint8_t k = 0; k < 18;) {
+                //Serial.print("  addr_temp zero cnt:"); Serial.print(k); Serial.print("  val:"); Serial.println(address_temp[k]);
+                if (address_temp[k] == ':') {
+                  address_temp[k] = '\0';
+                  //Serial.print("  addr_temp zero cnt sub:"); Serial.println(k);
+                }
+                address_temp[17] = '\0';
+                k++;
               }
-              address_temp[17] = '\0';
-              k++;
-            }
 
-            //Serial.print("\n address_temp ascii byte: ");  Serial.println(address_temp);
+              //Serial.print("\n address_temp ascii byte: ");  Serial.println(address_temp);
 
-            // convert each pair of the 6 acsii hex numbers to a number.
-            for (k = 0; k < 16; k += 3) {
-              uint8_t addr = (uint8_t)hexToDec((String)&address_temp[k]);
-              bd_address_temp[j++] = addr;
-              //Serial.print("   hex addr byte:0x");  Serial.print(addr, HEX);
-              //Serial.print("   hex addr array byte:0x");  Serial.println(bd_address_temp[j-1], HEX);
-            }
-            bd_address_temp[6] = '\0';
+              // convert each pair of the 6 acsii hex numbers to a number.
+              for (k = 0; k < 16; k += 3) {
+                uint8_t addr = (uint8_t)hexToDec((String)&address_temp[k]);
+                bd_address_temp[j++] = addr;
+                //Serial.print("   hex addr byte:0x");  Serial.print(addr, HEX);
+                //Serial.print("   hex addr array byte:0x");  Serial.println(bd_address_temp[j-1], HEX);
+              }
+              bd_address_temp[6] = '\0';
 
-            Serial.print(F(" Default bd_address:"));  // print default bd_address
-            for (int z = 0; z < 6; z++)
-              Serial.print(bd_address[z], HEX);
-            Serial.println("");
+              Serial.print(F(" Default bd_address:"));  // print default bd_address
+              for (int z = 0; z < 6; z++)
+                Serial.print(bd_address[z], HEX);
+              Serial.println("");
 
-            int y = (memcmp(bd_address, bd_address_temp, 6));  //  look to see if they are the same or not
-            if (y != 0) {                                      // 0 is the same
-              memcpy(bd_address, bd_address_temp, 6);          // valid address uee it.
-              Serial.println("Updated bd_address from config.ini");
+              int y = (memcmp(bd_address, bd_address_temp, 6));  //  look to see if they are the same or not
+              if (y != 0) {                                      // 0 is the same
+                memcpy(bd_address, bd_address_temp, 6);          // valid address uee it.
+                Serial.println("Updated bd_address from config.ini");
+              } else {
+                Serial.println("bd_address is the same as default");
+              }
+              //Serial.print(F("\nbd_address index:"));  Serial.println(j,DEC);
+              break;
             } else {
-              Serial.println("bd_address is the same as default");
+              Serial.print(F("No Match Found line:"));
+              Serial.println(cnt);
             }
-            //Serial.print(F("\nbd_address index:"));  Serial.println(j,DEC);
-            break;
           } else {
-            Serial.print(F("No Match Found line:"));
+            Serial.print(F("Commented or invalid line:"));
             Serial.println(cnt);
           }
-        } else {
-          Serial.print(F("Commented or invalid line:"));
-          Serial.println(cnt);
+          i = 0;
         }
-        i = 0;
       }
-    }
-    myFile.close();
+      myFile.close();
 
-    Serial.printf("number of lines in config.ini file %d\n", cnt);
+      Serial.printf("number of lines in config.ini file %d\n", cnt);
+      return cnt;
+    } else {
+      Serial.println("error opening config.ini");  // If the file is not open.
+      return 0;
+    }
     return cnt;
-  } else {
-    Serial.println("error opening config.ini");  // If the file is not open.
-    return 0;
   }
-  return cnt;
-}
 
-void performUpdate(Stream &updateSource, size_t updateSize) {
-  if (Update.begin(updateSize)) {
-    size_t written = Update.writeStream(updateSource);
-    if (written == updateSize) {
-      M5.Lcd.println("Written : " + String(written) + " successfully");
-    } else {
-      M5.Lcd.println("Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
-    }
-    if (Update.end()) {
-      M5.Lcd.println("OTA done!");
-      if (Update.isFinished()) {
-        M5.Lcd.println("Update successfully completed. Rebooting.");
+  void performUpdate(Stream &updateSource, size_t updateSize) {
+    if (Update.begin(updateSize)) {
+      size_t written = Update.writeStream(updateSource);
+      if (written == updateSize) {
+        M5.Lcd.println("Written : " + String(written) + " successfully");
       } else {
-        M5.Lcd.println("Update not finished? Something went wrong!");
+        M5.Lcd.println("Written only : " + String(written) + "/" + String(updateSize) + ". Retry?");
+      }
+      if (Update.end()) {
+        M5.Lcd.println("OTA done!");
+        if (Update.isFinished()) {
+          M5.Lcd.println("Update successfully completed. Rebooting.");
+        } else {
+          M5.Lcd.println("Update not finished? Something went wrong!");
+        }
+      } else {
+        M5.Lcd.println("Error Occurred. Error #: " + String(Update.getError()));
       }
     } else {
-      M5.Lcd.println("Error Occurred. Error #: " + String(Update.getError()));
+      M5.Lcd.println("Not enough space to begin OTA");
     }
-  } else {
-    M5.Lcd.println("Not enough space to begin OTA");
   }
-}
 
-void UpdateFromFS(fs::FS &fs) {
-  File updateBin = fs.open("/update.bin");
-  Serial.println("Update file has size " + String(updateBin.size()));
-  delay(1000);
+  void UpdateFromFS(fs::FS &fs) {
+    File updateBin = fs.open("/update.bin");
+    Serial.println("Update file has size " + String(updateBin.size()));
+    delay(1000);
 
-  if (updateBin) {
-    if (updateBin.isDirectory()) {
-      M5.Lcd.drawString("Error, update.bin is not a file", 1, 1, 2);
+    if (updateBin) {
+      if (updateBin.isDirectory()) {
+        M5.Lcd.drawString("Error, update.bin is not a file", 1, 1, 2);
+        updateBin.close();
+        return;
+      }
+
+      size_t updateSize = updateBin.size();
+
+      if (updateSize > 0) {
+        M5.Lcd.drawString("Try to start update", 1, 20, 2);
+        performUpdate(updateBin, updateSize);
+      } else {
+        M5.Lcd.drawString("Error, file is empty", 1, 20, 2);
+      }
+
       updateBin.close();
-      return;
-    }
 
-    size_t updateSize = updateBin.size();
-
-    if (updateSize > 0) {
-      M5.Lcd.drawString("Try to start update", 1, 20, 2);
-      performUpdate(updateBin, updateSize);
+      // whe finished remove the binary from sd card to indicate end of the process
+      fs.remove("/update.bin");
     } else {
-      M5.Lcd.drawString("Error, file is empty", 1, 20, 2);
+      M5.Lcd.drawString("Could not load update.bin from sd root", 1, 40, 2);
     }
-
-    updateBin.close();
-
-    // whe finished remove the binary from sd card to indicate end of the process
-    fs.remove("/update.bin");
-  } else {
-    M5.Lcd.drawString("Could not load update.bin from sd root", 1, 40, 2);
   }
-}
 
-void Update_from_SD() {
-  if (!SD.begin()) {
-    Serial.println("No SD Card");
-  } else {
-    Serial.println("SD Card found, try update");
-    UpdateFromFS(SD);
-  }
-  Serial.println("Yay, SD Update worked!");
-}
-
-
-void printDirectory(File dir, int numTabs) {
-  while (true) {
-    File entry = dir.openNextFile();
-    if (!entry) {
-      // no more files
-      break;
-    }
-    for (uint8_t i = 0; i < numTabs; i++) {
-      Serial.print('\t');
-    }
-    Serial.print(entry.name());
-    if (entry.isDirectory()) {
-      Serial.println("/");
-      printDirectory(entry, numTabs + 1);
+  void Update_from_SD() {
+    if (!SD.begin()) {
+      Serial.println("No SD Card");
     } else {
-      // files have sizes, directories do not
-      Serial.print("\t\t");
-      Serial.println(entry.size(), DEC);
+      Serial.println("SD Card found, try update");
+      UpdateFromFS(SD);
     }
-    entry.close();
+    Serial.println("Yay, SD Update worked!");
   }
-}
+
+
+  void printDirectory(File dir, int numTabs) {
+    while (true) {
+      File entry = dir.openNextFile();
+      if (!entry) {
+        // no more files
+        break;
+      }
+      for (uint8_t i = 0; i < numTabs; i++) {
+        Serial.print('\t');
+      }
+      Serial.print(entry.name());
+      if (entry.isDirectory()) {
+        Serial.println("/");
+        printDirectory(entry, numTabs + 1);
+      } else {
+        // files have sizes, directories do not
+        Serial.print("\t\t");
+        Serial.println(entry.size(), DEC);
+      }
+      entry.close();
+    }
+  }
 #endif
 
 //
@@ -1685,7 +1625,6 @@ void display_Band(uint8_t _band, bool _force) {
   if (_band != _prev_band || _force) {
     // Update our outputs
     Band_Decode_Output(band, true);
-    //sendBand(band);   // change the IO pins to match band
     //Serial.printf("Band %s\n", bands[_band].band_name);
 
     #ifndef M5STAMPC3U
@@ -1695,11 +1634,11 @@ void display_Band(uint8_t _band, bool _force) {
         y= 118;
       }
       #ifndef DBG_TO_LCD
-      M5.Lcd.setTextDatum(ML_DATUM);
-      M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
-      M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-      M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
+        M5.Lcd.setTextDatum(ML_DATUM);
+        M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(bands[_prev_band].band_name, x, y, font_sz);
+        M5.Lcd.setTextColor(TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.drawString(bands[_band].band_name, x, y, font_sz);
       #endif
     #endif
 
@@ -1711,7 +1650,7 @@ void display_Band(uint8_t _band, bool _force) {
         ; // nothing
         #endif
       else                   // by this time we should be stable after XVTR transitions
-        update_radio_settings_flag = false;
+        ;//update_radio_settings_flag = false;
     }
     _prev_band = _band;
   }
@@ -1785,59 +1724,83 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
   static bool XVTR_enabled_last;
   static uint8_t XVTR_band_before;
   uint8_t _input_band;
+  bool change_band = false;
+  static uint8_t last_band = 255;
 
-  if (_band_input_pattern != _band_input_pattern_last)  // only do something if it is different
+  // if PC or radio side frequncy change then go to the band.  If wired or button, then use input pattern
+  if (ext_input && !update_radio_settings_flag) {  // skip if freq change a result of wired input change
+    if (band != last_band) {
+      _input_band = band;
+      change_band = true;
+      last_band = band;
+      DPRINTF("Band Selector External Input = "); DPRINTLN(bands[band].band_name);
+    }
+  }    
+  else if (_band_input_pattern != _band_input_pattern_last)  // only do something if it is different
   {
-    #ifdef SD_Card
-      write_bands_data();                         // capture all data to SD before XVTR transition
-    #endif
     if (!XVTR_enabled_last && !XVTR_enabled) {  // capture last non-Xvtr band in use
       XVTR_band_before = band;                  // record the non-xvtr band before initial XVTR mode enabled.
     }
-
-    PTT_Output(DUMMY, false);  // send PTT OFF with current band before changing to new band.
-    // On the 8In/4Out Digital IO module, the inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
-    // translate input band pattern to band index then send to band Decode output
-    
     DPRINTF("Band Selector input = "); DPRINTLN(_band_input_pattern);
     for (_input_band = 0; _input_band < NUM_OF_BANDS; _input_band++) {
       //DPRINTF("Input search index = "); DPRINTLN(_input_band);
       //DPRINTF("Band Map Value = "); DPRINT(bands[_input_band].InputMap);
       //DPRINTF("    Input Band Value = "); DPRINTLN(_input_band);
       if (bands[_input_band].InputMap == _band_input_pattern) {
-        DPRINTF("Band Selector MATCH = "); DPRINTLN(bands[_input_band].InputMap); 
-        if (bands[_input_band].Xvtr_offset != 0) {
-          DPRINTF("Xvtr Band Detected = "); DPRINTLN(bands[_input_band].band_name);
-          XVTR_Band = _input_band;
-          XVTR_enabled = true;
-          #ifdef M5STAMPC3U
-            band = _input_band;
-          #endif
-        } else {
-          DPRINTF("Not a Xvtr Band = "); DPRINTLN(bands[_input_band].band_name);
-          band = _input_band;
-          XVTR_Band = 0;
-          XVTR_enabled = false;   // No match, do nothing
-        }
+        DPRINTF("Band Selector MATCH = "); DPRINTLN(bands[_input_band].InputMap);         
+        _band_input_pattern_last = _band_input_pattern;
+        change_band = true;
+        DPRINTF("Band Selector Source (wired or polled) Input Pattern = "); DPRINT(_band_input_pattern); 
         break;   // we have a match, use this as the target band
-      } else {
-        //DPRINTF("Band Selector NO MATCH = "); DPRINTLN(bands[_input_band].InputMap);
-        XVTR_enabled = false;   // No match, do nothing
       }
     }
+  }
 
-    DPRINTF("Band Selector Source (wired or polled) Input Pattern = "); DPRINT(_band_input_pattern); 
+  if (change_band) {
+    PTT_Output(DUMMY, false);  // send PTT OFF with current band before changing to new band.
+    // On the 8In/4Out Digital IO module, the inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
+    // translate input band pattern to band index then send to band Decode output
+  
+    if (bands[_input_band].Xvtr_offset != 0) {
+      DPRINTF("Xvtr Band Detected = "); DPRINTLN(bands[_input_band].band_name);
+      XVTR_Band = _input_band;
+      XVTR_enabled = true;
+      #ifdef M5STAMPC3U
+        band = _input_band;
+      #endif
+    } else {
+      DPRINTF("Not a Xvtr Band = "); DPRINTLN(bands[_input_band].band_name);
+      band = _input_band;
+      XVTR_Band = 0;
+      XVTR_enabled = false;   // No match, do nothing
+    }
+  } else {
+    //DPRINTF("Band Selector NO MATCH = "); DPRINTLN(bands[_input_band].InputMap);
+    XVTR_enabled = false;   // No match, do nothing
+  }
+
+  if (change_band) {
+    update_radio_settings_flag = true;
+    
     DPRINTF("   Xvtr enabled = "); DPRINT(XVTR_enabled);
     DPRINTF("   Band = "); DPRINT(band);
     DPRINTF("   Xvtr Band = "); DPRINTLN(XVTR_Band);
-    draw_new_screen();
-
-    _band_input_pattern_last = _band_input_pattern;
-
-    // Band and Frequency are not yet changed
+    
+    // Band and Frequency are not yet changed.  Set split to off on band changes else weird things happen.  
+    // Split will be reset after change is stabilized
     #ifndef M5STAMPC3U
       // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, never the same band.
       if (XVTR_enabled) {  // set VFO and other values to last used for the target XVTR band
+        SetSplit(XVTR_Band, true);  // force split off 
+        if (ext_input)
+          if (read_buffer[5] == 0x00)
+            SetFreq(frequency, CIV_C_F25A_SEND);
+          else
+            SetFreq(frequency, CIV_C_F25B_SEND);
+        else
+          SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied    
+        vTaskDelay(10);
+        processCatMessages();
         SetMode(XVTR_Band);
         vTaskDelay(10);
         SetPre(XVTR_Band);
@@ -1846,20 +1809,24 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         vTaskDelay(10);
         SetRFPwr(XVTR_Band);
         vTaskDelay(10);
-        SetSplit(XVTR_Band);
-        vTaskDelay(10);
+        //SetSplit(XVTR_Band, 0);
+        //vTaskDelay(10);
         SetAGC(XVTR_Band);
         vTaskDelay(10);
-        if (ext_input)
-          SetFreq(frequency, CIV_C_F25A_SEND);
-        else
-          SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied          
-        update_radio_settings_flag = true;
       }
-
-      // If turning off Xvtr mode, then restore the IF to normal last used values
-      if (XVTR_enabled_last && !XVTR_enabled) {  // This will have Xvtr offset = 0
+      else
+      // Restore the IF to last used values
+      //if ((ext_input && !XVTR_enabled) || (XVTR_enabled_last && !XVTR_enabled)) {  // This will have Xvtr offset = 0
         // band is still Xvtr band until the radio actually changes frequency
+      {
+
+        if (ext_input)
+          XVTR_band_before = band;  // if sent from a PC then use that band, not the last non-Xvtr band
+        SetSplit(XVTR_band_before, true);  // force split off 
+        //if (!ext_input)
+        SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25A_SEND);  // set radio to that last non-XVTR band used.
+        vTaskDelay(10);
+        processCatMessages();
         SetMode(XVTR_band_before);
         vTaskDelay(10);
         SetPre(XVTR_band_before);
@@ -1868,12 +1835,10 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         vTaskDelay(10);
         SetRFPwr(XVTR_band_before);
         vTaskDelay(10);
-        SetSplit(XVTR_band_before);
-        vTaskDelay(10);
+        //SetSplit(XVTR_band_before, 0);
+        //vTaskDelay(10);
         SetAGC(XVTR_band_before);
         vTaskDelay(10);
-        SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25A_SEND);  // set radio to that last non-XVTR band used.
-        update_radio_settings_flag = true;
       }
 
       if (update_radio_settings_flag == true) {
@@ -1888,6 +1853,13 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
           if (USBH_connected) SerialHost.flush();
         #endif
       }
+      draw_new_screen();  // clears the update flag
+      PTT_Output(band, false);
+      
+      #ifdef SD_Card
+        write_bands_data();                         // capture all data to SD before XVTR transition
+      #endif
+      update_radio_settings_flag = false;
     #endif
 
     // now the band and freq should be updated
@@ -2210,7 +2182,6 @@ void app_loop(void) {
         else
           band_Selector(0, false);
       #else
-
         radio_address = 0;
         DPRINTLNF("BtnB pressed: Scan for new radio address");
         get_new_address_flag = true;
@@ -2250,16 +2221,13 @@ void app_loop(void) {
       #endif
     }  // end Btn C
 
-  
     processCatMessages();  // look for delayed or unsolicited messages from radio
 
     refesh_display();
 
     Get_Radio_address();  // can autodiscover CI-V address if not predefined.
   
-    //#ifndef PC_PASSTHROUGH
-      poll_radio();  // do not send stuff to radio when a PC app is doing the same
-    //#endif
+    poll_radio();  // do not send stuff to radio when a PC app is doing the same
 
     #ifdef USBHOST
       if (restart_USBH_flag) {
@@ -2291,47 +2259,46 @@ void app_loop(void) {
 
     #define SHOW_INFO 1
 
-       
-      if (millis() > last_disp_info + 250) { 
-        temp_celsius = temperatureRead();
-        
-        // print out debug on serial if enabled
-        if (loop_ctr == 3  && SHOW_INFO) {
-          if (band == 1)  //  any band < 144MHz is represented as Band 1 but can be any band (AM) through 6M, ie HF/6M.
-            DPRINTF("HF/6M");
-          else
-            DPRINT(bands[band].band_name);
-          DPRINTF(" \t");
+    if (millis() > last_disp_info + 250) { 
+      temp_celsius = temperatureRead();
+      
+      // print out debug on serial if enabled
+      if (loop_ctr == 3  && SHOW_INFO) {
+        if (band == 1)  //  any band < 144MHz is represented as Band 1 but can be any band (AM) through 6M, ie HF/6M.
+          DPRINTF("HF/6M");
+        else
+          DPRINT(bands[band].band_name);
+        DPRINTF(" \t");
 
-          if (decode_PTT_last)
-            DPRINTF(Tx);
-          else 
-            DPRINTF(Rx);
-          DPRINTF("\t");
-          #ifdef INA226_I2C
-            volts = INA.getBusVoltage();
-            DPRINT(volts, 3);
-            DPRINTF("V   \t");
-            DPRINT(INA.getShuntVoltage_mV(), 3);
-            DPRINTF("mV(shunt)   \t");
-            
-            current = INA.getCurrent_mA();
-            current /= 1000;
-            DPRINT(current , 3);
-            DPRINTF("A   \t");
-            
-            DPRINT(INA.getPower_mW()/1000, 3);
-            DPRINTLNF("W");
+        if (decode_PTT_last)
+          DPRINTF(Tx);
+        else 
+          DPRINTF(Rx);
+        DPRINTF("\t");
+        #ifdef INA226_I2C
+          volts = INA.getBusVoltage();
+          DPRINT(volts, 3);
+          DPRINTF("V   \t");
+          DPRINT(INA.getShuntVoltage_mV(), 3);
+          DPRINTF("mV(shunt)   \t");
+          
+          current = INA.getCurrent_mA();
+          current /= 1000;
+          DPRINT(current , 3);
+          DPRINTF("A   \t");
+          
+          DPRINT(INA.getPower_mW()/1000, 3);
+          DPRINTLNF("W");
 
-            DPRINT(temp_celsius 3);
-            DPRINTLNF("C");
-          #endif
-        }
+          DPRINT(temp_celsius 3);
+          DPRINTLNF("C");
+        #endif
+      }
 
-        // Show on OLED display
-        // Rotate the info on the small OLED screen to keep font sizes larger
-        // paint the status icons for every screen
-        #ifdef SSD1306_OLED
+      // Show on OLED display
+      // Rotate the info on the small OLED screen to keep font sizes larger
+      // paint the status icons for every screen
+      #ifdef SSD1306_OLED
         if (loop_ctr == 4) {
           display.cp437(true);         // Use full 256 char 'Code Page 437' font
           display.setCursor(20, 6);  // set up for Text Info
@@ -2377,10 +2344,10 @@ void app_loop(void) {
         draw_PTT_icon(decode_PTT_last);  // update TX and Xvtr status icons
         draw_Xvtr_icon(XVTR_Band);
       #endif  // 
-    
-     loop_ctr += 1;
-     if (loop_ctr > 4) 
-       loop_ctr = 0;  // loop update every 1 second
+  
+      loop_ctr += 1;
+      if (loop_ctr > 4) 
+        loop_ctr = 0;  // loop update every 1 second
 
       last_disp_info = millis();
     }

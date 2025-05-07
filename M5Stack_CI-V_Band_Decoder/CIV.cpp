@@ -99,7 +99,8 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_SCOPE_OFF,       {3,0x27,0x11,0x00}},          // send/read Scope wave data output OFF
     {CIV_C_SCOPE_ALL,       {1,0x27}},                    // send/read Scope catch all to avoid no match found error outputs
     {CIV_R_NO_GOOD,         {1,0xFA}},                    // Message received from radio was no good
-    {CIV_R_GOOD,            {1,0xFB}}                    // Message received from radio was good
+    {CIV_R_GOOD,            {1,0xFB}},                    // Message received from radio was good
+    {CIV_R_SEL_VFO,         {1,0x07}}                     // Selesct VFO.  00 = A. 0 = B
 };
 
 //
@@ -343,11 +344,15 @@ void SetAGC(uint8_t  _band) {
 }
 
 // set split on radio
-void SetSplit(uint8_t  _band) {
-  if (bands[_band].split)
+void SetSplit(uint8_t  _band, bool force_off) {   // true = force split off
+  if (bands[_band].split && !force_off) {
     sendCatRequest(CIV_C_SPLIT_ON_SEND, 0, 0);
-  else
+    DPRINTLNF("Set Split ON");
+  }
+  else {
     sendCatRequest(CIV_C_SPLIT_OFF_SEND, 0, 0);
+    DPRINTLNF("Set Split OFF");
+  }
 }
 
 // set RF Power on radio
@@ -355,14 +360,14 @@ void SetRFPwr(uint8_t  _band) {
   uint8_t r[3];
   uint8_t r1[3] = {0,0,0};
   uint8_t a = bands[_band].rfpwr;
-  DPRINTF("Set RF Power: "); DPRINTLN(a);
+  DPRINTF("Set RF Power: "); DPRINT(a); DPRINTF("  for Band: "); DPRINTLN(bands[_band].band_name);
   uint8_t b = bcdByteEncode((uint8_t) a/100);
   uint8_t c = bcdByteEncode((uint8_t) a % 100);
   r1[0] = b;
   r1[1] = c;
   r1[2] = 0;
-  DPRINTF("Set RF Power1a: 0x"); DPRINTLN(r1[0],HEX);
-  DPRINTF("Set RF Power1b: 0x"); DPRINTLN(r1[1],HEX);
+  //DPRINTF("Set RF Power1a: 0x"); DPRINTLN(r1[0],HEX);
+  //DPRINTF("Set RF Power1b: 0x"); DPRINTLN(r1[1],HEX);
   sendCatRequest(CIV_C_RFPOWER, r1, 2);
 }
 
@@ -521,6 +526,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
             bands[band].datamode = radio_data;  // data on/off  0-1
             bands[band].filt = radio_filter;  // filter setting 1-3
             DPRINTF("CIV_Action: Extended Mode Info - ModeNum: "); DPRINT(bands[band].mode_idx, DEC); 
+            DPRINTF("   Band: "); DPRINT(bands[band].band_name);
             DPRINTF("   Mode: "); DPRINT(modeList[bands[band].mode_idx].mode_label);
             DPRINTF("   DATA: "); DPRINT(ModeStr[bands[band].datamode]);
             DPRINTF("   Filt: "); DPRINTLN(FilStr[bands[band].filt]);
@@ -694,7 +700,8 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         int _val = bcdByte(rd_buffer[data_start_idx]) *100;
         _val += bcdByte(rd_buffer[data_start_idx+1]);
         bands[band].rfpwr = (uint8_t) _val & 0x00FF;
-        DPRINTF("CIV_Action:  CI-V Returned RF Power Setting value (0-255): "); DPRINTLN(bands[band].rfpwr);
+        DPRINTF("CIV_Action:  CI-V Returned RF Power Setting value (0-255): "); DPRINT(bands[band].rfpwr);
+        DPRINTF("  for Band: "); DPRINTLN(bands[band].band_name);
         break;
     }
 
@@ -794,6 +801,9 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     case CIV_R_NO_GOOD: DPRINTLNF("CIV_Action  *** Command Rejected by Radio"); 
         break;
     
+    case CIV_R_SEL_VFO: DPRINTF("CIV_Action  *** Select VFO: "); DPRINTLN(rd_buffer[data_start_idx]);
+        break;
+
     case CIV_C_SCOPE_OFF:
     case CIV_C_SCOPE_ON:
     case CIV_C_SCOPE_ALL: break; // do nothing
