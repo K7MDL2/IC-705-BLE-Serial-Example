@@ -9,13 +9,13 @@
 [M5Core3SE]: https://img.shields.io/badge/-M5Core3SE-cyan "M5Core3SE"
 
 
-
-
 # IC-705-BLE, BT Classic, and USB Host Serial Examples featuring a CI-V decoder and 3-Band Transverter Box
 
-This project is complete as of May 2025. At lEast as any software ever is.   
+This project is complete as of May 2025. At least as any software ever is.   
 
-The 3-Band transveRter box is working with the IC-705 on all bands through 1296.  A PC can connect to the M5 Stack controller and see all transverter bands natively, as if the 705 had them built in.   The collection of VHF amps, Xvtr box and M5 stack controller, and the IC-705, are now being installed in my truck as the primary mobile radio supporting easy digital mode operation.  
+May 6, 2025 I checked in changes to improve control via a PC USB connection and added saving and restoring RF Power for each band.  Note if you change the band from the radio, especially when the controller is on a transverter band, then the RF power will not be restored properly, and the reported frequency will be wrong as well since the offset (IF) is now altered. Always use the controller buttons, wired input, or external CI-V to change bands when using a transverter band.   I have to test the wired input to be sure I did not break it, a lot of changes were made in the band_selector() function to handle external input.
+
+The 3-Band transverter box is working with the IC-705 on all bands through 1296.  A PC can connect to the M5 Stack controller and see all transverter bands natively, as if the 705 had them built in.   The collection of VHF amps, Xvtr box and M5 stack controller, and the IC-705, are now being installed in my truck as the primary mobile radio supporting easy digital mode operation.  
 
 I am modifying the hamlib N3FJP AC Log rig driver for cleaner operation allowing the logging program AC Log to take rig control and have WSJT-X interface through it.  WSJT-X will then follow the rig AC Log is swtiched to, it supports 3 rigs.  The May 2, 2025 hamlib release supports frequencies above 1GHz.  There are some missing modes and possibly PTT issues to sort out.   You can use WSJT-X direct, that all works well and proper so far.
 
