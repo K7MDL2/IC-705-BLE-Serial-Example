@@ -13,7 +13,15 @@
 
 This project is complete as of May 2025. At least as any software ever is.   
 
-May 6, 2025 I checked in changes to improve control via a PC USB connection and added saving and restoring RF Power for each band.  Note if you change the band from the radio, especially when the controller is on a transverter band, then the RF power will not be restored properly, and the reported frequency will be wrong as well since the offset (IF) is now altered. Always use the controller buttons, wired input, or external CI-V to change bands when using a transverter band.   I have to test the wired input to be sure I did not break it, a lot of changes were made in the band_selector() function to handle external input.
+May 11, 2025 - Added a ULN2803A octal driver to a M5Stack PLC Proto Module, using it in place of the 4-In/8-Out module + DIN base.  Has 12V supply and slightly less overall height, fewer connectors, and lower cost.  It is set up for 3 BCD band outputs, 1 PTT output and 1 PTT input for connection to the 3-band transverter box, now ready to install in my truck.
+
+![20250511_012008](https://github.com/user-attachments/assets/e2a54f89-108e-45f4-96e0-80be64cee107)
+
+![20250511_012041](https://github.com/user-attachments/assets/5a514f2d-42b3-4b29-9a38-b703b5990c7c)
+
+The 6-pin orange connector has GND, 3-band outputs and PTT output.  The 4-pin has GND and PTT Input.  The iC-705 does the pullup on the SEND line.  The CPU PTT Input line from the ULN2803A is set for input_pullup.  The PLC module comes with a cable exit bushing, you could replace the connectors with a permanent 6 or 7 conductor cable (standard rotator cable for example) through the bushing for a cleaner and slightly more rugged connection.
+
+May 6, 2025 - I checked in changes to improve control via a PC USB connection and added saving and restoring RF Power for each band.  Note if you change the band from the radio, especially when the controller is on a transverter band, then the RF power will not be restored properly, and the reported frequency will be wrong as well since the offset (IF) is now altered. Always use the controller buttons, wired input, or external CI-V to change bands when using a transverter band.   I have to test the wired input to be sure I did not break it, a lot of changes were made in the band_selector() function to handle external input.
 
 The 3-Band transverter box is working with the IC-705 on all bands through 1296.  A PC can connect to the M5 Stack controller and see all transverter bands natively, as if the 705 had them built in.   The collection of VHF amps, Xvtr box and M5 stack controller, and the IC-705, are now being installed in my truck as the primary mobile radio supporting easy digital mode operation.  
 
