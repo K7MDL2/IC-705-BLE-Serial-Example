@@ -17,6 +17,8 @@ May 11, 2025 - Added a ULN2803A octal driver to a M5Stack PLC Proto Module, usin
 
 ![20250511_012008](https://github.com/user-attachments/assets/e2a54f89-108e-45f4-96e0-80be64cee107)
 
+![20250511_010142](https://github.com/user-attachments/assets/ca40e4bb-8ba2-44e6-a156-8c16933a05d1)
+
 ![20250511_012041](https://github.com/user-attachments/assets/5a514f2d-42b3-4b29-9a38-b703b5990c7c)
 
 The 6-pin orange connector has GND, 3-band outputs and PTT output.  The 4-pin has GND and PTT Input.  The iC-705 does the pullup on the SEND line.  The CPU PTT Input line from the ULN2803A is set for input_pullup.  The PLC module comes with a cable exit bushing, you could replace the connectors with a permanent 6 or 7 conductor cable (standard rotator cable for example) through the bushing for a cleaner and slightly more rugged connection.
