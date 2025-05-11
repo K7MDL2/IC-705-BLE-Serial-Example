@@ -152,6 +152,18 @@ void GPIO_Out(uint16_t pattern, bool IF_Switch_ON) // pass IF_Switch_ON value to
       }
     #endif
 
+    #ifdef XVBOX_PLCC
+      // mask each bit and apply the 1 or 0 to the assigned pin
+      if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_0, (pattern & 0x0001) ? 1 : 0);  // bit 0
+      if (BAND_DECODE_OUTPUT_1 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_1, (pattern & 0x0002) ? 1 : 0);  // bit 1
+      if (BAND_DECODE_OUTPUT_2 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_2, (pattern & 0x0004) ? 1 : 0);  // bit 2
+      if (BAND_DECODE_OUTPUT_3 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_3, (pattern & 0x0008) ? 1 : 0);  // bit 3
+      if (BAND_DECODE_OUTPUT_4 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_4, (pattern & 0x0010) ? 1 : 0);  // bit 4
+      if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_5, (pattern & 0x0020) ? 1 : 0);  // bit 5
+      if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_6, (pattern & 0x0040) ? 1 : 0);  // bit 6
+      if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) digitalWrite(BAND_DECODE_OUTPUT_7, (pattern & 0x0080) ? 1 : 0);  // bit 7
+    #endif
+
     #ifdef IO_MODULE
       // mask each bit and apply the 1 or 0 to the assigned pin
       if (BAND_DECODE_OUTPUT_0 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_0, (pattern & 0x0001) ? 1 : 0);  // bit 0
@@ -162,7 +174,6 @@ void GPIO_Out(uint16_t pattern, bool IF_Switch_ON) // pass IF_Switch_ON value to
       if (BAND_DECODE_OUTPUT_5 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_5, (pattern & 0x0020) ? 1 : 0);  // bit 5
       if (BAND_DECODE_OUTPUT_6 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_6, (pattern & 0x0040) ? 1 : 0);  // bit 6
       if (BAND_DECODE_OUTPUT_7 != GPIO_PIN_NOT_USED) module.setOutput(BAND_DECODE_OUTPUT_7, (pattern & 0x0080) ? 1 : 0);  // bit 7
-
       //   Add 8 more porsts here if a 2nd module added.  Pins are already defined as GPIO_MOD2_MI_PIN_XX 
     #endif
 
@@ -285,9 +296,9 @@ void PTT_Output(uint8_t band, bool PTT_state)
     DPRINTF("PTT_Output: Band "); DPRINTLN(band);
 
     #ifdef M5STAMPC3U
-    if (PTT_state) {  // We are going to TX
+      if (PTT_state) {  // We are going to TX
     #else
-    if (1) {  // Do this for RX and TX if not the Xvtr controller
+      if (1) {  // Do this for RX and TX if not the Xvtr controller
     #endif
         switch (band)
         {
@@ -375,7 +386,18 @@ void GPIO_PTT_Out(uint16_t pattern, bool _PTT_state)
     //PTT_state = !PTT_state;  // Invert  PTT 1 = TX, IO needs 0 to gnd for TX.
     
     //Serial.println((pattern & 0x0008 & PTT_state) ? 0 : 1);
-    
+
+    #ifdef XVBOX_PLCC
+      if (BAND_DECODE_PTT_OUTPUT_0  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_0,  (pattern & 0x0001 & PTT_state) ? 1 : 0);}  // bit 0
+      if (BAND_DECODE_PTT_OUTPUT_1  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_1,  (pattern & 0x0002 & PTT_state) ? 1 : 0);}  // bit 1
+      if (BAND_DECODE_PTT_OUTPUT_2  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_2,  (pattern & 0x0004 & PTT_state) ? 1 : 0);}  // bit 2
+      if (BAND_DECODE_PTT_OUTPUT_3  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_3,  (pattern & 0x0008 & PTT_state) ? 1 : 0);}  // bit 3
+      if (BAND_DECODE_PTT_OUTPUT_4  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_4,  (pattern & 0x0010 & PTT_state) ? 1 : 0);}  // bit 4
+      if (BAND_DECODE_PTT_OUTPUT_5  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_5,  (pattern & 0x0020 & PTT_state) ? 1 : 0);}  // bit 5
+      if (BAND_DECODE_PTT_OUTPUT_6  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_6,  (pattern & 0x0040 & PTT_state) ? 1 : 0);}  // bit 6
+      if (BAND_DECODE_PTT_OUTPUT_7  != GPIO_PIN_NOT_USED) {digitalWrite(BAND_DECODE_PTT_OUTPUT_7,  (pattern & 0x0080 & PTT_state) ? 1 : 0);}  // bit 7
+    #endif
+
     #ifdef IO_MODULE
       // mask each bit and apply the 1 or 0 to the assigned pin
       if (BAND_DECODE_PTT_OUTPUT_0  != GPIO_PIN_NOT_USED) {module.setOutput(BAND_DECODE_PTT_OUTPUT_0,  (pattern & 0x0001 & PTT_state) ? 1 : 0);}  // bit 0
@@ -495,7 +517,7 @@ void GPIO_PTT_Out(uint16_t pattern, bool _PTT_state)
     #endif  
 }
 
-void Module_4_Relay_setup()
+void Module_4_Relay_setup(void)
 {
   uint8_t counter = 0;
 
@@ -529,7 +551,7 @@ void Module_4_Relay_setup()
   #endif
 }
 
-void Module_4in_8out_setup()
+void Module_4in_8out_setup(void)
 {
   uint8_t counter = 0;
 
@@ -553,6 +575,23 @@ void Module_4in_8out_setup()
       }
       if (counter < 4)
         DPRINTLNF("4IN8OUT INIT Success");
+  #endif
+}
+
+void Core_CPU_IO_Setup(void)  // Configure for 3 Band Out, 1 PTT out and 1 PTT in on the Core CPU module IO bus.
+{
+  DPRINTLNF("IOSET START");
+  #if defined (XVBOX_PLCC)
+    if (GPIO_CORE_BAND_0  != GPIO_PIN_NOT_USED) pinMode(GPIO_CORE_BAND_0,  OUTPUT);  // Set pin to output mode.
+    //DPRINTLNF("IOSET 0");
+    if (GPIO_CORE_BAND_1  != GPIO_PIN_NOT_USED) pinMode(GPIO_CORE_BAND_1,  OUTPUT);  // Set pin to output mode.
+    //DPRINTLNF("IOSET 1");
+    if (GPIO_CORE_BAND_2  != GPIO_PIN_NOT_USED) pinMode(GPIO_CORE_BAND_2,  OUTPUT);  // Set pin to output mode.
+    //DPRINTLNF("IOSET 2");
+    if (GPIO_CORE_PTT_OUT != GPIO_PIN_NOT_USED) pinMode(GPIO_CORE_PTT_OUT, OUTPUT);  // Set pin to output mode.
+    //DPRINTLNF("IOSET PTT Out");
+    if (GPIO_CORE_PTT_IN  != GPIO_PIN_NOT_USED) pinMode(GPIO_CORE_PTT_IN,  INPUT_PULLUP);  // Set pin to output mode.
+    //DPRINTLNF("IOSET PTT In");
   #endif
 }
 
@@ -655,15 +694,25 @@ uint8_t Unit_EXTIO2_Input_scan(void)
   return pattern & 0x0F;  // will leave the upper 4 GPIO pins for outputs
 }
 
+uint8_t CPU_Input_scan(void)
+{
+  uint8_t pattern = 0;
+  #ifdef XVBOX_PLCC
+    pattern |= digitalRead(GPIO_CORE_PTT_IN) << 3;  // for PLCC module only PTT input is wired and inverted
+  #endif
+  //DPRINTF("CPU Input Scan = "); DPRINTLN(pattern & 0x0F, HEX);
+  return pattern & 0x0F;
+}
+
 uint8_t Module_4in_8out_Input_scan(void) 
 {
   uint8_t pattern = 0;
- #ifdef IO_MODULE
-  pattern |= module.getInput(0) ; 
-  pattern |= module.getInput(1) << 1;
-  pattern |= module.getInput(2) << 2;
-  pattern |= module.getInput(3) << 3;
- #endif
+  #ifdef IO_MODULE
+    pattern |= module.getInput(0) ; 
+    pattern |= module.getInput(1) << 1;
+    pattern |= module.getInput(2) << 2;
+    pattern |= module.getInput(3) << 3;
+  #endif
   return pattern & 0x0F;
 }
 
@@ -717,11 +766,13 @@ uint8_t Module_4in_8out_Input_scan(void)
         pinMode(i, OUTPUT);   // CPU IO pins 3,4,5
       }
 
-      for (i = 6; i < 9; i++)   // C3U CPU GPIO pins 6,7,8,10
-      {
-        pinMode(i, INPUT_PULLUP);   // CPU IO pins 6,7,8, 9 not used
-      }
-      pinMode(BAND_DECODE_INPUT_3, INPUT_PULLUP);   //  PTT IO pin on pin 10
+      // C3U CPU GPIO pins 5, 6,7,8,10
+      
+      pinMode(GPIO_C3U_BAND_0, INPUT_PULLUP);
+      pinMode(GPIO_C3U_BAND_1, INPUT_PULLUP);
+      pinMode(GPIO_C3U_BAND_2, INPUT_PULLUP);
+      pinMode(GPIO_C3U_BAND_3, INPUT_PULLUP);
+      pinMode(GPIO_C3U_PTT,    INPUT_PULLUP);
 
       Band_Decode_Output(DUMMY, true);
       GPIO_PTT_Out(DECODE_DUMMY_PTT, true);   //initialize the PTT states.  Required since the ports are not all zero in RX but mixed state

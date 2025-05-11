@@ -1741,7 +1741,7 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
     if (!XVTR_enabled_last && !XVTR_enabled) {  // capture last non-Xvtr band in use
       XVTR_band_before = band;                  // record the non-xvtr band before initial XVTR mode enabled.
     }
-    DPRINTF("Band Selector input = "); DPRINTLN(_band_input_pattern);
+    DPRINTF("Band Selector Button, or Wired/Polled input = "); DPRINTLN(_band_input_pattern);
     for (_input_band = 0; _input_band < NUM_OF_BANDS; _input_band++) {
       //DPRINTF("Input search index = "); DPRINTLN(_input_band);
       //DPRINTF("Band Map Value = "); DPRINT(bands[_input_band].InputMap);
@@ -1750,13 +1750,14 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         DPRINTF("Band Selector MATCH = "); DPRINTLN(bands[_input_band].InputMap);         
         _band_input_pattern_last = _band_input_pattern;
         change_band = true;
-        DPRINTF("Band Selector Source (wired or polled) Input Pattern = "); DPRINT(_band_input_pattern); 
+        DPRINTF("Band Selector Source (wired or polled) Input Pattern = "); DPRINTLN(_band_input_pattern); 
         break;   // we have a match, use this as the target band
       }
     }
   }
 
   if (change_band) {
+    DPRINTLNF("Band Selector Dummy Band 0 for break before make effect");
     PTT_Output(DUMMY, false);  // send PTT OFF with current band before changing to new band.
     // On the 8In/4Out Digital IO module, the inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
     // translate input band pattern to band index then send to band Decode output
@@ -1785,6 +1786,8 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
     DPRINTF("   Xvtr enabled = "); DPRINT(XVTR_enabled);
     DPRINTF("   Band = "); DPRINT(band);
     DPRINTF("   Xvtr Band = "); DPRINTLN(XVTR_Band);
+    draw_new_screen();  // clears the update flag
+    PTT_Output(band, false);
     
     // Band and Frequency are not yet changed.  Set split to off on band changes else weird things happen.  
     // Split will be reset after change is stabilized
@@ -1853,8 +1856,6 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
           if (USBH_connected) SerialHost.flush();
         #endif
       }
-      draw_new_screen();  // clears the update flag
-      PTT_Output(band, false);
       
       #ifdef SD_Card
         write_bands_data();                         // capture all data to SD before XVTR transition
@@ -1998,6 +1999,10 @@ void app_setup(void) {
     //vTaskDelay(500);
     Module_4in_8out_setup();  //Set up our IO modules comms on I2C
   #endif
+  
+  #ifdef XVBOX_PLCC
+    Core_CPU_IO_Setup();  // Set up the PLCC module for 3 Band + 1 PTT out and 1 PTT in
+  #endif
 
   #ifdef MODULE_4RELAY_13_2
     Module_4_Relay_setup();   // Setup the stacking 4 channel relay module on i2c bus
@@ -2014,9 +2019,9 @@ void app_setup(void) {
   #ifdef M5STAMPC3U // For 705 Xvtr box controller
     MCP23017_IO_setup();
 
-    ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_handle));
+    //ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_handle));
     // Enable temperature sensor
-    ESP_ERROR_CHECK(temperature_sensor_enable(temp_handle));
+    //ESP_ERROR_CHECK(temperature_sensor_enable(temp_handle));
     // Get converted sensor data
     // Disable the temperature sensor if it is not needed and save the power
     //ESP_ERROR_CHECK(temperature_sensor_disable(temp_handle));
@@ -2263,7 +2268,7 @@ void app_loop(void) {
       temp_celsius = temperatureRead();
       
       // print out debug on serial if enabled
-      if (loop_ctr == 3  && SHOW_INFO) {
+      if (loop_ctr == 4  && SHOW_INFO) {
         if (band == 1)  //  any band < 144MHz is represented as Band 1 but can be any band (AM) through 6M, ie HF/6M.
           DPRINTF("HF/6M");
         else
@@ -2288,9 +2293,9 @@ void app_loop(void) {
           DPRINTF("A   \t");
           
           DPRINT(INA.getPower_mW()/1000, 3);
-          DPRINTLNF("W");
+          DPRINTF("W   \t");
 
-          DPRINT(temp_celsius 3);
+          DPRINT(temp_celsius, 1);
           DPRINTLNF("C");
         #endif
       }
@@ -2354,7 +2359,7 @@ void app_loop(void) {
   #endif  // M5STAMPC3U
 
   // scan our input sources for wired PTT and band change - only 1 module type at a time for now
-  #if defined ( IO_MODULE )  || defined ( EXT_IO2_UNIT ) || defined ( M5STAMPC3U )
+  #if defined ( IO_MODULE ) || defined (XVBOX_PLCC ) || defined ( EXT_IO2_UNIT ) || defined ( M5STAMPC3U )
     // Have observed the app loop time to generally be < 10ms so go fast
     uint8_t poll_interval = 8;  //  time in ms for wired we can scan it much faster since it is not querying the radio over a BT connection
     if (millis() > last_input_poll + poll_interval) {
@@ -2365,6 +2370,8 @@ void app_loop(void) {
         decode_in = Unit_EXTIO2_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
       #elif defined ( M5STAMPC3U )
         decode_in = M5STAMPC3U_Input_scan();     // Has 8 I/O ports, using lower 4 for band and PTT input
+      #elif defined ( XVBOX_PLCC )
+        decode_in = CPU_Input_scan();     // Has 3 Band Out, 1 PTT Out and 1 PTT in, no band in 
       #endif
 
       decode_PTT = (~decode_in & 0x08) >> 3;  //extract 4th bit

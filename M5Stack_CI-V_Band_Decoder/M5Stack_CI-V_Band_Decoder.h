@@ -101,11 +101,19 @@
 //#define M5STAMPC3U  // Set for M5 StampC3U used in the K7MDL IC-705 Transverter Box controller  
                       // Comment out and the CPU architecture is automatically selected for all others (AtomS3, Core, Core2, CoreS3/SE)
 
-#define XVBOX // set config specific to usage with the 705 transverter box
+#ifndef M5STAMPC3U  // for radio side controller can choose XVBox BCD output operation and/or PC Passthrough
+  
+  #define XVBOX // for radio side controller set config specific to usage with the 705 transverter box using hte 4In/*out module and 3 BCD + 1 PTT and 1 PTT in
+  
+  #ifdef XVBOX  // option for IO for BCD + PTT on LCD controller
+    #define XVBOX_PLCC // use PLCC module with ULN2803A instead of otehr IO device such as 4-In/8-Out module for 3 BCD + 1 PTT and 1 PTT in
+  #endif
 
-#define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  Turn off Debug in DebugPrint.h
+  #define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  Turn off Debug in DebugPrint.h
 
-//#define DBG_TO_LCD  // used to print frequency and CI-V commands to the LCD to debug PC Passthrough
+  //#define DBG_TO_LCD  // used to print frequency and CI-V commands to the LCD to debug PC Passthrough
+
+#endif
 
 #ifdef M5STAMPC3U  
   //#include <M5Unified.h>  // kills off USB Host
@@ -213,10 +221,9 @@
                       // BT Classic does not work on Core3.  It might on Core2 (untested)
   //#define BLE         // Core 3 (BT5).  Works on Core 2, (BT4.2) not on Core
   //#define USBHOST   // if no BLE or BTCLASSIC this must be enabled.   *** USB Host is not stable so far ****
-  #define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
+  //#define IO_MODULE   // enable the 4-In/8-Out module   OR EXT_IO2_UNIT - BOTH are default at addr = 0x45
   //#define EXT_IO2_UNIT  // EXT.IO2 UNIT GIO extender - plugs into Port A i2c Grove port on CPU module, adds 8 GPIO ports at 3.3V max.
   #define SD_CARD      // enable sd card features
-  
   //#define RELAY2_UNIT    // enable 1 or 2 channel UNIT-RELAY module on Port A, B or C  - Units are most useful on the AtomS3 or M5StampS3/C3U
   //#define RELAY4_UNIT    // enable the i2c Relay-4 unit, typically plugged into Port A (i2C).
   //#define MODULE_4RELAY_13_2  // enable the stacking 4 channel relay module - be sure to set the jumpers for each port relay contacts addr = 0x26

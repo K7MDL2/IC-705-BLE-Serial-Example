@@ -11,14 +11,16 @@ void PTT_Output(uint8_t band, bool PTT_state);
 void GPIO_PTT_Out(uint16_t pattern, bool PTT_state);
 
 uint8_t Module_4in_8out_Input_scan(void);
+uint8_t CPU_Input_scan(void);
 uint8_t Unit_EXTIO2_Input_scan(void);
 uint8_t M5STAMPC3U_Input_scan(void);
 
-void Module_4in_8out_setup();
-void Module_4_Relay_setup();
-void Unit_EXTIO2_setup();
-void Unit_RELAY4_setup();
-void MCP23017_IO_setup();
+void Module_4in_8out_setup(void);
+void Core_CPU_IO_Setup(void);
+void Module_4_Relay_setup(void);
+void Unit_EXTIO2_setup(void);
+void Unit_RELAY4_setup(void);
+void MCP23017_IO_setup(void);
 
 enum band_idx { DUMMY,
                 BAND_AM,
@@ -170,25 +172,55 @@ enum band_idx { DUMMY,
 //  PTT is the only IO pin that requires high speed scanning.  
 //  Putting PTT on the CPU instead of the MCP23017 avoids putting high speed daa flow on the i2c bus which causes noise on the 222 band
 //  Using the CPU IO lets the i2c bus be polled at low speed reducing radiated noise.
-
-#define GPIO_C3U_BAND_0     10
-#define GPIO_C3U_BAND_1     8
-#define GPIO_C3U_BAND_2     7
-#define GPIO_C3U_PTT        6
-#define GPIO_C3U_BAND_3     5
+#define GPIO_C3U_BAND_0     10 // input
+#define GPIO_C3U_BAND_1     8  // input
+#define GPIO_C3U_BAND_2     7  // input
+#define GPIO_C3U_PTT        6  // input
+#define GPIO_C3U_BAND_3     5  // input
 #define GPIO_C3U_SPARE1     4
 #define GPIO_C3U_SPARE2     3
 
+//  These are IO pins on the M5Core CPU module bus intended for Band decode input and PTT input with teh PLCC module equipped with ULN2803A 
+//  inverting octal buffer.   Typically used in place of the 4In/8Out module with 3 wire BCD + PTT output and PTT input
+//  PTT is the only IO pin that requires high speed scanning.  
+
+// These pins work for the Core2.  34-39 are input only, no pullup or pull down.
+#if defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
+  #define GPIO_CORE_BAND_0     25  // output
+  #define GPIO_CORE_BAND_1     26  // output
+  #define GPIO_CORE_BAND_2     33  // output
+  #define GPIO_CORE_PTT_OUT    19  // output
+  #define GPIO_CORE_PTT_IN     14  // input
+#elif defined ( CONFIG_IDF_TARGET_ESP32S3 )  // Core3
+  #define GPIO_CORE_BAND_0      5  // output
+  #define GPIO_CORE_BAND_1      9  // output
+  #define GPIO_CORE_BAND_2      1  // output
+  #define GPIO_CORE_PTT_OUT     7  // output
+  #define GPIO_CORE_PTT_IN     17  // input
+#else  // Core Basic
+  #define GPIO_CORE_BAND_0      2  // output
+  #define GPIO_CORE_BAND_1     26  // output
+  #define GPIO_CORE_BAND_2      5  // output
+  #define GPIO_CORE_PTT_OUT    13  // output
+  #define GPIO_CORE_PTT_IN     17  // input
+#endif
 
 // BAND DECODE INPUT (_INPUT_) PINS
 // Assign your pins of choice.  Use a number or one of the existing #define number names
 // Make sure they are not monitored by the code as a button or other use like an encoder.
 // If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
 #ifndef M5STAMPC3U
-  #define BAND_DECODE_INPUT_0        GPIO_MOD_MI_PIN_0      // bit 0   Band 0
-  #define BAND_DECODE_INPUT_1        GPIO_MOD_MI_PIN_1      // bit 1   Band 1
-  #define BAND_DECODE_INPUT_2        GPIO_MOD_MI_PIN_2      // bit 2   Band2
-  #define BAND_DECODE_INPUT_3        GPIO_MOD_MI_PIN_3      // bit 3   PTT Input
+  #ifdef XVBOX_PLCC
+    #define BAND_DECODE_INPUT_0        GPIO_PIN_NOT_USED      // bit 0   Band 0
+    #define BAND_DECODE_INPUT_1        GPIO_PIN_NOT_USED      // bit 1   Band 1
+    #define BAND_DECODE_INPUT_2        GPIO_PIN_NOT_USED      // bit 2   Band 2
+    #define BAND_DECODE_INPUT_3        GPIO_CORE_PTT_IN       // bit 3   PTT Input - only PTT Input wired on the PLCC module
+  #else
+    #define BAND_DECODE_INPUT_0        GPIO_MOD_MI_PIN_0      // bit 0   Band 0
+    #define BAND_DECODE_INPUT_1        GPIO_MOD_MI_PIN_1      // bit 1   Band 1
+    #define BAND_DECODE_INPUT_2        GPIO_MOD_MI_PIN_2      // bit 2   Band2
+    #define BAND_DECODE_INPUT_3        GPIO_MOD_MI_PIN_3      // bit 3   PTT Input
+  #endif
   #define BAND_DECODE_INPUT_4        GPIO_PIN_NOT_USED      // bit 0
   #define BAND_DECODE_INPUT_5        GPIO_PIN_NOT_USED      // bit 1
   #define BAND_DECODE_INPUT_6        GPIO_PIN_NOT_USED      // bit 2
@@ -211,11 +243,16 @@ enum band_idx { DUMMY,
 
 #ifndef M5STAMPC3U
   // 8 are inputs, 8 are defined under PTT section, and remaining 16 are for general outputs
-  #ifdef XVBOX  // Front end controller talking to Xvtr box embedded controller
-
-    #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_IO_PIN_0     // bit 0  0-2 are band decoder, 3 is ptt to Xvtr Box
-    #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_IO_PIN_1     // bit 1
-    #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_IO_PIN_2     // bit 2
+  #ifdef XVBOX  // Front end controller talking to Xvtr box embedded controller - using the 4In/8Out module
+    #ifdef XVBOX_PLCC
+      #define BAND_DECODE_OUTPUT_0        GPIO_CORE_BAND_0     // bit 0  0-2 are band decoder, 3 is ptt to Xvtr Box
+      #define BAND_DECODE_OUTPUT_1        GPIO_CORE_BAND_1     // bit 1
+      #define BAND_DECODE_OUTPUT_2        GPIO_CORE_BAND_2     // bit 2
+    #else
+      #define BAND_DECODE_OUTPUT_0        GPIO_MOD1_IO_PIN_0     // bit 0  0-2 are band decoder, 3 is ptt to Xvtr Box
+      #define BAND_DECODE_OUTPUT_1        GPIO_MOD1_IO_PIN_1     // bit 1
+      #define BAND_DECODE_OUTPUT_2        GPIO_MOD1_IO_PIN_2     // bit 2
+    #endif
     #define BAND_DECODE_OUTPUT_3        GPIO_PIN_NOT_USED      // bit 3
     #define BAND_DECODE_OUTPUT_4        GPIO_PIN_NOT_USED      // bit 4
     #define BAND_DECODE_OUTPUT_5        GPIO_PIN_NOT_USED      // bit 5
@@ -284,11 +321,14 @@ enum band_idx { DUMMY,
   // If not used set to GPIO_PIN_NOT_USED since there is no pin 255.
   
   #ifdef XVBOX  // only 4 outputs used on the XVBOX config, 3 for band decode out, 1 for PTT out
-
     #define BAND_DECODE_PTT_OUTPUT_0    GPIO_PIN_NOT_USED     // bit 0
     #define BAND_DECODE_PTT_OUTPUT_1    GPIO_PIN_NOT_USED     // bit 1
     #define BAND_DECODE_PTT_OUTPUT_2    GPIO_PIN_NOT_USED     // bit 2
-    #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_IO_PIN_3    // bit 3
+    #ifdef XVBOX_PLCC
+      #define BAND_DECODE_PTT_OUTPUT_3    GPIO_CORE_PTT_OUT    // bit 3 - for PCC ULN2803 module
+    #else
+      #define BAND_DECODE_PTT_OUTPUT_3    GPIO_MOD1_IO_PIN_3    // bit 3 - for 4IN/8Out module
+    #endif
     #define BAND_DECODE_PTT_OUTPUT_4    GPIO_PIN_NOT_USED     // bit 4
     #define BAND_DECODE_PTT_OUTPUT_5    GPIO_PIN_NOT_USED     // bit 5
     #define BAND_DECODE_PTT_OUTPUT_6    GPIO_PIN_NOT_USED     // bit 6
@@ -351,7 +391,6 @@ enum band_idx { DUMMY,
 #ifndef M5STAMPC3U
   // For normal usage with M5Stack CoreXX modules
   #ifdef XVBOX  // Config to talk to Xvtrt box controller
-
     #define DECODE_INPUT_DUMMY        (0xFF)    //Dummy Row
     #define DECODE_INPUT_BANDAM       (0x01)    //AM
     #define DECODE_INPUT_BAND160M     (0x01)    //160M 
@@ -482,59 +521,59 @@ enum band_idx { DUMMY,
   #define DECODE_BAND122G     (0x0000)    //122G
   #define DECODE_B_GENERAL    (0x0000)     // Non-Ham Band
 #else // For Xvtr Box with M5StampC3U
-//  In Module 2, upper byte, the upper 4 bits are the 12V power relays.   0 = on for each relay.
-// on relay module Relay 1 is 1296 but is wired PB4.  Relay 2 is 903, PB-5, 222 is relay 4, PB-7
-//  bit 7 1296 12V ON to 1296 Xvtr  - binary 0111 or 0x7xyz
-//  bit 6 Spare - binary 1011 of 0xBxyz  
-//  bit 5 903 12V ON to 903 Xvtr    - binary 1101 or 0xDxyz  (but also need 903 amp when installed)
-//  bit 4 222 12V ON to 222 Xvtr    - binary 1110 or 0xExyz
-//  All non-Xvtr bands set top-most nibble to 0xFxxx
+  //  In Module 2, upper byte, the upper 4 bits are the 12V power relays.   0 = on for each relay.
+  // on relay module Relay 1 is 1296 but is wired PB4.  Relay 2 is 903, PB-5, 222 is relay 4, PB-7
+  //  bit 7 1296 12V ON to 1296 Xvtr  - binary 0111 or 0x7xyz
+  //  bit 6 Spare - binary 1011 of 0xBxyz  
+  //  bit 5 903 12V ON to 903 Xvtr    - binary 1101 or 0xDxyz  (but also need 903 amp when installed)
+  //  bit 4 222 12V ON to 222 Xvtr    - binary 1110 or 0xExyz
+  //  All non-Xvtr bands set top-most nibble to 0xFxxx
 
-//  The upper byte, lower 4 bits are the SP4T coax switch.   1 = on for each of 4 ports.
-//  Example:  for HF/6M, we want the SP4T switch Port 2 (Xvtr Mode input path is on Port 1), rest are dont't care since only used on Xvtr bands) so set them to 0.
-//  Set the upper half (2nd MCP23017 port expander - 8 available outputs 8-16 in our numbering) bits 0-3
-//  Any Xvtr band (222, 903, 1296) would be Port 1  - 0x0001  or 1
-//  HF/50 would be Port 2 (0x02 - 2nd bit or bit 1) - 0x0010  or 2
-//  144 would be Port 3 (0x04 - 3rd bit or bit 2)   - 0x0100  or 4
-//  432 would be Port 4 (0x08 - 4th bit or bit 3)   - 0x1000  or 8
-//  If band undefined then default to 0x0002 or 2 to pass through anything to the 50/HF port
+  //  The upper byte, lower 4 bits are the SP4T coax switch.   1 = on for each of 4 ports.
+  //  Example:  for HF/6M, we want the SP4T switch Port 2 (Xvtr Mode input path is on Port 1), rest are dont't care since only used on Xvtr bands) so set them to 0.
+  //  Set the upper half (2nd MCP23017 port expander - 8 available outputs 8-16 in our numbering) bits 0-3
+  //  Any Xvtr band (222, 903, 1296) would be Port 1  - 0x0001  or 1
+  //  HF/50 would be Port 2 (0x02 - 2nd bit or bit 1) - 0x0010  or 2
+  //  144 would be Port 3 (0x04 - 3rd bit or bit 2)   - 0x0100  or 4
+  //  432 would be Port 4 (0x08 - 4th bit or bit 3)   - 0x1000  or 8
+  //  If band undefined then default to 0x0002 or 2 to pass through anything to the 50/HF port
 
-// Moved 4 input pins from the MCP23107 to the CPU GPIO to get them off the MCP23017 to reduce noise from 
-//    i2c activity as a result of fast PTT scanning.
+  // Moved 4 input pins from the MCP23107 to the CPU GPIO to get them off the MCP23017 to reduce noise from 
+  //    i2c activity as a result of fast PTT scanning.
 
-// **** Sequencing *****
-// Rx->Tx - The IF switch should be shut off and a 20ms delay should be inserted RX->TX after the relays and PTT are done.  This ensure no hot switching.
-// Tx->Rx - The IF switch should be shut off at the start and enabled at the end to prevent noise at the Radio from switching.  
-//           Delays are not required but can be added befoe the IF switch turn back on.
-// The IF switch action can be created by calling GPIO_Out twice, first with bits 0-2 forced to 0x7, then delay 20ms, then call again with normal pattern
+  // **** Sequencing *****
+  // Rx->Tx - The IF switch should be shut off and a 20ms delay should be inserted RX->TX after the relays and PTT are done.  This ensure no hot switching.
+  // Tx->Rx - The IF switch should be shut off at the start and enabled at the end to prevent noise at the Radio from switching.  
+  //           Delays are not required but can be added befoe the IF switch turn back on.
+  // The IF switch action can be created by calling GPIO_Out twice, first with bits 0-2 forced to 0x7, then delay 20ms, then call again with normal pattern
 
-// Lower Byte   Upper nibble always 0
-// bit 7-4 are spare 
+  // Lower Byte   Upper nibble always 0
+  // bit 7-4 are spare 
 
-// Lower Byte lower nibble 
-// bit 3 is unused
-// Lower byte, lowest bits are PTT out.  6 dedicated buffered 
-// bits 2-0 are IF SP6T switch.  C, B, A
-//          CBA
-//    RF1 = 000  NC     0
-//    RF2 = 001  NC     1
-//    RF3 = 010  222    2  
-//    RF4 = 011  NC     3  
-//    RF5 = 100  903    4
-//    RF6 = 101  1296   5
-//    OFF = 110         6
-//    OFF = 111         7
+  // Lower Byte lower nibble 
+  // bit 3 is unused
+  // Lower byte, lowest bits are PTT out.  6 dedicated buffered 
+  // bits 2-0 are IF SP6T switch.  C, B, A
+  //          CBA
+  //    RF1 = 000  NC     0
+  //    RF2 = 001  NC     1
+  //    RF3 = 010  222    2  
+  //    RF4 = 011  NC     3  
+  //    RF5 = 100  903    4
+  //    RF6 = 101  1296   5
+  //    OFF = 110         6
+  //    OFF = 111         7
 
-// Examples           relays   SP4T     zero     1   IF_Switch
-// HF/6M    0xF20F   b'1111    0010     0000     1  111    my choice of relay modue 1 is off, 0 is on.
-// 144      0xF40F   b'1111    0100     0000     1  111    
-// 222      0xE10A   b'1110    0001     0000     1  010    
-// 432      0xF80F   b'1111    1000     0000     1  111    
-// 903      0xD10C   b'1101    0001     0000     1  100    
-// 1296     0x7105   b'0111    0001     0000     1  101    amp relay operated by PTT not here
-// All other bands same as HF/6M.  0xF207  1111 0010 0000 1111
+  // Examples           relays   SP4T     zero     1   IF_Switch
+  // HF/6M    0xF20F   b'1111    0010     0000     1  111    my choice of relay modue 1 is off, 0 is on.
+  // 144      0xF40F   b'1111    0100     0000     1  111    
+  // 222      0xE10A   b'1110    0001     0000     1  010    
+  // 432      0xF80F   b'1111    1000     0000     1  111    
+  // 903      0xD10C   b'1101    0001     0000     1  100    
+  // 1296     0x7105   b'0111    0001     0000     1  101    amp relay operated by PTT not here
+  // All other bands same as HF/6M.  0xF207  1111 0010 0000 1111
 
-// 0xYYZZ where ZZ is typically 07 sets the IF SP6T switch to all off.  Only needed for Xvtr bands
+  // 0xYYZZ where ZZ is typically 07 sets the IF SP6T switch to all off.  Only needed for Xvtr bands
 
   #define ALL_OFF (0xF00F)  // This pattern can be sent at start of a band change to create a break before make effect (not used yet)
   #define DECODE_BAND_DUMMY   (0xF20F)    //Dummy Row
