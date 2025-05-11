@@ -13,7 +13,7 @@
 
 This project is complete as of May 2025. At least as any software ever is.   
 
-May 11, 2025 - Added a ULN2803A octal driver to a M5Stack PLC Proto Module, using it in place of the 4-In/8-Out module + DIN base.  Has 12V supply and slightly less overall height, fewer connectors, and lower cost.  It is set up for 3 BCD band outputs, 1 PTT output and 1 PTT input for connection to the 3-band transverter box, now ready to install in my truck.
+May 11, 2025 - Added a ULN2803A octal driver to a M5Stack PLC Proto Module, using it in place of the 4-In/8-Out module + DIN base.  Has 12V supply and slightly less overall height, fewer connectors, and lower cost.  It is set up for 3 BCD band outputs, 1 PTT output and 1 PTT input for connection to the 3-band transverter box, now ready to install in my truck.  Added CPU temperature to the rotating display which band, voltage, current, and TX and XVTR icons.
 
 ![20250511_012008](https://github.com/user-attachments/assets/e2a54f89-108e-45f4-96e0-80be64cee107)
 
