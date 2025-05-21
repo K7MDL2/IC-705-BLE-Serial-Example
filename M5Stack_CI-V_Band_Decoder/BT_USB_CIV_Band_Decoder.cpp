@@ -55,6 +55,7 @@ struct Bands {
 };
 */
 
+// Put the LO (RF - IF = LO) value into the 4th column.
 struct Bands bands[NUM_OF_BANDS] = {
   { "DUMMY", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF },                        // DUMMY Band to avoid using 0
   { "AM", 535000, 1705000, 0, 535000, 1, 1, 0, 1, 0, 0, 0, 25, DECODE_INPUT_BANDAM },                         // AM
