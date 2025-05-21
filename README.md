@@ -13,6 +13,14 @@
 
 This project is complete as of May 2025. At least as any software ever is.   
 
+May 21, 2025 - Michal SP1JMF configured his controller for 10GHz and 24GHz band transverters and submitted some pictures of his reconfiguration to suypport these 2 bands. I created a new Wiki Page detailing how to change the config for these 2 bands.
+
+https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Band-Configuration-Change-Example
+
+![1000022233](https://github.com/user-attachments/assets/18e56dcf-7925-4f4c-80ff-44115c1a6681)
+![1000022232](https://github.com/user-attachments/assets/2862449b-f55b-4c0e-935c-f05a880cefcb)
+![1000022231](https://github.com/user-attachments/assets/41a59e17-73d0-4016-86ce-6f048770bd74)
+
 May 11, 2025 - Added a ULN2803A octal driver to a M5Stack PLC Proto Module, using it in place of the 4-In/8-Out module + DIN base.  Has 12V supply and slightly less overall height, fewer connectors, and lower cost.  It is set up for 3 BCD band outputs, 1 PTT output and 1 PTT input for connection to the 3-band transverter box, now ready to install in my truck.  Added CPU temperature to the rotating display which band, voltage, current, and TX and XVTR icons.
 
 ![20250511_012008](https://github.com/user-attachments/assets/e2a54f89-108e-45f4-96e0-80be64cee107)
