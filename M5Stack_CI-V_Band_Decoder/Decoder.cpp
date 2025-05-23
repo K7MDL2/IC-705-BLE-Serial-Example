@@ -88,7 +88,7 @@ void Band_Decode_Output(uint8_t band, bool IF_Switch_ON) // pass IF_Switch_ON va
 
     switch (band)  // Now set them to the desired ON state
     {   
-        case  DUMMY     : GPIO_Out(0,              IF_Switch_ON);  break;   //Dummy Band
+        case  DUMMY     : GPIO_Out(DECODE_BAND_DUMMY, IF_Switch_ON);  break;   //Dummy Band
         case  BAND_AM   : GPIO_Out(DECODE_BANDAM,  IF_Switch_ON);  break;   //AM
         case  BAND_160M : GPIO_Out(DECODE_BAND160M,IF_Switch_ON);  break;   //160M 
         case  BAND_80M  : GPIO_Out(DECODE_BAND80M, IF_Switch_ON);  break;   //80M
@@ -721,11 +721,28 @@ uint8_t Module_4in_8out_Input_scan(void)
   uint8_t M5STAMPC3U_Input_scan(void) 
   {
     uint8_t pattern = 0;
-      pattern |= digitalRead(BAND_DECODE_INPUT_0);       // BCD Band 0 
-      pattern |= digitalRead(BAND_DECODE_INPUT_1) << 1;  // BCD Band 1
-      pattern |= digitalRead(BAND_DECODE_INPUT_2) << 2;  // BCD Band 2 
-      pattern |= digitalRead(BAND_DECODE_INPUT_3) << 3;  // PTT input
-    return pattern & 0x0F;  // upper 4 GPIO pins spare for now
+    uint8_t last_pattern = 0xFF;
+    uint8_t debounce_count = 0;
+
+      for (int i = 0; i < 20; i++) {  // debounce
+        pattern |= digitalRead(BAND_DECODE_INPUT_0);       // BCD Band 0 
+        pattern |= digitalRead(BAND_DECODE_INPUT_1) << 1;  // BCD Band 1
+        pattern |= digitalRead(BAND_DECODE_INPUT_2) << 2;  // BCD Band 2 
+        pattern |= digitalRead(BAND_DECODE_INPUT_3) << 3;  // PTT input
+        pattern &= 0x0F;  // upper 4 GPIO pins spare for now
+        
+        if (pattern == last_pattern )
+          debounce_count++;
+        else 
+          last_pattern = 0;
+        last_pattern = pattern;
+        
+        delay(1);
+      
+        if (debounce_count > 15)
+          return last_pattern;   // got stable input
+      }
+      return 0;  // did not get required stable input
   }
 
   void MCP23017_IO_setup()

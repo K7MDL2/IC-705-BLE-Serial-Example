@@ -455,7 +455,7 @@ enum band_idx { DUMMY,
   #endif
 
 #else  // For Xvtr Box with M5StampC3U
-  #define DECODE_INPUT_DUMMY        (0xFF)    //Dummy Row
+  #define DECODE_INPUT_DUMMY        (0x01)    //Dummy Row
   #define DECODE_INPUT_BANDAM       (0x01)    //AM
   #define DECODE_INPUT_BAND160M     (0x01)    //160M 
   #define DECODE_INPUT_BAND80M      (0x01)    //80M
@@ -476,15 +476,15 @@ enum band_idx { DUMMY,
   #define DECODE_INPUT_BAND432      (0x04)    //432
   #define DECODE_INPUT_BAND902      (0x05)    //902
   #define DECODE_INPUT_BAND1296     (0x06)    //1296
-  #define DECODE_INPUT_BAND2400     (0xFF)    //2400
-  #define DECODE_INPUT_BAND3300     (0xFF)    //3400
-  #define DECODE_INPUT_BAND5760     (0xFF)    //5760M
-  #define DECODE_INPUT_BAND10G      (0xFF)    //10.368.1G
-  #define DECODE_INPUT_BAND24G      (0xFF)    //24.192G
-  #define DECODE_INPUT_BAND47G      (0xFF)    //47.1G
-  #define DECODE_INPUT_BAND76G      (0xFF)    //76.1G
-  #define DECODE_INPUT_BAND122G     (0xFF)    //122G
-  #define DECODE_INPUT_B_GENERAL    (0xFF)     // Non-Ham Band
+  #define DECODE_INPUT_BAND2400     (0x01)    //2400
+  #define DECODE_INPUT_BAND3300     (0x01)    //3400
+  #define DECODE_INPUT_BAND5760     (0x01)    //5760M
+  #define DECODE_INPUT_BAND10G      (0x01)    //10.368.1G
+  #define DECODE_INPUT_BAND24G      (0x01)    //24.192G
+  #define DECODE_INPUT_BAND47G      (0x01)    //47.1G
+  #define DECODE_INPUT_BAND76G      (0x01)    //76.1G
+  #define DECODE_INPUT_BAND122G     (0x01)    //122G
+  #define DECODE_INPUT_B_GENERAL    (0x01)     // Non-Ham Band
 #endif
 
 // Band Decode Output pattern
