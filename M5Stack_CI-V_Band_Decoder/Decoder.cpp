@@ -724,7 +724,13 @@ uint8_t Module_4in_8out_Input_scan(void)
     uint8_t last_pattern = 0xFF;
     uint8_t debounce_count = 0;
 
-      for (int i = 0; i < 20; i++) {  // debounce
+    pattern |= digitalRead(BAND_DECODE_INPUT_0);       // BCD Band 0 
+    pattern |= digitalRead(BAND_DECODE_INPUT_1) << 1;  // BCD Band 1
+    pattern |= digitalRead(BAND_DECODE_INPUT_2) << 2;  // BCD Band 2 
+    pattern |= digitalRead(BAND_DECODE_INPUT_3) << 3;  // PTT input
+    return pattern & 0x0F;  // upper 4 GPIO pins spare for now
+/*
+    for (int i = 0; i < 5; i++) {  // debounce - this way is blocking for 15-20 secoinds - change to unblocking method
         pattern |= digitalRead(BAND_DECODE_INPUT_0);       // BCD Band 0 
         pattern |= digitalRead(BAND_DECODE_INPUT_1) << 1;  // BCD Band 1
         pattern |= digitalRead(BAND_DECODE_INPUT_2) << 2;  // BCD Band 2 
@@ -737,12 +743,13 @@ uint8_t Module_4in_8out_Input_scan(void)
           last_pattern = 0;
         last_pattern = pattern;
         
-        delay(1);
+        delayMicroseconds(250);
       
         if (debounce_count > 15)
           return last_pattern;   // got stable input
-      }
-      return 0;  // did not get required stable input
+    }
+    return 0;  // did not get required stable input
+*/
   }
 
   void MCP23017_IO_setup()
