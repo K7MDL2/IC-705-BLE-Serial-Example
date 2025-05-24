@@ -13,6 +13,15 @@
 
 This project is complete as of May 2025. At least as any software ever is.   
 
+It features a band decoder with LCD display (Band and PTT breakout) that can be used to translate the radio dial frequency with an offset value so a transverter frequyency is displayed and CI-V frequency data over the USB will have the transverter (Xvtr) frequency show.  The controller will save key parameters for each real and Xvtr band, and restore the last non-Xvtr band when you leave XVTR mode.  Bands may be selected via external wired input, PC CI-V commands, or for Xvtr bands, 3 display buttons.  Ther aree several IO module options, very little construction is required.
+
+May 23, 2025 - Fixed RFI issue while bench testing transverter.  Transmitting on a HF radio at 100W on 20M caused the transverter box to toggle bands every second or 2.  Added 0.1uF caps to the C3U band and PTT input pins. There are already caps on the M5Core controller end of the cable.  I also coiled some of the control cable.  I am using the M5 PLCC module with a ULN2803A for buffering on the M5Core controller end. Also fixed a bootup situation where all 3 transverters were powered on briefly.  Added software debounce then removed it after the caps alone solved the RFI problem.  Do not want to add any PTT delay if I do not need to.
+
+Here is my 3-Band transdveter mounted on a plywood base along with a PowerPole fuse distribution box and a Toptec 180W 2M amp (bottom with fan) and a Toptec 80W 430Mhz amp stacked to save space.  This slides under my rear truck bench seat where I have 12V@50A from my truck camper which has a 100Ah LiFePO4 battery, 160W solar panel, and 50A DC-DC charger from the truck alternator. I used 6AWG wire throughout.  There is also a 50Ah LiFePO4 battery mainly used for the microwave gear on a tripod but can swap with the 100Ah battery for backup power or to recharge it in the field.
+
+![20250513_160216](https://github.com/user-attachments/assets/337ee4c7-f6eb-4861-8239-ca489096012e)
+
+
 May 21, 2025 - Michal SP1JMF configured his controller for 10GHz and 24GHz band transverters and submitted some pictures of his reconfiguration to suypport these 2 bands. I created a new Wiki Page detailing how to change the config for these 2 bands.
 
 https://github.com/K7MDL2/IC-705-BLE-Serial-Example/wiki/Band-Configuration-Change-Example
