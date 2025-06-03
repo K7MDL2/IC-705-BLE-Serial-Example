@@ -1757,14 +1757,14 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
     // On the 8In/4Out Digital IO module, the inputs are in the middle of 2x 4.7K between 3.3V and GND.  1 is open, 0 is closed.
     // translate input band pattern to band index then send to band Decode output
   
-    if (bands[_input_band].Xvtr_offset != 0) {
+    if (bands[_input_band].Xvtr_offset != 0) {  // Xvtr band
       DPRINTF("Xvtr Band Detected = "); DPRINTLN(bands[_input_band].band_name);
       XVTR_Band = _input_band;
       XVTR_enabled = true;
       #ifdef M5STAMPC3U
         band = _input_band;
       #endif
-    } else {
+    } else {  // Not a Xvtr band
       DPRINTF("Not a Xvtr Band = "); DPRINTLN(bands[_input_band].band_name);
       band = _input_band;
       XVTR_Band = 0;
@@ -2012,8 +2012,23 @@ void app_setup(void) {
   #endif
   
   #ifdef M5STAMPC3U // For 705 Xvtr box controller
+    vTaskDelay(100); 
+    CPU_C3U_IO_Setup();
+    vTaskDelay(100); 
+    uint8_t inp = M5STAMPC3U_Input_scan();
+    DPRINTF("CPU Input IO Setup Complete - Pattern = ");  DPRINTLN(inp);
+    vTaskDelay(100); 
+    inp = M5STAMPC3U_Input_scan();
+    DPRINTF("CPU Input IO Setup Complete - Pattern 2 = ");  DPRINTLN(inp);
+    
     MCP23017_IO_setup();
+    DPRINTLNF("MCP23017 IO Expansion Modules Setup Complete");
 
+    Band_Decode_Output(DUMMY, true);
+    GPIO_PTT_Out(DECODE_DUMMY_PTT, true);   //initialize the PTT states.  Required since the ports are not all zero in RX but mixed state
+    vTaskDelay(700); 
+    
+    // ESP32 native method to get CPU temp
     //ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_handle));
     // Enable temperature sensor
     //ESP_ERROR_CHECK(temperature_sensor_enable(temp_handle));
@@ -2368,12 +2383,15 @@ void app_loop(void) {
       #elif defined ( XVBOX_PLCC )
         decode_in = CPU_Input_scan();     // Has 3 Band Out, 1 PTT Out and 1 PTT in, no band in 
       #endif
-
+      
+      //DPRINT(decode_in,BIN); DPRINT(":");
+      
       decode_PTT = (~decode_in & 0x08) >> 3;  //extract 4th bit
       decode_Band = (~decode_in & 0x07);      // extract the lower 3 of 4 input pins for band select.
 
       if (decode_Band != decode_Band_last)  // skip if nothing changed on the wired inputs
-      { // band changed, process it
+      { // band changed, process 
+        DPRINTF("New Band Input Pattern detected "); DPRINTLN(decode_Band);
         band_Selector(decode_Band, false);  // converts input pattern to band (real or virtual Xvtr band)
         decode_Band_last = decode_Band;
       }

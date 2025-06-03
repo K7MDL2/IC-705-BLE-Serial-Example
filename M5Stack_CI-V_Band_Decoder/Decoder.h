@@ -21,6 +21,7 @@ void Module_4_Relay_setup(void);
 void Unit_EXTIO2_setup(void);
 void Unit_RELAY4_setup(void);
 void MCP23017_IO_setup(void);
+void CPU_C3U_IO_Setup(void);
 
 enum band_idx { DUMMY,
                 BAND_AM,
@@ -172,39 +173,40 @@ enum band_idx { DUMMY,
 //  PTT is the only IO pin that requires high speed scanning.  
 //  Putting PTT on the CPU instead of the MCP23017 avoids putting high speed daa flow on the i2c bus which causes noise on the 222 band
 //  Using the CPU IO lets the i2c bus be polled at low speed reducing radiated noise.
-#define GPIO_C3U_BAND_0     10 // input
-#define GPIO_C3U_BAND_1     8  // input
-#define GPIO_C3U_BAND_2     7  // input
+#define GPIO_C3U_BAND_0     4 // input
+#define GPIO_C3U_BAND_1     5  // input
+#define GPIO_C3U_BAND_2     3  // input
 #define GPIO_C3U_PTT        6  // input
-#define GPIO_C3U_BAND_3     5  // input
-#define GPIO_C3U_SPARE1     4
-#define GPIO_C3U_SPARE2     3
+#define GPIO_C3U_BAND_3     7  // input
+#define GPIO_C3U_SPARE1     10  // bad pin
+#define GPIO_C3U_SPARE2     8   // bad pin
 
 //  These are IO pins on the M5Core CPU module bus intended for Band decode input and PTT input with teh PLCC module equipped with ULN2803A 
 //  inverting octal buffer.   Typically used in place of the 4In/8Out module with 3 wire BCD + PTT output and PTT input
 //  PTT is the only IO pin that requires high speed scanning.  
 
-// These pins work for the Core2.  34-39 are input only, no pullup or pull down.
-#if defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
-  #define GPIO_CORE_BAND_0     25  // output
-  #define GPIO_CORE_BAND_1     26  // output
-  #define GPIO_CORE_BAND_2     33  // output
-  #define GPIO_CORE_PTT_OUT    19  // output
-  #define GPIO_CORE_PTT_IN     14  // input
-#elif defined ( CONFIG_IDF_TARGET_ESP32S3 )  // Core3
-  #define GPIO_CORE_BAND_0      5  // output
-  #define GPIO_CORE_BAND_1      9  // output
-  #define GPIO_CORE_BAND_2      1  // output
-  #define GPIO_CORE_PTT_OUT     7  // output
-  #define GPIO_CORE_PTT_IN     17  // input
-#else  // Core Basic
-  #define GPIO_CORE_BAND_0      2  // output
-  #define GPIO_CORE_BAND_1     26  // output
-  #define GPIO_CORE_BAND_2      5  // output
-  #define GPIO_CORE_PTT_OUT    13  // output
-  #define GPIO_CORE_PTT_IN     17  // input
+#ifndef M5STAMPC3U
+  // These pins work for the Core2.  34-39 are input only, no pullup or pull down.
+  #if defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 )
+    #define GPIO_CORE_BAND_0     25  // output
+    #define GPIO_CORE_BAND_1     26  // output
+    #define GPIO_CORE_BAND_2     33  // output
+    #define GPIO_CORE_PTT_OUT    19  // output
+    #define GPIO_CORE_PTT_IN     14  // input
+  #elif defined ( CONFIG_IDF_TARGET_ESP32S3 )  // Core3
+    #define GPIO_CORE_BAND_0      5  // output
+    #define GPIO_CORE_BAND_1      9  // output
+    #define GPIO_CORE_BAND_2      1  // output
+    #define GPIO_CORE_PTT_OUT     7  // output
+    #define GPIO_CORE_PTT_IN     17  // input
+  #else  // Core Basic
+    #define GPIO_CORE_BAND_0      2  // output
+    #define GPIO_CORE_BAND_1     26  // output
+    #define GPIO_CORE_BAND_2      5  // output
+    #define GPIO_CORE_PTT_OUT    13  // output
+    #define GPIO_CORE_PTT_IN     17  // input
+  #endif
 #endif
-
 // BAND DECODE INPUT (_INPUT_) PINS
 // Assign your pins of choice.  Use a number or one of the existing #define number names
 // Make sure they are not monitored by the code as a button or other use like an encoder.

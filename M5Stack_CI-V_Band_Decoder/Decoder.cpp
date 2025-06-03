@@ -1,3 +1,4 @@
+#include "esp32-hal-gpio.h"
 // Band Decoder Input and Output.  Customize the IO pin patterns for band
 // Borrowed from my IC-905 Band Decoder dev project, applying it to the 4in/8out module example code.
 #ifndef _DECODER_
@@ -267,24 +268,25 @@ void GPIO_Out(uint16_t pattern, bool IF_Switch_ON) // pass IF_Switch_ON value to
       //   OUTPUT_15    pin 7   - 12V Relay 4 - 222 Xvtr Power
 
       // send pattern (0xF8F3) before change to do a break before make effect
+      #ifdef MCP23017
+        if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0   These are on the 1st MCP23017
+        if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1    
+        if (BAND_DECODE_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2
+        if (BAND_DECODE_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3   
+        if (BAND_DECODE_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_4,  (pattern & 0x0010) ? 1 : 0);  // bit 4
+        if (BAND_DECODE_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_5,  (pattern & 0x0020) ? 1 : 0);  // bit 5
+        if (BAND_DECODE_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_6,  (pattern & 0x0040) ? 1 : 0);  // bit 6
+        if (BAND_DECODE_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_7,  (pattern & 0x0080) ? 1 : 0);  // bit 7
 
-      if (BAND_DECODE_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0   These are on the 1st MCP23017
-      if (BAND_DECODE_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1    
-      if (BAND_DECODE_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2
-      if (BAND_DECODE_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3   
-      if (BAND_DECODE_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_4,  (pattern & 0x0010) ? 1 : 0);  // bit 4
-      if (BAND_DECODE_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_5,  (pattern & 0x0020) ? 1 : 0);  // bit 5
-      if (BAND_DECODE_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_6,  (pattern & 0x0040) ? 1 : 0);  // bit 6
-      if (BAND_DECODE_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_OUTPUT_7,  (pattern & 0x0080) ? 1 : 0);  // bit 7
-
-      if (BAND_DECODE_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_8,  (pattern & 0x0100) ? 1 : 0);  // bit 0    2nd MCP23017 board
-      if (BAND_DECODE_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_9,  (pattern & 0x0200) ? 1 : 0);  // bit 1
-      if (BAND_DECODE_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_10, (pattern & 0x0400) ? 1 : 0);  // bit 2
-      if (BAND_DECODE_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_11, (pattern & 0x0800) ? 1 : 0);  // bit 3
-      if (BAND_DECODE_OUTPUT_12 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_12, (pattern & 0x1000) ? 1 : 0);  // bit 4
-      if (BAND_DECODE_OUTPUT_13 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_13, (pattern & 0x2000) ? 1 : 0);  // bit 5
-      if (BAND_DECODE_OUTPUT_14 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_14, (pattern & 0x4000) ? 1 : 0);  // bit 6
-      if (BAND_DECODE_OUTPUT_15 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_15, (pattern & 0x8000) ? 1 : 0);  // bit 7
+        if (BAND_DECODE_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_8,  (pattern & 0x0100) ? 1 : 0);  // bit 0    2nd MCP23017 board
+        if (BAND_DECODE_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_9,  (pattern & 0x0200) ? 1 : 0);  // bit 1
+        if (BAND_DECODE_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_10, (pattern & 0x0400) ? 1 : 0);  // bit 2
+        if (BAND_DECODE_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_11, (pattern & 0x0800) ? 1 : 0);  // bit 3
+        if (BAND_DECODE_OUTPUT_12 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_12, (pattern & 0x1000) ? 1 : 0);  // bit 4
+        if (BAND_DECODE_OUTPUT_13 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_13, (pattern & 0x2000) ? 1 : 0);  // bit 5
+        if (BAND_DECODE_OUTPUT_14 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_14, (pattern & 0x4000) ? 1 : 0);  // bit 6
+        if (BAND_DECODE_OUTPUT_15 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_OUTPUT_15, (pattern & 0x8000) ? 1 : 0);  // bit 7
+      #endif
     #endif
 }
 
@@ -493,27 +495,29 @@ void GPIO_PTT_Out(uint16_t pattern, bool _PTT_state)
     #endif
 
     #ifdef M5STAMPC3U
-      // mask each bit and apply the 1 or 0 to the assigned pin
-      if (BAND_DECODE_PTT_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0 HF/50
-      if (BAND_DECODE_PTT_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1 144
-      if (BAND_DECODE_PTT_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2 222
-      if (BAND_DECODE_PTT_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3 432
-      
-      if (BAND_DECODE_PTT_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_4,  (pattern & 0x0010) ? 1 : 0);  // bit 4 902/903
-      if (BAND_DECODE_PTT_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_5,  (pattern & 0x0020) ? 1 : 0);  // bit 5 1296
-      if (BAND_DECODE_PTT_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_6,  (pattern & 0x0040) ? 1 : 0);  // bit 6 not used
-      if (BAND_DECODE_PTT_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_7,  (pattern & 0x0080) ? 1 : 0);  // bit 7 TxInhibit or not used
-      
-      // mask each bit and apply the 1 or 0 to the assigned pin
-      if (BAND_DECODE_PTT_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_8,  (pattern & 0x0100) ? 1 : 0);  // bit 0 HF/50
-      if (BAND_DECODE_PTT_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_9,  (pattern & 0x0200) ? 1 : 0);  // bit 1 144
-      if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400) ? 1 : 0);  // bit 2 222
-      if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800) ? 1 : 0);  // bit 3 432
-      
-      if (BAND_DECODE_PTT_OUTPUT_12 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_12, (pattern & 0x1000) ? 1 : 0);  // bit 4 902/903
-      if (BAND_DECODE_PTT_OUTPUT_13 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_13, (pattern & 0x2000) ? 1 : 0);  // bit 5 1296
-      if (BAND_DECODE_PTT_OUTPUT_14 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_14, (pattern & 0x4000) ? 1 : 0);  // bit 6 1296 12V PA PTT
-      if (BAND_DECODE_PTT_OUTPUT_15 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_15, (pattern & 0x8000) ? 1 : 0);  // bit 7 PTT to TC board IF T/R relay
+      #ifdef MCP23017
+        // mask each bit and apply the 1 or 0 to the assigned pin
+        if (BAND_DECODE_PTT_OUTPUT_0  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_0,  (pattern & 0x0001) ? 1 : 0);  // bit 0 HF/50
+        if (BAND_DECODE_PTT_OUTPUT_1  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_1,  (pattern & 0x0002) ? 1 : 0);  // bit 1 144
+        if (BAND_DECODE_PTT_OUTPUT_2  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_2,  (pattern & 0x0004) ? 1 : 0);  // bit 2 222
+        if (BAND_DECODE_PTT_OUTPUT_3  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_3,  (pattern & 0x0008) ? 1 : 0);  // bit 3 432
+        
+        if (BAND_DECODE_PTT_OUTPUT_4  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_4,  (pattern & 0x0010) ? 1 : 0);  // bit 4 902/903
+        if (BAND_DECODE_PTT_OUTPUT_5  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_5,  (pattern & 0x0020) ? 1 : 0);  // bit 5 1296
+        if (BAND_DECODE_PTT_OUTPUT_6  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_6,  (pattern & 0x0040) ? 1 : 0);  // bit 6 not used
+        if (BAND_DECODE_PTT_OUTPUT_7  != GPIO_PIN_NOT_USED) mcp0.digitalWrite(BAND_DECODE_PTT_OUTPUT_7,  (pattern & 0x0080) ? 1 : 0);  // bit 7 TxInhibit or not used
+        
+        // mask each bit and apply the 1 or 0 to the assigned pin
+        if (BAND_DECODE_PTT_OUTPUT_8  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_8,  (pattern & 0x0100) ? 1 : 0);  // bit 0 HF/50
+        if (BAND_DECODE_PTT_OUTPUT_9  != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_9,  (pattern & 0x0200) ? 1 : 0);  // bit 1 144
+        if (BAND_DECODE_PTT_OUTPUT_10 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_10, (pattern & 0x0400) ? 1 : 0);  // bit 2 222
+        if (BAND_DECODE_PTT_OUTPUT_11 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_11, (pattern & 0x0800) ? 1 : 0);  // bit 3 432
+        
+        if (BAND_DECODE_PTT_OUTPUT_12 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_12, (pattern & 0x1000) ? 1 : 0);  // bit 4 902/903
+        if (BAND_DECODE_PTT_OUTPUT_13 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_13, (pattern & 0x2000) ? 1 : 0);  // bit 5 1296
+        if (BAND_DECODE_PTT_OUTPUT_14 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_14, (pattern & 0x4000) ? 1 : 0);  // bit 6 1296 12V PA PTT
+        if (BAND_DECODE_PTT_OUTPUT_15 != GPIO_PIN_NOT_USED) mcp1.digitalWrite(BAND_DECODE_PTT_OUTPUT_15, (pattern & 0x8000) ? 1 : 0);  // bit 7 PTT to TC board IF T/R relay
+      #endif
     #endif  
 }
 
@@ -749,60 +753,53 @@ uint8_t Module_4in_8out_Input_scan(void)
           return last_pattern;   // got stable input
     }
     return 0;  // did not get required stable input
-*/
+  */
   }
 
   void MCP23017_IO_setup()
   {
-    uint8_t counter = 0;
-    
-    DPRINTLNF("Decoder: M5 StampC3U i2c pins used for 2 MCP23017 16 port expander modules address 0x20 and 0x21");
-    
-    while (!mcp0.begin_I2C(0x20) && counter < 4) {  //for core S3
-      DPRINTLNF("M5StampC3U i2c INIT ERROR, Check Modules are installed correctly, address 0x20");
-      delay(10);
-      counter++;
-    }
-    while (!mcp1.begin_I2C(0x21) && counter < 4) {  //for core S3
-      DPRINTLNF("M5StampC3U i2c INIT ERROR, Check Modules are installed correctly, address 0x21");
-      delay(10);
-      counter++;
-    }
-
-    if (counter < 4) {
-      DPRINTLNF("MCP23017 Module INIT Success");
-
-      // set up pin directions
-      int i;
-      for (i = 0; i < 16; i++)   // PA0-7, PB0-7 1st Module
-      {
-        mcp0.pinMode(i, OUTPUT);   // PA0-7 outputs on 1st module (0-2 used for Xvtr board internal PTT )  rest are spare
-      }
-
-      // Module 2, all are outputs    
-      for (i = 0; i < 16; i++)   // PA0-7 and PB0-7
-      {
-        mcp1.pinMode(i, OUTPUT);   
-      }
-
-      for (i = 3; i < 6; i++)   // C3U CPU GPIO pins 3,4,5 for IF SP6T Switch Control
-      {
-        pinMode(i, OUTPUT);   // CPU IO pins 3,4,5
-      }
-
-      // C3U CPU GPIO pins 5, 6,7,8,10
+    #ifdef MCP23017
+      uint8_t counter = 0;
       
-      pinMode(GPIO_C3U_BAND_0, INPUT_PULLUP);
-      pinMode(GPIO_C3U_BAND_1, INPUT_PULLUP);
-      pinMode(GPIO_C3U_BAND_2, INPUT_PULLUP);
-      pinMode(GPIO_C3U_BAND_3, INPUT_PULLUP);
-      pinMode(GPIO_C3U_PTT,    INPUT_PULLUP);
+      DPRINTLNF("Decoder: M5 StampC3U i2c pins used for 2 MCP23017 16 port expander modules address 0x20 and 0x21");
+      
+      while (!mcp0.begin_I2C(0x20) && counter < 4) {  //for core S3
+        DPRINTLNF("M5StampC3U i2c INIT ERROR, Check Modules are installed correctly, address 0x20");
+        delay(10);
+        counter++;
+      }
+      while (!mcp1.begin_I2C(0x21) && counter < 4) {  //for core S3
+        DPRINTLNF("M5StampC3U i2c INIT ERROR, Check Modules are installed correctly, address 0x21");
+        delay(10);
+        counter++;
+      }
 
-      Band_Decode_Output(DUMMY, true);
-      GPIO_PTT_Out(DECODE_DUMMY_PTT, true);   //initialize the PTT states.  Required since the ports are not all zero in RX but mixed state
+      if (counter < 4) {
+        DPRINTLNF("MCP23017 Module INIT Success");
 
-      vTaskDelay(700);
-    }
+        // set up pin directions
+        int i;
+        for (i = 0; i < 16; i++)   // PA0-7, PB0-7 1st Module
+        {
+          mcp0.pinMode(i, OUTPUT);   // PA0-7 outputs on 1st module (0-2 used for Xvtr board internal PTT )  rest are spare
+        }
+
+        // Module 2, all are outputs    
+        for (i = 0; i < 16; i++)   // PA0-7 and PB0-7
+        {
+          mcp1.pinMode(i, OUTPUT);   
+        }
+      }
+    #endif
+  }
+
+  void CPU_C3U_IO_Setup(void)
+  {
+    // C3U CPU GPIO pins
+    pinMode(GPIO_C3U_BAND_0, INPUT_PULLUP);
+    pinMode(GPIO_C3U_BAND_1, INPUT_PULLUP);
+    pinMode(GPIO_C3U_BAND_2, INPUT_PULLUP);
+    pinMode(GPIO_C3U_PTT,    INPUT_PULLUP);
   }
 #endif  // M5STAMPC3U
 
