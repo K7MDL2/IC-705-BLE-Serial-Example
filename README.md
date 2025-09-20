@@ -15,6 +15,14 @@ This project is complete as of May 2025. At least as any software ever is.
 
 It features a band decoder with LCD display (Band and PTT breakout) that can be used to translate the radio dial frequency with an offset value so a transverter frequency is displayed and CI-V frequency data over the USB will have the transverter (Xvtr) frequency show.  The controller will save key parameters for each real and Xvtr band, and restore the last non-Xvtr band when you leave XVTR mode.  Bands may be selected via external wired input, PC CI-V commands, or for Xvtr bands, 3 display buttons.  There are several IO module options, very little construction is required.
 
+Operated portable (K7MDL/P) in Sept 2025 VHF contest.  Had reports of RFI on audio on 222.  After the contest I tracked it down to the IF coax line running into the T/R switch board inside the Xvtr box.  A small snap-on ferrite cleared it up.  It was also on 903 which also uses a 28Mhz IF.  1296 was clear (144 IF).   All worked as it should except for the preamp not getting reliably restored on band switches.   Pictures from Mt Constitution at 1400ft road turnout looking south over Puget Sound (in Washington).
+
+![20250913_151005](https://github.com/user-attachments/assets/f518e6ea-2f86-43e7-ade2-0b8429f30afa)
+
+![20250913_155135](https://github.com/user-attachments/assets/af7ee5b0-b3ef-4580-81b3-455c3e4ef4c1)
+
+![20250913_155139](https://github.com/user-attachments/assets/cbb55281-0a7e-4622-abf3-bc73f5eedbf8)
+
 June 16, 2025 - Used the system in the rover truck for the first time for the 2025 June VHF contest as K7MDL/R, roving in grids CN87/88/97/98 using only this 705 based setup for all bands 50-1296.  Got reports of distorted audio on 222, need to investigate.  Had high noise level on 2M.  Solved it by running the PTT cable between the IC-705 SEND jack and the controller through a large ferrite cylinder close to the controller connector.   Overall it worked well and as designed.   I mounted the 705 on a LIDO brand cup holder/RAM mount and it was plenty solid bouncing around on the forest roads.  
 
 ![image](https://github.com/user-attachments/assets/8f4f0026-f3dd-4a4f-b1a0-fa86410c034c)
