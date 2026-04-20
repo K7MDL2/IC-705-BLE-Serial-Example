@@ -1,4 +1,3 @@
-#include "HWCDC.h"
 /*
  *  IC705_BLE_Decoder_Simple.ino
  *
@@ -72,9 +71,13 @@
  * https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v14.0.0%2Fble_sdk_app_nus_eval.html
  *
  */
+ 
 #define BLE_
 #ifdef BLE_
 
+#include "M5Stack_CI-V_Band_Decoder.h"
+#ifndef M5STAMPC3U
+#include "HWCDC.h"
 //#include "M5Stack_CI-V_Band_Decoder.h"
 #include "DebugPrint.h"
 #include "BLEDevice.h"
@@ -346,7 +349,7 @@ bool connectToServer(BLEAddress pAddress) {
 
   // Read the value of the TX characteristic.
   //if(pTXCharacteristic->canRead()) {
-    std::string value = pTXCharacteristic->readValue();
+    String value = pTXCharacteristic->readValue();
     DPRINTF("The characteristic value is currently: ");
     DPRINTLN(value.c_str());
   //}
@@ -362,7 +365,7 @@ bool connectToServer(BLEAddress pAddress) {
 
   // Read the value of the characteristic.
   if(pRXCharacteristic->canRead()) {
-      value = pRXCharacteristic->readValue();
+      String value = pRXCharacteristic->readValue();
       DPRINTF("The characteristic value was: ");
       DPRINTLN(value.c_str());
   }
@@ -448,9 +451,9 @@ void Scan_BLE_Servers(void)
   pBLEScan->setInterval(1349);
   pBLEScan->setWindow(449); // less or equal setInterval value
   pBLEScan->setActiveScan(true);
-  BLEScanResults foundDevices = pBLEScan->start(scanTime, false);
+  BLEScanResults* foundDevices = pBLEScan->start(scanTime, false);
   ////pBLEScan->start(scanTime, false);
-  DPRINTF("Devices found: "); DPRINTLN(foundDevices.getCount());
+  DPRINTF("Devices found: "); DPRINTLN(foundDevices->getCount());
   DPRINTLNF("Scan done!");
   pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
 }
@@ -585,6 +588,7 @@ void BLE_loop(void)
   }
 } // End of loop
 
+#endif
 #endif
 #endif
 

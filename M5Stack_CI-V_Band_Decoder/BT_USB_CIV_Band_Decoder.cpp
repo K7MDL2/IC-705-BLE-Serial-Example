@@ -386,55 +386,55 @@ uint8_t readLine(void) {
     if (counter && read_buffer[0] == 0xFE && read_buffer[1] == 0xFE && read_buffer[counter-1] == 0xFD)
     {
       #ifndef SKIP_XVTR_FREQ_XLATE
-      // cmd 0x05 changes freq, returns FB/FA.  03 and 25 return frequency.  00 is unsolicited frequency change from radio (turnging dial)
-      if (XVTR_enabled && (cmd== 0x00 || (PC_to_Radio_Msg_Sent && last_PC_cmd == cmd && (cmd == 0x03 || cmd == 0x25))))
-      {
-        uint64_t ff;
-        // convert the radio reported frequency CI-V message to transverter frequency 
-        if (read_buffer[2] != CONTROLLER_ADDRESS) {
-          reply_to_PC(cmd);
-          PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
-          
-          #ifdef DBG_TO_LCD
-            M5.Lcd.setCursor(1,180);
-            M5.Lcd.setTextSize(2);
-            M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-            M5.Lcd.printf("%02X %011llu", 0, frequency);
-            M5.Lcd.setCursor(1,180);
-            M5.Lcd.setTextColor(TFT_BLACK, TFT_YELLOW);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-            M5.Lcd.printf("%02X %011llu", read_buffer[4], frequency);
-          #endif
+        // cmd 0x05 changes freq, returns FB/FA.  03 and 25 return frequency.  00 is unsolicited frequency change from radio (turnging dial)
+        if (XVTR_enabled && (cmd== 0x00 || (PC_to_Radio_Msg_Sent && last_PC_cmd == cmd && (cmd == 0x03 || cmd == 0x25))))
+        {
+          uint64_t ff;
+          // convert the radio reported frequency CI-V message to transverter frequency 
+          if (read_buffer[2] != CONTROLLER_ADDRESS) {
+            reply_to_PC(cmd);
+            PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
+            
+            #ifdef DBG_TO_LCD
+              M5.Lcd.setCursor(1,180);
+              M5.Lcd.setTextSize(2);
+              M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("XV=%02X %011llu>>PC", 0, frequency);
+              M5.Lcd.setCursor(1,180);
+              M5.Lcd.setTextColor(TFT_BLACK, TFT_YELLOW);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("XV=%02X %011llu>>PC", read_buffer[4], frequency);
+            #endif
+          }
         }
-      }
-      else  // not frequency related
+        else  // not frequency related
       #else
-      if (read_buffer[2] != CONTROLLER_ADDRESS)
+        if (read_buffer[2] != CONTROLLER_ADDRESS)
       #endif
-      {  
-        if (PC_to_Radio_Msg_Sent && (cmd == 0x00 || cmd == 0xFB || cmd == 0xFA || cmd == last_PC_cmd)) {
-          Serial.write(read_buffer, counter);
-          PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
-          #ifdef DBG_TO_LCD
-            M5.Lcd.setCursor(1,200);
-            M5.Lcd.setTextSize(2);
-            M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-            M5.Lcd.printf("%02X", 0);
-            M5.Lcd.setCursor(1,200);
-            M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-            M5.Lcd.printf("%02X", read_buffer[4]);
-          #endif
+        {  
+          if (PC_to_Radio_Msg_Sent && (cmd == 0x00 || cmd == 0xFB || cmd == 0xFA || cmd == last_PC_cmd)) {
+            Serial.write(read_buffer, counter);
+            PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
+            #ifdef DBG_TO_LCD
+              M5.Lcd.setCursor(1,200);
+              M5.Lcd.setTextSize(2);
+              M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("%02X>>PC", 0);
+              M5.Lcd.setCursor(1,200);
+              M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("%02X>>PC", read_buffer[4]);
+            #endif
+          }
         }
-      }
       processCatMessages(); // To reduce polling needs, use the info other controllers are getting.
       Serial.flush();
       #ifdef DBG_TO_LCD
         M5.Lcd.setCursor(1,220);
         M5.Lcd.setTextSize(2);
         M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-        M5.Lcd.printf("%02X", 0);
+        M5.Lcd.printf("%02X>>PC", 0);
         M5.Lcd.setCursor(1,220);
         M5.Lcd.setTextColor(TFT_BLACK, TFT_CYAN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-        M5.Lcd.printf("%02X", read_buffer[4]);
+        M5.Lcd.printf("%02X>>PC", read_buffer[4]);
       #endif
     }
   #endif
@@ -457,21 +457,33 @@ uint8_t pass_PC_to_radio(void) {
     uint8_t vfo_dec[7] = {0};
     uint8_t f_len;
 
-    while (1) {
-      while (!Serial.available()) {
+    counter = 0;
+    while (Serial.available()) {
         if (--ed == 0) return 0;  // leave the loop if BT connection is lost
-      }
       ed = readtimeout;
       byte = Serial.read();
       if (byte == 0xFF) continue;  //TODO skip to start byte instead
 
       r_buffer[counter++] = byte;
+      r_buffer[counter] = 0;
+      
+      delay(4);
+
+      #ifdef DBG_TO_LCD
+        M5.Lcd.setCursor(1,80);
+        M5.Lcd.setTextSize(2);
+        M5.Lcd.setTextColor(TFT_WHITE, TFT_PURPLE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+        M5.Lcd.printf("IN=%02X%02X %02X%02X %02X %02X%02X%02X", r_buffer[0], r_buffer[1], r_buffer[2], r_buffer[3], r_buffer[4], r_buffer[5], r_buffer[6], r_buffer[7]);            
+      #endif
+
       if (STOP_BYTE == byte) break;
 
       if (counter >= sizeof(r_buffer)) return 0;
+      //if (byte == 0xFA || byte == 0xFB) return 0;
+      if (r_buffer[0] != 0xFE) return 0;
     }
 
-    if (1) 
+    if (r_buffer[0] == 0xFE && r_buffer[1] == 0xFE && r_buffer[counter-1] == STOP_BYTE)   // filter for properly formed incoming serial message
     {
       //if ( && r_buffer[2] == radio_address && (r_buffer[0] == 0xFE && r_buffer[1] == 0xFE)) {
       uint64_t f;
@@ -482,13 +494,24 @@ uint8_t pass_PC_to_radio(void) {
 
       #ifndef SKIP_XVTR_FREQ_XLATE
         uint8_t cmd = r_buffer[4];
+
+          #ifdef DBG_TO_LCD
+              M5.Lcd.setCursor(1,120);
+              M5.Lcd.setTextSize(2);
+              M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("IN=%02X%02X %02X%02X%02X%02X", r_buffer[2], r_buffer[3], r_buffer[4], r_buffer[5], r_buffer[6], r_buffer[7]);
+              M5.Lcd.setCursor(1,120);
+              M5.Lcd.setTextColor(TFT_WHITE, TFT_RED);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("IN=%02X%02X %02X%02X%02X%02X", r_buffer[2], r_buffer[3], r_buffer[4], r_buffer[5], r_buffer[6], r_buffer[7]);            
+            #endif
+
         // if inbound frequency change command then translate it if it is for a transverter band
         if (STOP_BYTE == byte && counter > 10 && r_buffer[2] == radio_address && r_buffer[0] == 0xFE && r_buffer[1] == 0xFE && (cmd == 0x05 || cmd == 0x25))
         {
           mul = 1;
           f = 0;
           k = 0;
-          Ext_Controller = r_buffer[3];  // capure requesting contgroller ID.  Could be several.
+          Ext_Controller = r_buffer[3];  // capture requesting controller ID.  Could be several.
 
           if (cmd == 0x25)
             k=1; // data is 1 byte further down the msg - byte 5 is VFO , 0 is A, 1 is B
@@ -524,18 +547,30 @@ uint8_t pass_PC_to_radio(void) {
                             break;
                 case 0x05: SetFreq(frequency, CIV_C_F1_SEND);  // send 0x05
                             break;
-            }
+            }          
+          
+            #ifdef DBG_TO_LCD
+              M5.Lcd.setCursor(1,140);
+              M5.Lcd.setTextSize(2);
+              M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("XV=%02X %011llu", 0, f);
+              M5.Lcd.setCursor(1,140);
+              M5.Lcd.setTextColor(TFT_WHITE, TFT_BLUE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("XV=%02X %011llu", last_PC_cmd, f);
+            #endif
+          } else {  // not Xvtr band
+            ; // nothing 
+      
+            #ifdef DBG_TO_LCD
+              M5.Lcd.setCursor(1,140);
+              M5.Lcd.setTextSize(2);
+              M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("RD>%02X %011llu", 0, f);
+              M5.Lcd.setCursor(1,140);
+              M5.Lcd.setTextColor(TFT_YELLOW, TFT_BLUE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+              M5.Lcd.printf("RD>%02X %011llu", last_PC_cmd, f);
+            #endif
           }
-
-          #ifdef DBG_TO_LCD
-            M5.Lcd.setCursor(1,140);
-            M5.Lcd.setTextSize(2);
-            M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-            M5.Lcd.printf("%02X %011llu", 0, f);
-            M5.Lcd.setCursor(1,140);
-            M5.Lcd.setTextColor(TFT_WHITE, TFT_BLUE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-            M5.Lcd.printf("%02X %011llu", last_PC_cmd, f);
-          #endif
         }
       #endif
 
@@ -557,10 +592,10 @@ uint8_t pass_PC_to_radio(void) {
           M5.Lcd.setCursor(1,160);
           M5.Lcd.setTextSize(2);
           M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-          M5.Lcd.printf("%02X %011llu", 0, frequency);
+          M5.Lcd.printf(">>%02X %011llu", 0, frequency);
           M5.Lcd.setCursor(1,160);
           M5.Lcd.setTextColor(TFT_BLACK, TFT_GREEN);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-          M5.Lcd.printf("%02X %011llu", last_PC_cmd, frequency);
+          M5.Lcd.printf(">>%02X %011llu", last_PC_cmd, frequency);
         #endif
       }
 
@@ -1605,7 +1640,11 @@ void display_Freq(uint64_t _freq, bool _force) {
       M5.Lcd.setTextColor(background_color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
       M5.Lcd.drawString(formatVFO(_prev_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
       M5.Lcd.setTextColor(color, background_color);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+      #ifdef DBG_TO_LCD
+      M5.Lcd.drawString(formatVFO(_freq), 230, y, font_sz);
+      #else
       M5.Lcd.drawString(formatVFO(_freq), (int)(M5.Lcd.width() / 2), y, font_sz);
+      #endif
     #endif // M5STAMPC3U
     _prev_freq = _freq;
   }
@@ -1662,7 +1701,7 @@ void display_Grid(char _grid[], bool _force) {
     //Serial.printf("Grid Square = %s\n",_grid);
 
     #ifndef M5STAMPC3U
-      #ifndef DBG_TO_LCD   
+      #ifndef DBG_TO_LCD
         if (board_type == M5ATOMS3) {
           font_sz = 4;  // downsize for Atom
           y = 86;

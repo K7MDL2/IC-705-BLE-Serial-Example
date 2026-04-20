@@ -103,10 +103,10 @@
 
 #ifndef M5STAMPC3U  // for radio side controller can choose XVBox BCD output operation and/or PC Passthrough
   
-  #define XVBOX // for radio side controller set config specific to usage with the 705 transverter box using hte 4In/*out module and 3 BCD + 1 PTT and 1 PTT in
+  #define XVBOX // for radio side controller set config specific to usage with the 705 transverter box using the 4In/4Out module and 3 BCD + 1 PTT and 1 PTT in
   
   #ifdef XVBOX  // option for IO for BCD + PTT on LCD controller
-    #define XVBOX_PLCC // use PLCC module with ULN2803A instead of otehr IO device such as 4-In/8-Out module for 3 BCD + 1 PTT and 1 PTT in
+    #define XVBOX_PLCC // use PLCC module with ULN2803A instead of other IO device such as 4-In/8-Out module for 3 BCD + 1 PTT and 1 PTT in
   #endif
 
   #define PC_PASSTHROUGH  // fwd through BT or USBHOST data to a PC if connected.  Turn off Debug in DebugPrint.h
