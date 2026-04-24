@@ -251,6 +251,7 @@ uint8_t board_type = 0;
 
 #ifndef M5STAMPC3U
   void chk_btns(void) {
+    M5.update();
     #if defined ( CONFIG_IDF_TARGET_ESP32S3 ) && !defined ( __M5GFX_M5ATOMDISPLAY__ )
       auto touchPoint = M5.Touch.getDetail(); 
       if (prev_state != touchPoint.state) {
@@ -275,40 +276,21 @@ uint8_t board_type = 0;
           }
       }   
 
-    #elif !defined ( CORE2LIB ) && ( defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) )
-      int state = M5.BtnA.wasHold() ? 1
-              : M5.BtnA.wasClicked() ? 2
-              : M5.BtnA.wasPressed() ? 3
-              : M5.BtnA.wasReleased() ? 4
-              : M5.BtnA.wasDecideClickCount() ? 5
-              : 0;
-      if (state == 3 && !BtnA_pressed) {  // Only process once the main loop is done
-        BtnA_pressed = true;
-        DPRINTF("2A, state = "); DPRINTLN(state);
+    #elif !defined ( CORE2LIB ) && ( defined ( ARDUINO_M5STACK_CORE2 ) || defined ( ARDUINO_M5STACK_Core2 ) )       
+      if(M5.BtnA.isPressed() || M5.BtnB.isPressed() || M5.BtnC.isPressed())
+      {
+          if (M5.BtnA.isPressed()) {
+              BtnA_pressed = true;
+          }
+          else if (M5.BtnB.isPressed()) {
+              BtnB_pressed = true;
+          }
+          else if (M5.BtnC.isPressed()) {
+              BtnC_pressed = true;
+          }
       }
-      
-      state = M5.BtnB.wasHold() ? 1
-            : M5.BtnB.wasClicked() ? 2
-            : M5.BtnB.wasPressed() ? 3
-            : M5.BtnB.wasReleased() ? 4
-            : M5.BtnB.wasDecideClickCount() ? 5
-            : 0;
-      if (state == 3 && !BtnB_pressed) {
-        BtnB_pressed = true;
-        DPRINTF("2B, state = "); DPRINTLN(state);
-      }
+      vTaskDelay(1);
 
-      state = M5.BtnC.wasHold() ? 1
-            : M5.BtnC.wasClicked() ? 2
-            : M5.BtnC.wasPressed() ? 3
-            : M5.BtnC.wasReleased() ? 4
-            : M5.BtnC.wasDecideClickCount() ? 5
-            : 0;
-      if (state == 3 & !BtnC_pressed) {
-        BtnC_pressed = true;
-        DPRINTF("2C, state = "); DPRINTLN(state);
-      }
-    
     #elif !defined (M5STAMPC3U)
       if (//M5.BtnA.wasReleased() ||
       M5.BtnA.pressedFor(100, 3000)) {
