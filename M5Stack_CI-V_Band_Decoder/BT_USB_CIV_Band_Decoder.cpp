@@ -1067,7 +1067,7 @@ void poll_radio(void) {
   static uint32_t time_last_pre = millis();
   static uint32_t time_last_split = millis();
   static uint32_t time_last_rfpwr = millis();
-  return;
+
   if (!PC_to_Radio_Msg_Sent && radio_address != 0x00 && radio_address != 0xFF && radio_address != CONTROLLER_ADDRESS) {
   
     if (millis() >= time_last_freq + POLL_RADIO_FREQ)  // poll every X ms
@@ -1105,7 +1105,7 @@ void poll_radio(void) {
 
     if (millis() >= time_last_attn + POLL_RADIO_ATTN)  // poll every X ms
     {
-      sendCatRequest(CIV_C_ATTN_READ, 0, 0);  // Get mode, filter, and datamode status
+      sendCatRequest(CIV_C_ATTN_READ, 0, 0);  // Get ATTN status
       vTaskDelay(2);
       processCatMessages();
       time_last_attn = millis();
@@ -1113,7 +1113,7 @@ void poll_radio(void) {
 
     if (millis() >= time_last_pre + POLL_RADIO_PRE)  // poll every X ms
     {
-      sendCatRequest(CIV_C_PREAMP_READ, 0, 0);  // Get mode, filter, and datamode status
+      sendCatRequest(CIV_C_PREAMP_READ, 0, 0);  // Get preamp status
       vTaskDelay(2);
       processCatMessages();
       time_last_pre = millis();
@@ -1857,7 +1857,7 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
           SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied    
           SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25B_SEND);  // This value always has Xvtr offset applied    
         }
-        vTaskDelay(10);
+        vTaskDelay(100);
         processCatMessages();
         SetMode(XVTR_Band);
         vTaskDelay(10);
@@ -1884,7 +1884,7 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         //if (!ext_input)
         SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25A_SEND);  // set radio to that last non-XVTR band used.
         SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25B_SEND);  // set radio to that last non-XVTR band used.
-        vTaskDelay(10);
+        vTaskDelay(100);
         processCatMessages();
         SetMode(XVTR_band_before);
         vTaskDelay(10);

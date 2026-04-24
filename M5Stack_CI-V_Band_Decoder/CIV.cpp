@@ -65,7 +65,7 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_S_MTR_LVL,       {2,0x15,0x02}},                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
     {CIV_C_PREAMP_READ,     {2,0x16,0x02}},             	  // read preamp state
     {CIV_C_PREAMP_OFF,      {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
-    {CIV_C_PREAMP_ON,       {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
+    {CIV_C_PREAMP_ON,       {3,0x16,0x02,0x01}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
     {CIV_C_PREAMP_ON2,      {3,0x16,0x02,0x02}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON - not on 905
     {CIV_C_AGC_READ,        {2,0x16,0x12}},                 // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
     {CIV_C_AGC_FAST,        {3,0x16,0x12,0x01}},            // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
