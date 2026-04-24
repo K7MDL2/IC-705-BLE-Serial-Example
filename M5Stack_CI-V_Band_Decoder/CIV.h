@@ -128,7 +128,8 @@ enum cmds {
     CIV_C_SCOPE_ALL,
     CIV_R_NO_GOOD,
     CIV_R_GOOD,
-    CIV_R_SEL_VFO,
+    CIV_C_SEL_VFO,
+    CIV_C_SEL_MEM,
     End_of_Cmd_List
 };
 

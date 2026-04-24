@@ -327,6 +327,7 @@ struct Bands {
   uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
   uint8_t split;          // Split mode on or off
   uint8_t rfpwr;          // RF Power set 0-255 range = 0-100%
+  uint8_t vfo_mem;        // VFO mode (0) or memory mode (1) active.
   uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
 };
 

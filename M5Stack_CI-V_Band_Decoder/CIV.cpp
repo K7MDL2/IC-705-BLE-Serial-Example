@@ -100,7 +100,8 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_SCOPE_ALL,       {1,0x27}},                    // send/read Scope catch all to avoid no match found error outputs
     {CIV_R_NO_GOOD,         {1,0xFA}},                    // Message received from radio was no good
     {CIV_R_GOOD,            {1,0xFB}},                    // Message received from radio was good
-    {CIV_R_SEL_VFO,         {1,0x07}}                     // Selesct VFO.  00 = A. 0 = B
+    {CIV_C_SEL_VFO,         {1,0x07}},                    // Select VFO Mode. If cmd supplied, then choose which VFO -  00 = A. 0 = B
+    {CIV_C_SEL_MEM,         {1,0x08}}                     // Select MEM mode
 };
 
 //
@@ -389,6 +390,16 @@ void SetPre(uint8_t  _band) {
   };
 }
 
+void Swap_to_MEM(uint8_t _band) {
+  if (bands[_band].vfo_mem)
+    sendCatRequest(CIV_C_SEL_MEM, 0, 0);
+}
+
+void Swap_to_VFO(uint8_t _band) {
+  if (bands[_band].vfo_mem)
+    sendCatRequest(CIV_C_SEL_VFO, 0, 0);
+}
+
 uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uint8_t buffer[])
 {
   if (m_Counter < offset + 3)
@@ -410,14 +421,16 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
 //  3. add the new switch case statement with the new enum index
 //
 
-//#define DBG_CIV1  // command parser entry
+#define DBG_CIV1  // command parser entry
 //#define DBG_CIV2  // just do summary print
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t rd_buffer[]) { 
   #ifdef DBG_CIV1
-  Serial.printf("CIV_Action: Entry - cmd = %X  data_start_idx = %d  data_len = %d  rd_buffer:%X %X %X %X %X %X %X %X %x %X %X\n", cmd_List[cmd_num].cmdData[1], \
+  //if (rd_buffer[4] == 0x1A && rd_buffer[5] == 0x05 && rd_buffer[6] == 0x00 && rd_buffer[7] == 0x74) {
+    Serial.printf("CIV_Action: Entry - cmd = %02X  data_start_idx = %d  data_len = %02d  rd_buffer:%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", cmd_List[cmd_num].cmdData[1], \
              data_start_idx, data_len, rd_buffer[0], rd_buffer[1], rd_buffer[2], rd_buffer[3],rd_buffer[4], rd_buffer[5], rd_buffer[6], \
              rd_buffer[7],rd_buffer[8], rd_buffer[9], rd_buffer[10]);
+  //}
   #endif
   
   switch (cmd_num) 
@@ -678,14 +691,14 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
     }
     
-    case CIV_C_SPLIT_READ: {
+    case CIV_C_SPLIT_READ: {  // read split and duplex status
         uint8_t _val = rd_buffer[data_start_idx];
 
         //DPRINTF("CIV_Action:  CI-V Returned Preamp status: "); DPRINTLN(_val);
         if (_val > 0)
         {
             //bands[band].atten = ATTN_OFF;
-            bands[band].split = 1;              
+            bands[band].split = _val;            
         }
         if (_val == 0)
         {
@@ -801,7 +814,10 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     case CIV_R_NO_GOOD: DPRINTLNF("CIV_Action  *** Command Rejected by Radio"); 
         break;
     
-    case CIV_R_SEL_VFO: DPRINTF("CIV_Action  *** Select VFO: "); DPRINTLN(rd_buffer[data_start_idx]);
+    case CIV_C_SEL_VFO: DPRINTLNF("CIV_Action  *** Swap MEM<->VFO  VFO:"); DPRINTLN(rd_buffer[data_start_idx]);
+        break;
+
+    case CIV_C_SEL_MEM: DPRINTF("CIV_Action  *** Swap VFO<->MEM");
         break;
 
     case CIV_C_SCOPE_OFF:
