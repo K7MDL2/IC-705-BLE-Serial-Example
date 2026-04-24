@@ -11,7 +11,13 @@
 
 # IC-705 CI-V Band Decoder and a 3-Band Transverter Box using BT Classic or BLE.
 
-This project is complete as of May 2025. At least as any software ever is.   
+This project is complete as of May 2025. At least as any software ever is. 
+
+April 2026 - I am testing and making some improvements getting ready for my 2026 summer travels.  After a long evaluation of several radio and SDR hardware and software setups optimized for VHF rover use in my truck cab and camper, I have concluded that none offer a better overall set of compromises than this exsting IC-705/M5Stack/3-band Xvtr box combo does today.  So I have resumed testing and making some improvements to make it as seemless as possible to serve as a compact single rig mobile solution for all bands HF through 1296.  My requirements list is long and several other rig/software combos tick many of the same boxes, and none give me all that I desire.  IT woudl be a long articale to detail my study and may do so on a Wiki page later on.  To complete this 705-based setup in my rover truck I only need to add 14VDC 222MHz and 50MHz amps.  I am fixing bugs and have more settings to save and restore per band to fine tune this to be a daily driver.
+
+Recent fixes (April 2026) improve using the M5Stack USB port as a CAT serial port (aka PC Passthru Mode - on by default). I also improved the touch button detection on the Core2 and fixed Preamp1 not getting restored.  Visit the Issues page to track what is on the radar.
+
+One key goal of this transverter controller/band decoder project is to make PC apps connected via USB see a multiband rig and require no special transverter config knowledge.  You connect a PC USB cable to the M5Stack USB port and set your logging and/or digital program CAT control port to it.  Use another USB cable on the IC-705 USB port to connect your USB Audio and GPS serial (Port B) if used.  Ignore the 705 CAT (Port A) on this cable and use the M5Stack cable instead to have transverter bands translated as if the IC-705 really had them.  The 705 does not know about the transverter bands, it is just the IF so Port A CAT info will only have IF frrequency data.
 
 It features a band decoder with LCD display (Band and PTT breakout) that can be used to translate the radio dial frequency with an offset value so a transverter frequency is displayed and CI-V frequency data over the USB will have the transverter (Xvtr) frequency show.  The controller will save key parameters for each real and Xvtr band, and restore the last non-Xvtr band when you leave XVTR mode.  Bands may be selected via external wired input, PC CI-V commands, or for Xvtr bands, 3 display buttons.  There are several IO module options, very little construction is required.
 
