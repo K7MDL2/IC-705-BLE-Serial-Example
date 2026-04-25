@@ -56,7 +56,7 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_ATTN_READ,   	  {1,0x11}},                  	  // Attn read state
     {CIV_C_ATTN_OFF,   		  {2,0x11,0x00}},                 // Attn OFF
     {CIV_C_ATTN_ON,    		  {2,0x11,0x10}},                 // Attn 10dB (144, 432, 1200 bands only)
-    {CIV_C_SPLIT_READ,      {1,0x0F}},                      // read Split OFF
+    {CIV_C_SPLIT_READ,      {1,0x0F}},                      // reads Split and duplex states  00=Split off, 01=split on, 0x11 duplex-, 0x12 duplex+ (0 is simplex and/or split off)
     {CIV_C_SPLIT_OFF_SEND,  {2,0x0F,0x00}},                 // set split OFF
     {CIV_C_SPLIT_ON_SEND,   {2,0x0F,0x01}},                 // Set split ON
     {CIV_C_RFGAIN,          {2,0x14,0x02}},                 // send/read RF Gain
@@ -88,8 +88,8 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_UTC_READ_905,    {4,0x1A,0x05,0x01,0x81}},     //  Get UTC Offset
     //{CIV_C_UTC_SEND,        {4,0x1A,0x05,0x00,0x96}},  		// + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
     {CIV_C_UTC_READ_705,    {4,0x1A,0x05,0x01,0x70}},  		// + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-    {CIV_C_DUPLEX_READ,		  {1,0x0C}},          	    	  // read Duplex Offset  - has 3 bytes frequency offset data
-    {CIV_C_DUPLEX_SEND,		  {1,0x0D}},	          	    	// send Duplex Offset
+    {CIV_R_DUPLEX_OFFSET,	  {1,0x0C}},          	    	  // read Duplex Offset  - has 3 bytes frequency offset data
+    {CIV_C_DUPLEX_OFFSET,	  {1,0x0D}},	          	    	// send Duplex Offset
     {CIV_C_RIT_XIT,			    {2,0x21,0x00}},          	    // read or send RIT/XIT Offset  - has 3 bytes frequency offset data  XIT and RIT share this Offset value
     {CIV_C_RIT_ON_OFF,		  {2,0x21,0x01}},	          	  // send or send RIT ON or Off status 00 = , 01 = t
     {CIV_C_XIT_ON_OFF,		  {2,0x21,0x02}},	          	  // send or send XIT Offset
@@ -101,7 +101,10 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_R_NO_GOOD,         {1,0xFA}},                    // Message received from radio was no good
     {CIV_R_GOOD,            {1,0xFB}},                    // Message received from radio was good
     {CIV_C_SEL_VFO,         {1,0x07}},                    // Select VFO Mode. If cmd supplied, then choose which VFO -  00 = A. 0 = B
-    {CIV_C_SEL_MEM,         {1,0x08}}                     // Select MEM mode
+    {CIV_C_SEL_MEM,         {1,0x08}},                    // Select MEM mode
+    {CIV_C_DUPLEX_SIMPLEX,  {2,0x0F,0x10}},               // Select Simplex mode
+    {CIV_C_DUPLEX_MINUS,    {2,0x0F,0x11}},               // Select Duplex - mode
+    {CIV_C_DUPLEX_PLUS,     {2,0x0F,0x12}}                // Select Duplex + mode
 };
 
 //
@@ -346,13 +349,25 @@ void SetAGC(uint8_t  _band) {
 
 // set split on radio
 void SetSplit(uint8_t  _band, bool force_off) {   // true = force split off
-  if (bands[_band].split && !force_off) {
-    sendCatRequest(CIV_C_SPLIT_ON_SEND, 0, 0);
-    DPRINTLNF("Set Split ON");
-  }
-  else {
+  if (!force_off) {
+    switch (bands[_band].split) {
+      case 0x00:  sendCatRequest(CIV_C_SPLIT_OFF_SEND, 0, 0);
+                  DPRINTLNF("Set Split OFF"); break;
+      case 0x01:  sendCatRequest(CIV_C_SPLIT_ON_SEND, 0, 0);
+                  DPRINTLNF("Set Split ON"); break;
+      case 0x10:  sendCatRequest(CIV_C_DUPLEX_SIMPLEX, 0, 0);
+                  DPRINTLNF("Set Simplex"); break;
+      case 0x11:  sendCatRequest(CIV_C_DUPLEX_MINUS, 0, 0);
+                  DPRINTLNF("Set Duplex --"); break;
+      case 0x12:  sendCatRequest(CIV_C_DUPLEX_PLUS, 0, 0);
+                  DPRINTLNF("Set Duplex ++"); break;
+    }
+  } else {
     sendCatRequest(CIV_C_SPLIT_OFF_SEND, 0, 0);
-    DPRINTLNF("Set Split OFF");
+    vTaskDelay(10);
+    sendCatRequest(CIV_C_DUPLEX_SIMPLEX, 0, 0);
+    vTaskDelay(10);
+    DPRINTLNF("Set Split/Duplex OFF");
   }
 }
 
@@ -400,6 +415,24 @@ void Swap_to_VFO(uint8_t _band) {
     sendCatRequest(CIV_C_SEL_VFO, 0, 0);
 }
 
+void Set_Duplex_Minus(uint8_t _band) { // may also need to change offset
+  if (bands[_band].split == 0x11)
+    sendCatRequest(CIV_C_DUPLEX_MINUS, 0, 0);
+     DPRINTLNF("Set Duplex --");
+}
+
+void Set_Duplex_Plus(uint8_t _band) { // may also need to change offset
+  if (bands[_band].split == 0x12)
+    sendCatRequest(CIV_C_DUPLEX_PLUS, 0, 0);
+     DPRINTLNF("Set Duplex ++");
+}
+
+void Set_Duplex_Simplex(uint8_t _band) { // may also need to change offset
+  if (bands[_band].split == 0)
+    sendCatRequest(CIV_C_DUPLEX_SIMPLEX, 0, 0);
+    DPRINTLNF("Set to Simplex");
+}
+
 uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uint8_t buffer[])
 {
   if (m_Counter < offset + 3)
@@ -408,7 +441,6 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
     ret += bcdByte(buffer[offset+1]);
     return ret;
 }
-
 
 //
 //  CIV_Action - Takes action on a sucessfully parsed CIV command result from processmessages()
@@ -421,7 +453,7 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
 //  3. add the new switch case statement with the new enum index
 //
 
-#define DBG_CIV1  // command parser entry
+//#define DBG_CIV1  // command parser entry
 //#define DBG_CIV2  // just do summary print
 
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t rd_buffer[]) { 
@@ -693,8 +725,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     
     case CIV_C_SPLIT_READ: {  // read split and duplex status
         uint8_t _val = rd_buffer[data_start_idx];
-
-        //DPRINTF("CIV_Action:  CI-V Returned Preamp status: "); DPRINTLN(_val);
+        //DPRINTF("CIV_Action:  CI-V Returned Split status: "); DPRINTLN(_val);        
         if (_val > 0)
         {
             //bands[band].atten = ATTN_OFF;
@@ -704,8 +735,6 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         {
             bands[band].split = 0;
         }
-        //displayAttn();
-        //displayPreamp();
         break;
     }
 
@@ -749,8 +778,8 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
 		}  // AGC changed
 
-		case CIV_C_DUPLEX_READ:
-		case CIV_C_DUPLEX_SEND: {
+		case CIV_R_DUPLEX_OFFSET:
+    case CIV_C_DUPLEX_OFFSET: {
         //              Dup            1k/100Hz   100K/10Khz    10M/1MHz    term
         // FE.FE.E0.AC. 0C.               01.        81.          00.        FD
         //					 datalen=3   
@@ -812,12 +841,6 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
 
     case CIV_R_NO_GOOD: DPRINTLNF("CIV_Action  *** Command Rejected by Radio"); 
-        break;
-    
-    case CIV_C_SEL_VFO: DPRINTLNF("CIV_Action  *** Swap MEM<->VFO  VFO:"); DPRINTLN(rd_buffer[data_start_idx]);
-        break;
-
-    case CIV_C_SEL_MEM: DPRINTF("CIV_Action  *** Swap VFO<->MEM");
         break;
 
     case CIV_C_SCOPE_OFF:

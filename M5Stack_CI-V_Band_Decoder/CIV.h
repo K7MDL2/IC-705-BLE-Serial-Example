@@ -64,6 +64,11 @@ void SetPre(uint8_t  _band);
 void SetAttn(uint8_t  _band);
 void SetSplit(uint8_t  _band, bool force_off);
 void SetRFPwr(uint8_t  _band);
+void Swap_to_MEM(uint8_t _band);
+void Swap_to_VFO(uint8_t _band);
+void Set_Duplex_Simplex(uint8_t _band);
+void Set_Duplex_Minus(uint8_t _band);
+void Set_Duplex_Plus(uint8_t _band);
 
 // command "body" of the CIV commands currently in use
 // Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.
@@ -116,8 +121,8 @@ enum cmds {
     CIV_C_TIME,
     CIV_C_UTC_READ_905,
     CIV_C_UTC_READ_705,
-    CIV_C_DUPLEX_READ,
-    CIV_C_DUPLEX_SEND,
+    CIV_C_DUPLEX_OFFSET,
+    CIV_R_DUPLEX_OFFSET,
     CIV_C_RIT_XIT,
     CIV_C_RIT_ON_OFF,
     CIV_C_XIT_ON_OFF,
@@ -130,6 +135,9 @@ enum cmds {
     CIV_R_GOOD,
     CIV_C_SEL_VFO,
     CIV_C_SEL_MEM,
+    CIV_C_DUPLEX_SIMPLEX,
+    CIV_C_DUPLEX_MINUS,
+    CIV_C_DUPLEX_PLUS,
     End_of_Cmd_List
 };
 

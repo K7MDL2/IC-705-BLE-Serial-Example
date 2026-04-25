@@ -325,7 +325,7 @@ struct Bands {
   uint8_t agc;            // store last agc.  Some radio/band/mode combos only have 1.
   uint8_t preamp;         // some bands there is no preamp (2.4G+ on 905).  Some radios/bands/modes combos have 1 preamp level, others have 2 levels.
   uint8_t atten;          // some bands there is no atten (some on 905).  Some radios/bands/mode combos have 1 atten level, others have more. 
-  uint8_t split;          // Split mode on or off
+  uint8_t split;          // Split and Duplex status.  0=Split and Duplex OFF, 1=split ON, 0x11 = Duplex --, 0x12 = Duplex ++
   uint8_t rfpwr;          // RF Power set 0-255 range = 0-100%
   uint8_t vfo_mem;        // VFO mode (0) or memory mode (1) active.
   uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.

@@ -513,15 +513,15 @@ uint8_t pass_PC_to_radio(void) {
         uint8_t cmd = r_buffer[4];
         uint8_t sub_cmd = r_buffer[5]; // applies only if cmd has a sub_cmd else ignore
 
-          #ifdef DBG_TO_LCD
-              M5.Lcd.setCursor(1,120);
-              M5.Lcd.setTextSize(2);
-              M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-              M5.Lcd.printf("IN=%02X%02X %02X%02X%02X%02X", r_buffer[2], r_buffer[3], r_buffer[4], r_buffer[5], r_buffer[6], r_buffer[7]);
-              M5.Lcd.setCursor(1,120);
-              M5.Lcd.setTextColor(TFT_WHITE, TFT_RED);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-              M5.Lcd.printf("IN=%02X%02X %02X%02X%02X%02X", r_buffer[2], r_buffer[3], r_buffer[4], r_buffer[5], r_buffer[6], r_buffer[7]);            
-            #endif
+        #ifdef DBG_TO_LCD
+          M5.Lcd.setCursor(1,120);
+          M5.Lcd.setTextSize(2);
+          M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+          M5.Lcd.printf("IN=%02X%02X %02X%02X%02X%02X", r_buffer[2], r_buffer[3], r_buffer[4], r_buffer[5], r_buffer[6], r_buffer[7]);
+          M5.Lcd.setCursor(1,120);
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_RED);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
+          M5.Lcd.printf("IN=%02X%02X %02X%02X%02X%02X", r_buffer[2], r_buffer[3], r_buffer[4], r_buffer[5], r_buffer[6], r_buffer[7]);            
+        #endif
 
         // if inbound frequency change command then translate it if it is for a transverter band
         if (counter > 10 && r_buffer[2] == radio_address && (cmd == 0x05 || cmd == 0x25))
@@ -1860,6 +1860,8 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         }
         vTaskDelay(100);
         processCatMessages();
+        SetSplit(XVTR_Band, false);
+        vTaskDelay(10);
         SetMode(XVTR_Band);
         vTaskDelay(10);
         SetPre(XVTR_Band);
@@ -1887,6 +1889,8 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25B_SEND);  // set radio to that last non-XVTR band used.
         vTaskDelay(100);
         processCatMessages();
+        SetSplit(XVTR_band_before, false);  // force split off 
+        vTaskDelay(10);
         SetMode(XVTR_band_before);
         vTaskDelay(10);
         SetPre(XVTR_band_before);
