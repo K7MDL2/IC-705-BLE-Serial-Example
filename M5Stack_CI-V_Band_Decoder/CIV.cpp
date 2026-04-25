@@ -497,7 +497,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           pc = false;
         #endif
         
-        if (data_len != 1 || !(rd_buffer[4] == 0x1C && rd_buffer[5] == 0x00))
+        if (data_len != 1 || !(rd_buffer[4] == 0x1C && rd_buffer[5] == 0x00)) // redundant really
           break;
         
         PTT = rd_buffer[6] == 1 ? true : false;
@@ -508,7 +508,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
           //Serial.printf("CIV_Action: TX Status = %d\n", PTT);
           TX_last = PTT;
         }        
-        break;                     // Call PTT output here rather than in teh main loop to avoid any loop delay time.
+        break;                     // Call PTT output here rather than in the main loop to avoid any loop delay time.
     }
 
     case CIV_C_MOD_READ:

@@ -402,10 +402,10 @@ uint8_t readLine(void) {
               M5.Lcd.setCursor(1,180);
               M5.Lcd.setTextSize(2);
               M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-              M5.Lcd.printf("XV=%02X %011llu>>PC", 0, frequency);
+              M5.Lcd.printf("XV=%02X %011llu->PC", 0, frequency);
               M5.Lcd.setCursor(1,180);
               M5.Lcd.setTextColor(TFT_BLACK, TFT_YELLOW);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-              M5.Lcd.printf("XV=%02X %011llu>>PC", read_buffer[4], frequency);
+              M5.Lcd.printf("XV=%02X %011llu->PC", read_buffer[4], frequency);
             #endif
           }
         }
@@ -420,18 +420,18 @@ uint8_t readLine(void) {
             PC_to_Radio_Msg_Sent = false;   // reset flag, allow local polling
             delay(60);
             #ifdef DBG_TO_LCD
-              if (cmd == 0xFB) {
+              if (cmd == 0x1C) {
                 M5.Lcd.setCursor(1,200);
                 M5.Lcd.setTextSize(2);
                 M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-                M5.Lcd.printf("%02X>>PC", 0);
+                M5.Lcd.printf("%02X%02X %02X->PC", cmd, read_buffer[05], read_buffer[6]);
                 M5.Lcd.setCursor(1,200);
                 M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-                M5.Lcd.printf("%02X>>PC", cmd);
+                M5.Lcd.printf("%02X%02X %02X->PC", cmd, read_buffer[05], read_buffer[6]);
                 delay (100);
               } else {
                 M5.Lcd.setTextColor(TFT_BLACK, TFT_BLACK);  //Set the color of the text from 0 to 65535, and the background color behind it 0 to 65535
-                M5.Lcd.printf("%02X>>PC", 0);
+                M5.Lcd.printf("%02X%02X %02X->PC", cmd, read_buffer[05], read_buffer[6]);
               }
             #endif
           }
@@ -1848,14 +1848,18 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
     #ifndef M5STAMPC3U
       // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, never the same band.
       if (XVTR_enabled) {  // set VFO and other values to last used for the target XVTR band
-        SetSplit(XVTR_Band, true);  // force split off 
+        //SetSplit(XVTR_Band, true);  // force split off 
         if (ext_input) {
           //if (read_buffer[5] == 0x00)
             SetFreq(frequency, CIV_C_F25A_SEND);
+            vTaskDelay(100);
+            processCatMessages();
           //else
-            SetFreq(frequency, CIV_C_F25B_SEND);
+            SetFreq(frequency, CIV_C_F25B_SEND);        
         } else {
           SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied    
+          vTaskDelay(100);
+          processCatMessages();
           SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25B_SEND);  // This value always has Xvtr offset applied    
         }
         vTaskDelay(100);
@@ -1870,8 +1874,6 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         vTaskDelay(10);
         SetRFPwr(XVTR_Band);
         vTaskDelay(10);
-        //SetSplit(XVTR_Band, 0);
-        //vTaskDelay(10);
         SetAGC(XVTR_Band);
         vTaskDelay(10);
       }
@@ -1883,9 +1885,11 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
 
         if (ext_input)
           XVTR_band_before = band;  // if sent from a PC then use that band, not the last non-Xvtr band
-        SetSplit(XVTR_band_before, true);  // force split off 
+        //SetSplit(XVTR_band_before, true);  // force split off 
         //if (!ext_input)
         SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25A_SEND);  // set radio to that last non-XVTR band used.
+        vTaskDelay(100);
+        processCatMessages();
         SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25B_SEND);  // set radio to that last non-XVTR band used.
         vTaskDelay(100);
         processCatMessages();
@@ -1899,8 +1903,6 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
         vTaskDelay(10);
         SetRFPwr(XVTR_band_before);
         vTaskDelay(10);
-        //SetSplit(XVTR_band_before, 0);
-        //vTaskDelay(10);
         SetAGC(XVTR_band_before);
         vTaskDelay(10);
       }
