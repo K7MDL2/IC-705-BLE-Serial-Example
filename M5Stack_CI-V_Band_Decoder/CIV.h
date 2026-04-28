@@ -69,6 +69,12 @@ void Swap_to_VFO(uint8_t _band);
 void Set_Duplex_Simplex(uint8_t _band);
 void Set_Duplex_Minus(uint8_t _band);
 void Set_Duplex_Plus(uint8_t _band);
+void Set_ToneSquelchMode(uint8_t _band);
+void Set_Tone(uint8_t _band);
+void Set_TSQL(uint8_t _band);
+void Set_DTCS(uint8_t _band);
+void Set_CSQL(uint8_t _band);
+void Set_Bandstack_reg(uint8_t _band);
 
 // command "body" of the CIV commands currently in use
 // Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.
@@ -121,8 +127,8 @@ enum cmds {
     CIV_C_TIME,
     CIV_C_UTC_READ_905,
     CIV_C_UTC_READ_705,
-    CIV_C_DUPLEX_OFFSET,
     CIV_R_DUPLEX_OFFSET,
+    CIV_C_DUPLEX_OFFSET,
     CIV_C_RIT_XIT,
     CIV_C_RIT_ON_OFF,
     CIV_C_XIT_ON_OFF,
@@ -138,6 +144,11 @@ enum cmds {
     CIV_C_DUPLEX_SIMPLEX,
     CIV_C_DUPLEX_MINUS,
     CIV_C_DUPLEX_PLUS,
+    CIV_C_TONE,
+    CIV_C_TSQL,
+    CIV_C_DTCS,
+    CIV_C_CSQL,
+    CIV_C_TONE_SQL_MODE,
     End_of_Cmd_List
 };
 

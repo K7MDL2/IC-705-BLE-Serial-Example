@@ -1145,7 +1145,7 @@ void poll_radio(void) {
       vTaskDelay(2);
       processCatMessages();
       sendCatRequest(CIV_C_MY_POSIT_READ, 0, 0);  //CMD_READ_FREQ);
-      vTaskDelay(2);
+      vTaskDelay(10 / portTICK_PERIOD_MS);
       processCatMessages();
       time_last_UTC = millis();
 

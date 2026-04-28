@@ -125,12 +125,14 @@ void Band_Decode_Output(uint8_t band, bool IF_Switch_ON) // pass IF_Switch_ON va
 
 void GPIO_Out(uint16_t pattern, bool IF_Switch_ON) // pass IF_Switch_ON value to GPIO_out for sequencing usage)
 {
+    #ifdef M5STAMPC3U
     if (!IF_Switch_ON) {
       pattern |= 0x0007;  // modify lower 3 bits to turn IF switch OFF (all 1s) for sequencing
       DPRINTLNF(" IF Switch Set to Block RF");
     } else {
       DPRINTLNF(" IF Switch allowed to PASS RF if configured to do so (last 3 bits)");
     }
+    #endif
     
     DPRINTF("  GPIO_Out: pattern:  DEC "); DPRINT(pattern);
     DPRINTF("  HEX "); DPRINT(pattern, HEX);

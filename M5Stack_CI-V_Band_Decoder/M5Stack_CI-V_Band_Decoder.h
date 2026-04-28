@@ -212,8 +212,9 @@
 #define POLL_RADIO_AGC   3403 // poll radio for AGC
 #define POLL_RADIO_ATTN  3305 // poll radio for atten status
 #define POLL_RADIO_PRE   3204 // poll radio for preamp status
-#define POLL_RADIO_SPLIT 3102 // poll radio for split status
+#define POLL_RADIO_SPLIT 3102 // poll radio for split and duplex status
 #define POLL_RADIO_RFPWR 1713 // poll radio for RF power for active band
+#define POLL_RADIO_TONE  8833 // poll radio for RF power for active band
 
 #ifndef M5STAMPC3U  // None of these apply to the M5StampC3U as used in the 705 Transverter project
   // Chose the combination needed.  Note that at least one comm service must be enabled.
@@ -311,12 +312,20 @@ uint8_t pass_PC_to_radio(void);
 #define BAUD_RATES_SIZE 4
 const uint16_t baudRates[BAUD_RATES_SIZE] = { 19200, 9600, 4800, 1200 };
 
+// Use this to recall specific settings or complete per band setup
+struct BStack {
+  //uint8_t band_code;
+  //uint8_t register_Code;
+  uint8_t reg[52];
+};
+
 struct Bands {
   char band_name[6];    // Freindly name or label.  Default here but can be changed by user.
   uint64_t edge_lower;  // band edge limits for TX and for when to change to next band when tuning up or down.
   uint64_t edge_upper;
   uint64_t Xvtr_offset;  // Offset to add to radio frequency.
                          // When all is correct, it will be within the band limits and allow PTT and Band decoder outputs
+  uint8_t bstack_band;   // band stack band code.  IF a Xv band, then use the icom code for the IF frequency
   uint64_t VFO_last;     // store the last used frequency on each band.
                          // for XVTR bands subtract the LO offset and send the result to the radio
   uint8_t mode_idx;      // current mode stored as indexc to the modelist table.
@@ -328,6 +337,12 @@ struct Bands {
   uint8_t split;          // Split and Duplex status.  0=Split and Duplex OFF, 1=split ON, 0x11 = Duplex --, 0x12 = Duplex ++
   uint8_t rfpwr;          // RF Power set 0-255 range = 0-100%
   uint8_t vfo_mem;        // VFO mode (0) or memory mode (1) active.
+  uint8_t tone_mode;      // store the tone squelch function (some combo of TONE/TSQL/DTCS/CSQL/OFF)
+  uint8_t tone_freq[2];   // For FM xx is 00, a is 0-2 100Hz digit, b is 0-9 10Hz digit, c is 0-9 1Hz digit, and d is 0-9 0.1Hz digit.
+  uint8_t tsql_freq[2];   // For FM xx is 00, a is 0-2 100Hz digit, b is 0-9 10Hz digit, c is 0-9 1Hz digit, and d is 0-9 0.1Hz digit.
+  uint8_t dtcs_code[3];   // polarity and DTCS code
+  uint8_t csql_code;      // DV code squelch
+  uint8_t dup_offset[3];  // duplex frequency offset
   uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
 };
 
