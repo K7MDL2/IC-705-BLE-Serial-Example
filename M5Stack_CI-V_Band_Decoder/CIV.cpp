@@ -5,11 +5,15 @@
 #include "M5Stack_CI-V_Band_Decoder.h"
 #include "CIV.h"
 
+//#define DEBUG  //set for debug output
+
 // CIV related stuff
 char Grid_Square[GRIDSQUARE_LEN];   /* 10 char grid square max to be used - store d here as last known good Grid Flash icon if no valid GPS input*/
 extern uint8_t UTC;    // 0 local time, 1 UTC time
 extern void read_Frequency(uint64_t freq, uint8_t data_len);
 extern bool PTT;
+extern struct BStack BStack_Copy[];
+extern bool XVTR_enabled;
 static bool TX_last = 0;
 int hr_off;  // time offsets to apply to UTC time
 int min_off;
@@ -34,14 +38,14 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_F_SEND,          {1,0x00}},                      // send operating frequency to all
     {CIV_C_F1_SEND,         {1,0x05}},                      // send operating frequency to one
     {CIV_C_F_READ,          {1,0x03}},                      // read operating frequency
-    {CIV_C_F26,        		  {1,0x26}},                      // read selected VFO m data, filt -  26 datafield template; selected VFO; mode, data on/off(0-1), filter (1-3);
-    {CIV_C_F26A,        	  {2,0x26,0x00}},                 // read/set selected VFO m data, filt
-    {CIV_C_F26B,       		  {2,0x26,0x01}},                 // read/set  un- selected VFO m data, filt
+    {CIV_C_F26,        		{1,0x26}},                      // read selected VFO m data, filt -  26 datafield template; selected VFO; mode, data on/off(0-1), filter (1-3);
+    {CIV_C_F26A,        	{2,0x26,0x00}},                 // read/set selected VFO m data, filt
+    {CIV_C_F26B,       		{2,0x26,0x01}},                 // read/set  un- selected VFO m data, filt
     {CIV_C_F25A_SEND,       {2,0x25,0x00}},                 // set selected VFO frequency
     {CIV_C_F25B_SEND,       {2,0x25,0x01}},                 // set un-selected VFO frequency
 
-    {CIV_C_MOD_READ,        {1,0x04}},               	      // read Modulation Mode in use
-    {CIV_C_MOD_SET,         {3,0x06,0x23,0x02}},  		      // set mode to ATV and FIL2, same 2 byte filed for cmds 1, 4, and 6
+    {CIV_C_MOD_READ,        {1,0x04}},               	    // read Modulation Mode in use
+    {CIV_C_MOD_SET,         {3,0x06,0x23,0x02}},  		    // set mode to ATV and FIL2, same 2 byte filed for cmds 1, 4, and 6
     {CIV_C_MOD_SEND ,       {1,0x01}},                      // send Modulation Mode to all
     {CIV_C_MOD1_SEND,       {1,0x06}},                      // send Modulation Mode to one
     {CIV_C_MOD_USB_F1_SEND, {3,0x06,0x01,0x01}},            // send USB Filter 1 
@@ -53,9 +57,9 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_LSB_D1_F2_SEND,  {5,0x26,0x00,0x00,0x01,0x02}},  // selected VFO; mod USB; Data ON;  RX_filter F2;
     {CIV_C_FM_D1_F1_SEND,   {5,0x26,0x00,0x05,0x01,0x01}},  // selected VFO; mod USB; Data ON;  RX_filter F2;
     
-    {CIV_C_ATTN_READ,   	  {1,0x11}},                  	  // Attn read state
-    {CIV_C_ATTN_OFF,   		  {2,0x11,0x00}},                 // Attn OFF
-    {CIV_C_ATTN_ON,    		  {2,0x11,0x10}},                 // Attn 10dB (144, 432, 1200 bands only)
+    {CIV_C_ATTN_READ,   	{1,0x11}},                  	// Attn read state
+    {CIV_C_ATTN_OFF,   		{2,0x11,0x00}},                 // Attn OFF
+    {CIV_C_ATTN_ON,    		{2,0x11,0x10}},                 // Attn 10dB (144, 432, 1200 bands only)
     {CIV_C_SPLIT_READ,      {1,0x0F}},                      // reads Split and duplex states  00=Split off, 01=split on, 0x11 duplex-, 0x12 duplex+ (0 is simplex and/or split off)
     {CIV_C_SPLIT_OFF_SEND,  {2,0x0F,0x00}},                 // set split OFF
     {CIV_C_SPLIT_ON_SEND,   {2,0x0F,0x01}},                 // Set split ON
@@ -63,7 +67,7 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_AFGAIN,          {2,0x14,0x01}},                 // send/read AF Gain
     {CIV_C_RFPOWER,         {2,0x14,0x0A}},                 // send / read max RF power setting (0..255 == 0 .. 100%)
     {CIV_C_S_MTR_LVL,       {2,0x15,0x02}},                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
-    {CIV_C_PREAMP_READ,     {2,0x16,0x02}},             	  // read preamp state
+    {CIV_C_PREAMP_READ,     {2,0x16,0x02}},             	// read preamp state
     {CIV_C_PREAMP_OFF,      {3,0x16,0x02,0x00}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
     {CIV_C_PREAMP_ON,       {3,0x16,0x02,0x01}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON
     {CIV_C_PREAMP_ON2,      {3,0x16,0x02,0x02}},            // send/read preamp 3rd byte is on or of for sending - 00 = OFF, 01 = ON - not on 905
@@ -76,25 +80,25 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
                                                                     // data byte 1 0xyy = Freq band code
                                                                     // dat abyte 2 0xzz = register code 01, 02 or 03
                                                                     // to read 432 band stack register 1 use 0x1A,0x01,0x02,0x01
-    {CIV_C_MY_POSIT_READ,   {2,0x23,0x00}},          	    // read my GPS Position
-    {CIV_C_MY_POSIT_DATA,   {1,0x23}},          	    	  // read my GPS Position
-    {CIV_C_TRX_ON_OFF,      {1,0x18}},                 		// switch radio ON/OFF
-    {CIV_C_TRX_ID,          {2,0x19,0x00}},            		// ID query
-    {CIV_C_TX,              {2,0x1C,0x00}},            		// query of TX-State 00=OFF, 01=ON
+    {CIV_C_MY_POSIT_READ,   {2,0x23,0x00}},          	  // read my GPS Position
+    {CIV_C_MY_POSIT_DATA,   {1,0x23}},          	      // read my GPS Position
+    {CIV_C_TRX_ON_OFF,      {1,0x18}},                 	  // switch radio ON/OFF
+    {CIV_C_TRX_ID,          {2,0x19,0x00}},            	  // ID query
+    {CIV_C_TX,              {2,0x1C,0x00}},            	  // query of TX-State 00=OFF, 01=ON
     // the following three commands don't fit for IC7100 !!!
-    {CIV_C_DATE,            {4,0x1A,0x05,0x00,0x94}},  		// + 0x20 0x20 0x04 0x27 for 27.4.2020
-    {CIV_C_TIME,            {4,0x1A,0x05,0x00,0x95}},  		// + 0x19 0x57 for 19:57
-    //{CIV_C_UTC,             {4,0x1A,0x05,0x00,0x96}},  		// + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
+    {CIV_C_DATE,            {4,0x1A,0x05,0x00,0x94}},  	  // + 0x20 0x20 0x04 0x27 for 27.4.2020
+    {CIV_C_TIME,            {4,0x1A,0x05,0x00,0x95}},  	  // + 0x19 0x57 for 19:57
+    //{CIV_C_UTC,             {4,0x1A,0x05,0x00,0x96}},   // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
     {CIV_C_UTC_READ_905,    {4,0x1A,0x05,0x01,0x81}},     //  Get UTC Offset
-    //{CIV_C_UTC_SEND,        {4,0x1A,0x05,0x00,0x96}},  		// + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-    {CIV_C_UTC_READ_705,    {4,0x1A,0x05,0x01,0x70}},  		// + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-    {CIV_R_DUPLEX_OFFSET,	  {1,0x0C}},          	    	  // read Duplex Offset  - has 3 bytes frequency offset data
-    {CIV_C_DUPLEX_OFFSET,	  {1,0x0D}},	          	    	// send Duplex Offset
-    {CIV_C_RIT_XIT,			    {2,0x21,0x00}},          	    // read or send RIT/XIT Offset  - has 3 bytes frequency offset data  XIT and RIT share this Offset value
-    {CIV_C_RIT_ON_OFF,		  {2,0x21,0x01}},	          	  // send or send RIT ON or Off status 00 = , 01 = t
-    {CIV_C_XIT_ON_OFF,		  {2,0x21,0x02}},	          	  // send or send XIT Offset
-    {CIV_C_RADIO_OFF,		    {2,0x18,0x00}},	          	  // Turn Off the radio
-    {CIV_C_RADIO_ON,		    {2,0x18,0x01}},	          	  // Turn on the radio
+    //{CIV_C_UTC_SEND,        {4,0x1A,0x05,0x00,0x96}},   // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
+    {CIV_C_UTC_READ_705,    {4,0x1A,0x05,0x01,0x70}},  	  // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
+    {CIV_R_DUPLEX_OFFSET,	{1,0x0C}},          	      // read Duplex Offset  - has 3 bytes frequency offset data
+    {CIV_C_DUPLEX_OFFSET,	{1,0x0D}},	          	      // send Duplex Offset
+    {CIV_C_RIT_XIT,			{2,0x21,0x00}},          	  // read or send RIT/XIT Offset  - has 3 bytes frequency offset data  XIT and RIT share this Offset value
+    {CIV_C_RIT_ON_OFF,		{2,0x21,0x01}},	          	  // send or send RIT ON or Off status 00 = , 01 = t
+    {CIV_C_XIT_ON_OFF,		{2,0x21,0x02}},	          	  // send or send XIT Offset
+    {CIV_C_RADIO_OFF,		{2,0x18,0x00}},	          	  // Turn Off the radio
+    {CIV_C_RADIO_ON,		{2,0x18,0x01}},	          	  // Turn on the radio
     {CIV_C_SCOPE_ON,        {3,0x27,0x11,0x01}},          // send/read Scope wave data output ON
     {CIV_C_SCOPE_OFF,       {3,0x27,0x11,0x00}},          // send/read Scope wave data output OFF
     {CIV_C_SCOPE_ALL,       {1,0x27}},                    // send/read Scope catch all to avoid no match found error outputs
@@ -104,7 +108,16 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_SEL_MEM,         {1,0x08}},                    // Select MEM mode
     {CIV_C_DUPLEX_SIMPLEX,  {2,0x0F,0x10}},               // Select Simplex mode
     {CIV_C_DUPLEX_MINUS,    {2,0x0F,0x11}},               // Select Duplex - mode
-    {CIV_C_DUPLEX_PLUS,     {2,0x0F,0x12}}                // Select Duplex + mode
+    {CIV_C_DUPLEX_PLUS,     {2,0x0F,0x12}},               // Select Duplex + mode
+    {CIV_C_TONE,            {2,0x1B,0x00}},               // Send/Read Repeater Tone frequency
+    {CIV_C_TSQL,            {2,0x1B,0x01}},               // Send/Read Repeater Tone Squelch tone frequency
+    {CIV_C_DTCS,            {2,0x1B,0x02}},               // Send/Read Repeater DTCS code and polarity
+    {CIV_C_CSQL,            {2,0x1B,0x07}},               // Send/Read Repeater CSQL code
+    {CIV_C_TONE_SQL_MODE,   {2,0x16,0x5D}},               // Send/Read Tone Squelch modes. Data byte is mode combo
+    {CIV_C_TONE_STATE,      {2,0x16,0x42}},               // Send/read the Repeater tone (00=OFF, 01=ON)
+    {CIV_C_TSQL_STATE,      {2,0x16,0x43}},               // Send/read the Tone squelch (00=OFF, 01=ON)
+    {CIV_C_DTCS_STATE,      {2,0x16,0x4B}},               // Send/read the DTCS function (00=OFF, 01=ON)
+    {CIV_C_DSQL_STATE,      {2,0x16,0x5B}}                // Send/Read the DSQL 0=OFF, 01=DSQL, 02=CSQL
 };
 
 //
@@ -369,6 +382,9 @@ void SetSplit(uint8_t  _band, bool force_off) {   // true = force split off
     vTaskDelay(10);
     DPRINTLNF("Set Split/Duplex OFF");
   }
+
+  sendCatRequest(CIV_C_DUPLEX_OFFSET, bands[_band].dup_offset, 3);
+  vTaskDelay(10);
 }
 
 // set RF Power on radio
@@ -406,31 +422,92 @@ void SetPre(uint8_t  _band) {
 }
 
 void Swap_to_MEM(uint8_t _band) {
-  if (bands[_band].vfo_mem)
     sendCatRequest(CIV_C_SEL_MEM, 0, 0);
+    DPRINTLNF("Swap to Memory Mode");
 }
 
 void Swap_to_VFO(uint8_t _band) {
-  if (bands[_band].vfo_mem)
     sendCatRequest(CIV_C_SEL_VFO, 0, 0);
+    DPRINTLNF("Swap to VFO Mode");
 }
 
 void Set_Duplex_Minus(uint8_t _band) { // may also need to change offset
-  if (bands[_band].split == 0x11)
     sendCatRequest(CIV_C_DUPLEX_MINUS, 0, 0);
-     DPRINTLNF("Set Duplex --");
+    DPRINTLNF("Set Duplex --");
 }
 
 void Set_Duplex_Plus(uint8_t _band) { // may also need to change offset
-  if (bands[_band].split == 0x12)
     sendCatRequest(CIV_C_DUPLEX_PLUS, 0, 0);
-     DPRINTLNF("Set Duplex ++");
+    DPRINTLNF("Set Duplex ++");
 }
 
-void Set_Duplex_Simplex(uint8_t _band) { // may also need to change offset
-  if (bands[_band].split == 0)
+void Set_Duplex_Simplex(uint8_t _band) {
     sendCatRequest(CIV_C_DUPLEX_SIMPLEX, 0, 0);
     DPRINTLNF("Set to Simplex");
+}
+
+void Set_Duplex_Offset(uint8_t _band) { // change offset frequency
+    sendCatRequest(CIV_C_DUPLEX_OFFSET, bands[_band].dup_offset, 3);
+    DPRINTF("Set Duplex Offset Frequency to "); DPRINT(bands[_band].dup_offset[0]); DPRINT(bands[_band].dup_offset[1]); DPRINT(bands[_band].dup_offset[2]);
+}
+
+void Set_Tone(uint8_t _band) { // may also need to change offset
+    sendCatRequest(CIV_C_TONE, bands[band].tone_freq, 2);
+    DPRINTF("Set TONE frequency to "); DPRINT(bands[band].tone_freq[0], HEX); DPRINTLN(bands[band].tone_freq[1], HEX);
+}
+
+void Set_TSQL(uint8_t _band) { // may also need to change offset
+    sendCatRequest(CIV_C_TSQL, bands[band].tsql_freq, 2);
+    DPRINTF("Set TSQL tone frequency to "); DPRINT(bands[band].tsql_freq[0], HEX); DPRINTLN(bands[band].tsql_freq[1], HEX);
+}
+
+void Set_DTCS(uint8_t _band) { // may also need to change offset
+    sendCatRequest(CIV_C_DTCS, bands[band].dtcs_code, 3);
+    DPRINTF("Set DTCS code to "); DPRINT(bands[band].dtcs_code[0], HEX); DPRINT("  "); DPRINT(bands[band].dtcs_code[1], HEX); DPRINT("  "); DPRINTLN(bands[band].dtcs_code[2], HEX);
+}
+
+void Set_CSQL(uint8_t _band) { // may also need to change offset
+    sendCatRequest(CIV_C_CSQL, &bands[band].csql_code, 1);
+    DPRINTF("Set CSQL Code to "); DPRINTLN(bands[band].csql_code, HEX);
+}
+
+// The tone on/off status for multiple tone types are packed and stored in bands[band].tone_mode when read.  Unpack them here
+void Set_ToneSquelchMode(uint8_t _band) { // may also need to change offset
+    uint8_t tone_state = bands[band].tone_mode;
+    uint8_t mode = bands[band].mode_idx;
+    uint8_t new_state = 0;    
+    // DV modes
+    if (mode == DV) {
+        if (tone_state == 0x00) new_state = 0;  // We keep DV state in upper nibble rest in lower nibble
+        if (tone_state == 0x10) new_state = 1;
+        if (tone_state == 0x20) new_state = 2;
+        sendCatRequest(CIV_C_DSQL_STATE, &new_state, 1); // CSQL DV only   
+    } else if (tone_state < 4) {
+        sendCatRequest(CIV_C_TONE_SQL_MODE, &tone_state, 1); // TONE/TSQL/DTCS
+    } else {
+        Serial.print("CIV: Set_ToneSquelchMode Unknown state ");
+    }    
+    DPRINTF("Set TONE Squelch Mode to "); DPRINTLN(bands[band].tone_mode, HEX);
+}
+
+// This is an alternative way to bulk set many parameters
+void Set_Bandstack_reg(uint8_t _band) { // may also need to change offset   
+    //translate radio band to our RF or if XV active, IF band
+    uint8_t _bandx = bands[band].bstack_band;  // return radio IF band stack band code
+    BStack_Copy[band].reg[0] = _bandx;
+    BStack_Copy[band].reg[1] = 1;
+    sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
+    vTaskDelay(20 / portTICK_PERIOD_MS);
+    processCatMessages();
+    BStack_Copy[band].reg[1] = 2;
+    sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
+    vTaskDelay(20 / portTICK_PERIOD_MS);
+    processCatMessages();
+    BStack_Copy[band].reg[1] = 3;
+    sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
+    vTaskDelay(20 / portTICK_PERIOD_MS);
+    processCatMessages();
+    DPRINTF("Set All Band Stack registers to same value for IF band"); DPRINTLN(_bandx);    
 }
 
 uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uint8_t buffer[])
@@ -459,9 +536,9 @@ uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uin
 void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8_t data_len, const uint8_t msg_len, const uint8_t rd_buffer[]) { 
   #ifdef DBG_CIV1
   //if (rd_buffer[4] == 0x1A && rd_buffer[5] == 0x05 && rd_buffer[6] == 0x00 && rd_buffer[7] == 0x74) {
-    Serial.printf("CIV_Action: Entry - cmd = %02X  data_start_idx = %d  data_len = %02d  rd_buffer:%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", cmd_List[cmd_num].cmdData[1], \
+    Serial.printf("CIV_Action: Entry - cmd = %02X  data_start_idx = %d  data_len = %02d  rd_buffer:%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", cmd_List[cmd_num].cmdData[1], \
              data_start_idx, data_len, rd_buffer[0], rd_buffer[1], rd_buffer[2], rd_buffer[3],rd_buffer[4], rd_buffer[5], rd_buffer[6], \
-             rd_buffer[7],rd_buffer[8], rd_buffer[9], rd_buffer[10]);
+             rd_buffer[7],rd_buffer[8], rd_buffer[9], rd_buffer[10], rd_buffer[11], rd_buffer[12], rd_buffer[13]);
   //}
   #endif
   
@@ -748,7 +825,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     }
 
     case CIV_C_ATTN_READ:	
-		case CIV_C_ATTN_ON:
+	case CIV_C_ATTN_ON:
     case CIV_C_ATTN_OFF: {
         uint8_t _val = rd_buffer[data_start_idx];
 
@@ -767,7 +844,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
     }  // Attn changed
 
-		//case CIV_C_AGC_FAST:
+	    //case CIV_C_AGC_FAST:
 		//case CIV_C_AGC_MID:
 		//case CIV_C_AGC_SLOW:
     case CIV_C_AGC_READ: {
@@ -778,34 +855,27 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
 		}  // AGC changed
 
-		case CIV_R_DUPLEX_OFFSET:
+    case CIV_R_DUPLEX_OFFSET:
     case CIV_C_DUPLEX_OFFSET: {
+        // store in db raw
+        bands[band].dup_offset[0] = rd_buffer[data_start_idx];
+        bands[band].dup_offset[1] = rd_buffer[data_start_idx+1];
+        bands[band].dup_offset[2] = rd_buffer[data_start_idx+2];
         //              Dup            1k/100Hz   100K/10Khz    10M/1MHz    term
         // FE.FE.E0.AC. 0C.               01.        81.          00.        FD
         //					 datalen=3   
-        // when using datafield, add 1 to prog guide index to account for first byte used as length counter - so 3 is 4 here.
-
-        //uint8_t DUP_10MHZ 	= bcdByte(CIVresultL.datafield[3] & 0xF0); 
-        //uint8_t DUP_1MHZ 	= bcdByte(CIVresultL.datafield[3] & 0x0F); 
-        
-        //uint8_t DUP_100KHZ 	= bcdByte(CIVresultL.datafield[2] & 0xF0); 
-        //uint8_t DUP_10KHZ 	= bcdByte(CIVresultL.datafield[2] & 0x0F); 
-
-        //uint8_t DUP_1KHZ 	= bcdByte(CIVresultL.datafield[1] & 0xF0);
-        //uint8_t DUP_100HZ 	= bcdByte(CIVresultL.datafield[1] & 0x0F);
-             
-        //int8_t DUP_MINUS 	= CIVresultL.datafield[3];    // 00 = plus, 01 - minus
+        // display bcd converted content
         radio_DUP 	   = bcdByte(rd_buffer[data_start_idx+2])*1000;
         radio_DUP  	  += bcdByte(rd_buffer[data_start_idx+1])*10; 
         radio_DUP  	  += bcdByte(rd_buffer[data_start_idx]); 
         radio_DUP 	  *= 1000;  //convert KHz to Hz
         //radio_DUP = DUP_MINUS ?  radio_DUP*-1: radio_DUP;
-        DPRINTF("CIV_Action:  Radio Returned Duplex Offset: "); DPRINT(radio_DUP); DPRINTLNF("Hz");
+
+        //DPRINTF("CIV_Action:  Radio Returned Duplex Offset: "); DPRINT(radio_DUP); DPRINTLNF("Hz");
         break;
 		}  // Duplex Offset
 
-
-		case CIV_C_RIT_XIT: {
+	case CIV_C_RIT_XIT: {
         // RIT -1.97KHz
         //              RIT            1k/100Hz   10/1hz   +/1    term
         // FE.FE.E0.AC. 21.00              01.      97.     01.     FD
@@ -821,21 +891,22 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         break;
     }  // RIT/XIT Offset
 
-		case CIV_C_RIT_ON_OFF: {
+	case CIV_C_RIT_ON_OFF: {
       	radio_RIT_On_Off  	    = bcdByte(rd_buffer[data_start_idx]); 
 				DPRINTF("CIV_Action:  RIT On/Off: "); DPRINTLN(radio_RIT_On_Off);
 				break;
 		}  // RIT On/Off
 
-		case CIV_C_XIT_ON_OFF: {					
+	case CIV_C_XIT_ON_OFF: {					
         radio_XIT_On_Off  	    = bcdByte(rd_buffer[data_start_idx]); 
         DPRINTF("CIV_Action:  XIT On/Off: "); DPRINTLN(radio_XIT_On_Off);
         break;
 		}  // XIT On/Off
 
-    case CIV_C_TRX_ID: 
+    case CIV_C_TRX_ID: {
         DPRINTF("CIV Action: *** Rig ID 0x"); DPRINTLN(rd_buffer[3], HEX);
         break;
+    }
 
     case CIV_R_GOOD: //DPRINTLNF("CIV_Action *** Command Accepted by Radio"); 
         break;
@@ -843,11 +914,114 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
     case CIV_R_NO_GOOD: DPRINTLNF("CIV_Action  *** Command Rejected by Radio"); 
         break;
 
+    // Read Tone State info   
+    case CIV_C_TONE_STATE: bands[band].tone_mode = rd_buffer[data_start_idx]?1:0; break;    // TONE
+
+    case CIV_C_TSQL_STATE: bands[band].tone_mode = rd_buffer[data_start_idx]?2:0; break;    // TSQL
+
+    case CIV_C_DTCS_STATE: bands[band].tone_mode = rd_buffer[data_start_idx]?3:0; break;    // DTCS            
+
+    case CIV_C_TONE_SQL_MODE: {
+            bands[band].tone_mode = rd_buffer[data_start_idx]; // composite Send/read the Tone squelch function
+            //00=OFF, 01=TONE, 02=TSQL, 03=DTCS, 06=DTCS (T), 07=TONE (T)/DTCS (R), 08=DTCS (T)/TSQL (R), 09=TONE (T)/TSQL (R)            
+            //default:  bands[band].tone_mode = 0; break;
+        //Serial.printf("CIV_Action: Tone Squelch Function 0x%02X state = 0x%02X database tone_mode 0x%02X for band %s\n", cmd_List[cmd_num].cmdData[2], rd_buffer[data_start_idx], bands[band].tone_mode, bands[band].band_name);
+        break;
+    }
+     
+    case CIV_C_DSQL_STATE: { // DV mode only
+        uint8_t state = rd_buffer[data_start_idx];
+        if (state == 0) bands[band].tone_mode = 0x0F & bands[band].tone_mode;  // off
+        if (state == 1) bands[band].tone_mode = 0x10 | bands[band].tone_mode;  // DSQL On
+        if (state == 2) bands[band].tone_mode = 0x20 | bands[band].tone_mode;  // CSQL On
+        Serial.printf("CIV_Action: Digital Squelch Function state = 0x%02X\n", bands[band].tone_mode);
+        break;
+    }
+
+    case CIV_C_TONE: { //DPRINTLNF("CIV_Action: Read Tone Frequency");
+        // 3 bytes  left most is fixed at 0x00,
+        // middle is 0-2|0-9  100Hz|10Hz 
+        bands[band].tone_freq[0] = rd_buffer[data_start_idx+1];
+        // rightmost 0-9|0-9  1Hz|0,1Hz
+        bands[band].tone_freq[1] = rd_buffer[data_start_idx+2];
+        float tone = (bcdByte(bands[band].tone_freq[0]))*10 + ((bcdByte(0xF0 & bands[band].tone_freq[1]))/10) + ((float)(bcdByte(0x0F & bands[band].tone_freq[1]))/10);
+        //Serial.printf("Tone Squelch Function = %01X, Tone Frequency is %3.1f\n", bands[band].tone_mode, tone);
+        break;
+    }
+
+    case CIV_C_TSQL: { //DPRINTLNF("CIV_Action: Read Tone Squelch Frequency");
+        // 3 bytes  left most is fixed at 0x00,
+        // middle is 0-2|0-9  100Hz|10Hz 
+        bands[band].tsql_freq[0] = rd_buffer[data_start_idx+1];
+        // rightmost 0-9|0-9  1Hz|0,1Hz
+        bands[band].tsql_freq[1] = rd_buffer[data_start_idx+2];
+        float tone = (bcdByte(bands[band].tsql_freq[0]))*10 + ((bcdByte(0xF0 & bands[band].tsql_freq[1]))/10) + ((float)(bcdByte(0x0F & bands[band].tsql_freq[1]))/10);
+        //Serial.printf("Tone Squelch Function = %01X, TSQL Frequency is %3.1f\n", bands[band].tone_mode, tone);
+        break;
+    }
+
+    case CIV_C_DTCS: { //DPRINTLNF("CIV_Action: Read Repeater DTCS Polarity and Code");
+        // 3 bytes  left most is rx and Tx polarity
+        bands[band].dtcs_code[0] = rd_buffer[data_start_idx+0];
+        // middle byte has 0 fixed and 0-7 lower nibble
+        bands[band].dtcs_code[1] = rd_buffer[data_start_idx+1];
+        // rightmost byte has 2nd and 3rd code digits, range  0-7 | 0-7 
+        bands[band].dtcs_code[2] = rd_buffer[data_start_idx+2];
+        //Serial.printf("Tone Squelch Function = %01X, DTCS Code is %02X %02X%02X\n", bands[band].tone_mode, bands[band].dtcs_code[0], bands[band].dtcs_code[1], bands[band].dtcs_code[2]); 
+        break;
+    }
+
+    case CIV_C_CSQL: { //DPRINTLNF("CIV_Action: Read Repeater DV Digital Coded Squelch setting");
+        // 0-9|0-9  1st and 2nd digit
+        bands[band].csql_code = rd_buffer[data_start_idx];
+        //Serial.printf("Tone Squelch Function = %01X, DV CSQL Code is %02X\n", bands[band].tone_mode, bands[band].csql_code);
+        break;
+    }
+
+    case CIV_C_BSTACK: { //DPRINTLNF("CIV_Action: Read Repeater DV Digital Coded Squelch setting");
+        uint64_t f_bandstack = 0;
+        uint64_t mul = 1;
+
+        memcpy(&BStack_Copy[band].reg, &rd_buffer[data_start_idx], data_len);
+        uint8_t band_code = BStack_Copy[band].reg[0];
+        uint8_t band_reg  = BStack_Copy[band].reg[1];
+
+        for (uint8_t i = 2; i < 7; i++) {          
+          f_bandstack += (BStack_Copy[band].reg[i] & 0x0F) * mul; mul *= 10;  // * decMulti[i * 2 + 1];
+          f_bandstack += (BStack_Copy[band].reg[i] >> 4) * mul; mul *= 10;  //  * decMulti[i * 2];
+        }
+        if (XVTR_enabled) f_bandstack += bands[band].Xvtr_offset;
+        
+        uint8_t bmode = BStack_Copy[band].reg[7];
+        uint8_t bfilt = BStack_Copy[band].reg[8];
+        uint8_t dmode = BStack_Copy[band].reg[9];
+        uint8_t band_dup_tone = BStack_Copy[band].reg[10];
+        uint8_t dsql = BStack_Copy[band].reg[11];
+        uint8_t band_tone0 = BStack_Copy[band].reg[12];
+        uint8_t band_tone1 = BStack_Copy[band].reg[13];
+        uint8_t band_tone2 = BStack_Copy[band].reg[14];
+        uint8_t band_tone3 = BStack_Copy[band].reg[15];
+        uint8_t band_tone4 = BStack_Copy[band].reg[16];
+        uint8_t band_tone5 = BStack_Copy[band].reg[17];
+        // 18, 19, 20 is DTCS 3 bytes
+        // 21 is DV CSQL byte
+        // 22-24 3 bytes duplex offset frequency 
+        // 25-48 is digital mode stuff
+
+        //for (int i = 0; i< 31; i++) {
+        //  Serial.printf("%d-%02x:", i, BStack_Copy[band].reg[i]);          
+        //}
+        //Serial.printf("Read Band Stack: dlen %d Band %02X Reg %02X Freq %02X%02X%02X%02X%02X Mode %02X Filt %02X Data %02X Duplex|ToneMode %02X ToneFreq1 %02X%02X%02X ToneFreq2 %02X%02X%02X\n", 
+        //                            data_len, band_code, band_reg, BStack_Copy[band].reg[6], BStack_Copy[band].reg[5],BStack_Copy[band].reg[4],BStack_Copy[band].reg[3],BStack_Copy[band].reg[2],
+        //                            bmode, bfilt, dmode, band_dup_tone, band_tone0, band_tone1, band_tone2, band_tone3, band_tone4, band_tone5);
+        break;
+    }
+
     case CIV_C_SCOPE_OFF:
     case CIV_C_SCOPE_ON:
     case CIV_C_SCOPE_ALL: break; // do nothing
 
-    default: DPRINTF("CIV_Action: *** Unknown command "); DPRINTLN(cmd_num); break;
+    default: DPRINTF("CIV_Action: *** Unknown command "); DPRINTLN(cmd_num, HEX); break;
           //knowncommand = false;
   }
   #ifdef DBG_CIV2

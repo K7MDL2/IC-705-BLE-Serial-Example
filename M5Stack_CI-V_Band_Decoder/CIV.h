@@ -149,6 +149,10 @@ enum cmds {
     CIV_C_DTCS,
     CIV_C_CSQL,
     CIV_C_TONE_SQL_MODE,
+    CIV_C_TONE_STATE,
+    CIV_C_TSQL_STATE,
+    CIV_C_DTCS_STATE,
+    CIV_C_DSQL_STATE,
     End_of_Cmd_List
 };
 
