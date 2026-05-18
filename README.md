@@ -11,7 +11,12 @@
 
 # IC-705 CI-V Band Decoder and a 3-Band Transverter Box using BT Classic or BLE.
 
-This project was completed May 2025. At least as any software ever is. Been working some on reliability and new features have been added since, mostly to support repeater settings.  Using Band Stack registers to attempt to bulk set and restore values.  It mostly works.  For a band like 222 where an FM repeater RX IF is 30.120Mhz, which is in the Generic band on the 705, FM repeater settings can get confused when changing to the SSB portion of hte band which the Rx IF is within the 10M band so differnt band stack registers, but there is no easy way today to handle it except to avoid using Band Stack registers at the cost of a dozen extra queries to poll and then to set on band changes.
+This project was completed May 2025. At least as any software ever is. Been working some on reliability and new features have been added since, mostly to support repeater settings.  
+
+May 2026 - Using Band Stack registers to attempt to bulk set and restore values.  It mostly works.  For a band like 222 where an FM repeater RX IF is 30.120Mhz, which is in the Generic band on the 705, FM repeater settings can get confused when changing to the SSB portion of hte band which the Rx IF is within the 10M band so differnt band stack registers, but there is no easy way today to handle it except to avoid using Band Stack registers at the cost of a dozen extra queries to poll and then to set on band changes.  
+
+> [!NOTE]
+> I have uncommented *#define CLEAN_SD_DB_FILE* by default since the band database has changed requiring it be written over in EEPROM and the SD card.  You should comment it out after your first upload is done so that it will save your radio settings across a reboot.
 
 April 2026 - I am testing and making some improvements getting ready for my 2026 summer travels.  After a long evaluation of several radio and SDR hardware and software setups optimized for VHF rover use in my truck cab and camper, I have concluded that none offer a better overall set of compromises than this exsting IC-705/M5Stack/3-band Xvtr box combo does today.  So I have resumed testing and making some improvements to make it as seemless as possible to serve as a compact single rig mobile solution for all bands HF through 1296.  My requirements list is long and several other rig/software combos tick many of the same boxes, and none give me all that I desire.  It would be a long article to detail my study and I may do so on a Wiki page later on.  To complete this 705-based setup in my rover truck I only need to add 14VDC 222MHz and 50MHz amps.  I am fixing bugs and have more settings to save and restore per band to fine tune this to be a daily driver.
 
