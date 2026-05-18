@@ -78,8 +78,9 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_CW_MSGS,         {1,0x17}},                      // Send CW messages see page 17 of prog manual for char table
     {CIV_C_BSTACK,          {2,0x1A,0x01}},                 // send/read BandStack contents - see page 19 of prog manual.  
                                                                     // data byte 1 0xyy = Freq band code
-                                                                    // dat abyte 2 0xzz = register code 01, 02 or 03
+                                                                    // dat abyte 2 0xzz = register code 01, 02 or 03 - 1 is latest, 3 oldest
                                                                     // to read 432 band stack register 1 use 0x1A,0x01,0x02,0x01
+                                                                    // 1A 01 bb 01 -- bb is band code per docs. Can be used to change bands using thelast used band settings for each band.  
     {CIV_C_MY_POSIT_READ,   {2,0x23,0x00}},          	  // read my GPS Position
     {CIV_C_MY_POSIT_DATA,   {1,0x23}},          	      // read my GPS Position
     {CIV_C_TRX_ON_OFF,      {1,0x18}},                 	  // switch radio ON/OFF
@@ -117,7 +118,8 @@ struct cmdList cmd_List[End_of_Cmd_List] = {
     {CIV_C_TONE_STATE,      {2,0x16,0x42}},               // Send/read the Repeater tone (00=OFF, 01=ON)
     {CIV_C_TSQL_STATE,      {2,0x16,0x43}},               // Send/read the Tone squelch (00=OFF, 01=ON)
     {CIV_C_DTCS_STATE,      {2,0x16,0x4B}},               // Send/read the DTCS function (00=OFF, 01=ON)
-    {CIV_C_DSQL_STATE,      {2,0x16,0x5B}}                // Send/Read the DSQL 0=OFF, 01=DSQL, 02=CSQL
+    {CIV_C_DSQL_STATE,      {2,0x16,0x5B}},               // Send/Read the DSQL 0=OFF, 01=DSQL, 02=CSQL
+    {CIV_C_SCOPE_REF,       {2,0x27,0x1E}}                // Send/Read the Scope Reference level setting
 };
 
 //
@@ -452,12 +454,16 @@ void Set_Duplex_Offset(uint8_t _band) { // change offset frequency
 }
 
 void Set_Tone(uint8_t _band) { // may also need to change offset
-    sendCatRequest(CIV_C_TONE, bands[band].tone_freq, 2);
+    uint8_t tone_freq[3] = {0,0,0};
+    memcpy(&tone_freq[1], bands[band].tone_freq, 2);
+    sendCatRequest(CIV_C_TONE,tone_freq, 2);
     DPRINTF("Set TONE frequency to "); DPRINT(bands[band].tone_freq[0], HEX); DPRINTLN(bands[band].tone_freq[1], HEX);
 }
 
 void Set_TSQL(uint8_t _band) { // may also need to change offset
-    sendCatRequest(CIV_C_TSQL, bands[band].tsql_freq, 2);
+    uint8_t tsql_freq[3] = {0,0,0};
+    memcpy(&tsql_freq[1], bands[band].tsql_freq, 2);
+    sendCatRequest(CIV_C_TSQL, tsql_freq, 3);
     DPRINTF("Set TSQL tone frequency to "); DPRINT(bands[band].tsql_freq[0], HEX); DPRINTLN(bands[band].tsql_freq[1], HEX);
 }
 
@@ -490,24 +496,40 @@ void Set_ToneSquelchMode(uint8_t _band) { // may also need to change offset
     DPRINTF("Set TONE Squelch Mode to "); DPRINTLN(bands[band].tone_mode, HEX);
 }
 
-// This is an alternative way to bulk set many parameters
+// This is an alternative way to bulk set many parameters.  Register 1 is the latest.  
+// Push band stack reg 1 stored for each band.
+// first bs reg 1 for each band, real and virtual in or database. 
+// then on band change, push our saved info into the new band reg 1 and make active.
 void Set_Bandstack_reg(uint8_t _band) { // may also need to change offset   
     //translate radio band to our RF or if XV active, IF band
     uint8_t _bandx = bands[band].bstack_band;  // return radio IF band stack band code
     BStack_Copy[band].reg[0] = _bandx;
     BStack_Copy[band].reg[1] = 1;
+    
+    //ToDo save and retrieve for each band, real and virtual
     sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
     vTaskDelay(20 / portTICK_PERIOD_MS);
     processCatMessages();
-    BStack_Copy[band].reg[1] = 2;
-    sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
+
+    //BStack_Copy[band].reg[1] = 2;
+    //sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
+    //vTaskDelay(20 / portTICK_PERIOD_MS);
+    //processCatMessages();
+    //BStack_Copy[band].reg[1] = 3;
+    //sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
+    //vTaskDelay(20 / portTICK_PERIOD_MS);
+    //processCatMessages();
+    
+    DPRINTF("Set Band Stack register to last value for RF/IF band"); DPRINTLN(_bandx);    
+}
+
+// scope refence 00 ab c0 de where a = 10dB difit 0,1,2  b = 1dB digit 0-9  c = 0.1 digit 0,5   0.01 digit - always 0   de = 00 = + , 01 = -    
+// -20.0 to +20.0 range
+void Set_Scope_Reference_Level(uint8_t _band) {    
+    //Serial.printf("Set Scope Ref level: 0x%X %X %X %X\n", bands[band].scope_ref[0], bands[band].scope_ref[1],bands[band].scope_ref[2],bands[band].scope_ref[3]);
+    sendCatRequest(CIV_C_SCOPE_REF, bands[_band].scope_ref, 4);
     vTaskDelay(20 / portTICK_PERIOD_MS);
     processCatMessages();
-    BStack_Copy[band].reg[1] = 3;
-    sendCatRequest(CIV_C_BSTACK, BStack_Copy[_bandx].reg, 49);
-    vTaskDelay(20 / portTICK_PERIOD_MS);
-    processCatMessages();
-    DPRINTF("Set All Band Stack registers to same value for IF band"); DPRINTLN(_bandx);    
 }
 
 uint8_t getByteResponse(const uint8_t m_Counter, const uint8_t offset, const uint8_t buffer[])
@@ -934,7 +956,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         if (state == 0) bands[band].tone_mode = 0x0F & bands[band].tone_mode;  // off
         if (state == 1) bands[band].tone_mode = 0x10 | bands[band].tone_mode;  // DSQL On
         if (state == 2) bands[band].tone_mode = 0x20 | bands[band].tone_mode;  // CSQL On
-        Serial.printf("CIV_Action: Digital Squelch Function state = 0x%02X\n", bands[band].tone_mode);
+        //Serial.printf("CIV_Action: Digital Squelch Function state = 0x%02X\n", bands[band].tone_mode);
         break;
     }
 
@@ -982,7 +1004,7 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         uint64_t f_bandstack = 0;
         uint64_t mul = 1;
 
-        memcpy(&BStack_Copy[band].reg, &rd_buffer[data_start_idx], data_len);
+        memcpy(&BStack_Copy[band].reg, &rd_buffer[data_start_idx], data_len);   // Copy whole bstack register into memory.  Normally will be just reg #1
         uint8_t band_code = BStack_Copy[band].reg[0];
         uint8_t band_reg  = BStack_Copy[band].reg[1];
 
@@ -997,23 +1019,45 @@ void CIV_Action(const uint8_t cmd_num, const uint8_t data_start_idx, const uint8
         uint8_t dmode = BStack_Copy[band].reg[9];
         uint8_t band_dup_tone = BStack_Copy[band].reg[10];
         uint8_t dsql = BStack_Copy[band].reg[11];
-        uint8_t band_tone0 = BStack_Copy[band].reg[12];
-        uint8_t band_tone1 = BStack_Copy[band].reg[13];
+        uint8_t band_tone0 = BStack_Copy[band].reg[12];  // byte 16 in memeory reference page
+        uint8_t band_tone1 = BStack_Copy[band].reg[13];  // 17
         uint8_t band_tone2 = BStack_Copy[band].reg[14];
         uint8_t band_tone3 = BStack_Copy[band].reg[15];
         uint8_t band_tone4 = BStack_Copy[band].reg[16];
-        uint8_t band_tone5 = BStack_Copy[band].reg[17];
+        uint8_t band_tone5 = BStack_Copy[band].reg[17];  // 21
+        //uint8_t band_dtcs_code0 = BStack_Copy[band].reg[18];  // 22
+        //uint8_t band_dtcs_code1 = BStack_Copy[band].reg[19];  // 23
+        //uint8_t band_dtcs_code2 = BStack_Copy[band].reg[20];  // 24
+        //uint8_t band_dv_code_squelch = BStack_Copy[band].reg[21];  // 25
+        uint8_t band_dub_offset_0 = BStack_Copy[band].reg[22];  // 26
+        uint8_t band_dub_offset_1 = BStack_Copy[band].reg[23];  // 27
+        uint8_t band_dub_offset_2 = BStack_Copy[band].reg[24];  // 28
+        //bands[band].dup_offset[0] = BStack_Copy[band].reg[22];  // 26  get duplex frequency offset from band stack register
+        //bands[band].dup_offset[1] = BStack_Copy[band].reg[23];  // 27
+        //bands[band].dup_offset[2] = BStack_Copy[band].reg[24];  // 28
         // 18, 19, 20 is DTCS 3 bytes
         // 21 is DV CSQL byte
         // 22-24 3 bytes duplex offset frequency 
         // 25-48 is digital mode stuff
 
-        //for (int i = 0; i< 31; i++) {
-        //  Serial.printf("%d-%02x:", i, BStack_Copy[band].reg[i]);          
-        //}
-        //Serial.printf("Read Band Stack: dlen %d Band %02X Reg %02X Freq %02X%02X%02X%02X%02X Mode %02X Filt %02X Data %02X Duplex|ToneMode %02X ToneFreq1 %02X%02X%02X ToneFreq2 %02X%02X%02X\n", 
-        //                            data_len, band_code, band_reg, BStack_Copy[band].reg[6], BStack_Copy[band].reg[5],BStack_Copy[band].reg[4],BStack_Copy[band].reg[3],BStack_Copy[band].reg[2],
-        //                            bmode, bfilt, dmode, band_dup_tone, band_tone0, band_tone1, band_tone2, band_tone3, band_tone4, band_tone5);
+        /*
+        for (int i = 0; i< 31; i++) {
+          Serial.printf("%d-%02x:", i, BStack_Copy[band].reg[i]);          
+        }
+        Serial.printf("\nRead Band Stack for Band #%02X Band Name %20s: dlen %d Band %02X Reg %02X Freq %02X%02X.%02X%02X%02X Mode %02X Filt %02X Data %02X Duplex|ToneMode %02X ToneFreq1 %02X%02X%02X ToneFreq2 %02X%02X%02X Duplex Offset Freq %02X.%02X%02X\n", 
+                                    band, bands[band].band_name, data_len, band_code, band_reg, BStack_Copy[band].reg[6], BStack_Copy[band].reg[5],BStack_Copy[band].reg[4],BStack_Copy[band].reg[3],BStack_Copy[band].reg[2],
+                                    bmode, bfilt, dmode, band_dup_tone, band_tone0, band_tone1, band_tone2, band_tone3, band_tone4, band_tone5,
+                                    band_dub_offset_2, band_dub_offset_1, band_dub_offset_0);
+        */
+        break;
+    }
+
+    CIV_C_SCOPE_REF:  {// -20.00 to +20.00 range in 4 bytes, first byte will always be 0
+        bands[band].scope_ref[0] = rd_buffer[data_start_idx+0];
+        bands[band].scope_ref[1] = rd_buffer[data_start_idx+1];
+        bands[band].scope_ref[2] = rd_buffer[data_start_idx+2];
+        bands[band].scope_ref[3] = rd_buffer[data_start_idx+3];
+        //Serial.printf("Read Scope Ref level: 0x%X %X %X %X\n", bands[band].scope_ref[0], bands[band].scope_ref[1],bands[band].scope_ref[2],bands[band].scope_ref[3]);
         break;
     }
 

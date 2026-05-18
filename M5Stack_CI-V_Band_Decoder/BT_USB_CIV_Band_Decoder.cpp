@@ -33,6 +33,7 @@ void read_bands_data(void);
 void refesh_display(void);
 void band_Selector(uint8_t _band_input_pattern, bool ext_input);
 void reply_to_PC(uint8_t cmd);
+extern void Set_Scope_Reference_Level(uint8_t _band);
 
 /*  copy of struct here from header file for easy reference.
 struct Bands {
@@ -59,51 +60,52 @@ struct Bands {
   uint8_t dtcs_code[3];   // polarity and DTCS code
   uint8_t csql_code;      // DV code squelch
   uint8_t dup_offset[3];  // duplex frequency offset
-  uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
+  uint8_t scope_ref[4];   // refence level value (4 bytes, first byte is always 00)
+  uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.  
 };
 */
 
 // Put the LO (RF - IF = LO) value into the 4th column.
 struct Bands bands[NUM_OF_BANDS] = {
   // name       dge_lower   edge_upper Xvtr_offset  if code   VFO_last
-  { "DUMMY",           0,            0,          0, 0x15,            0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, 0xFF },                        // DUMMY Band to avoid using 0
-  { "AM",         535000,      1705000,          0, 0x15,       535000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BANDAM },         // AM
-  { "160M",      1800000,      2000000,          0, 0x01,      1860000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND160M },       // 160m
-  { "80M",       3500000,      4000000,          0, 0x02,      3573000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND80M },        // 80m
-  { "60M",       5351000,      5367000,          0, 0x15,      5351000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND60M },        // 60m
-  { "40M",       7000000,      7300000,          0, 0x03,      7074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND40M },        // 40m
-  { "30M",      10100000,     10150000,          0, 0x04,     10136000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND30M },        // 30m
-  { "20M",      14000000,     14350000,          0, 0x05,     14074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND20M },        // 20m
-  { "17M",      18068000,     18168000,          0, 0x06,     18100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND17M },        // 17m
-  { "15M",      21000000,     21450000,          0, 0x07,     21074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND15M },        // 15m
-  { "12M",      24890000,     24990000,          0, 0x08,     24891500, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND12M },        // 12m
-  { "10M",      28000000,     29700000,          0, 0x09,     28074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND10M },        // 10m
-  { "6M",       50000000,     54000000,          0, 0x10,     50125000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND6M },         // 6m
-  { "WFM",      88000000,    108000000,          0, 0x11,     95700000, 6, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BANDFM },         // FM
-  { "Air",     118000000,    137000000,          0, 0x12,    119200000, 2, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BANDAIR },        // AIR
-  { "2M",      144000000,    148000000,          0, 0x13,    144200000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND144 },        // 2m
-  { "1.25M",   222000000,    225000000,  194000000, 0x09,    222100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND222 },        // 222 with 28Mhz LO
-  { "70cm",    430000000,    450000000,          0, 0x14,    432100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND432 },        // 430/440  No LO
+  { "DUMMY",           0,            0,          0, 0x15,            0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, 0xFF },                        // DUMMY Band to avoid using 0
+  { "AM",         535000,      1705000,          0, 0x15,       535000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BANDAM },         // AM
+  { "160M",      1800000,      2000000,          0, 0x01,      1860000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND160M },       // 160m
+  { "80M",       3500000,      4000000,          0, 0x02,      3573000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND80M },        // 80m
+  { "60M",       5351000,      5367000,          0, 0x15,      5351000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND60M },        // 60m
+  { "40M",       7000000,      7300000,          0, 0x03,      7074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND40M },        // 40m
+  { "30M",      10100000,     10150000,          0, 0x04,     10136000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND30M },        // 30m
+  { "20M",      14000000,     14350000,          0, 0x05,     14074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND20M },        // 20m
+  { "17M",      18068000,     18168000,          0, 0x06,     18100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND17M },        // 17m
+  { "15M",      21000000,     21450000,          0, 0x07,     21074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND15M },        // 15m
+  { "12M",      24890000,     24990000,          0, 0x08,     24891500, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND12M },        // 12m
+  { "10M",      28000000,     29700000,          0, 0x09,     28074000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND10M },        // 10m
+  { "6M",       50000000,     54000000,          0, 0x10,     50125000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND6M },         // 6m
+  { "WFM",      88000000,    108000000,          0, 0x11,     95700000, 6, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BANDFM },         // FM
+  { "Air",     118000000,    137000000,          0, 0x12,    119200000, 2, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BANDAIR },        // AIR
+  { "2M",      144000000,    148000000,          0, 0x13,    144200000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0x00,0x60,0x00}, {0,0,0,0}, DECODE_INPUT_BAND144 },        // 2m
+  { "1.25M",   222000000,    225000000,  194000000, 0x15,    222100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0x00,0x60,0x01}, {0,0,0,0}, DECODE_INPUT_BAND222 },        // 222 with 28Mhz LO
+  { "70cm",    430000000,    450000000,          0, 0x14,    432100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0x00,0x00,0x05}, {0,0,0,0}, DECODE_INPUT_BAND432 },        // 430/440  No LO
   #ifdef XVBOX // for 705 transverter box, using 28Mhz IF for 903, 50Mhz for 1296, 28 for 222.  
-    { "33cm",  902000000,    928000000,  874000000, 0x09,    903100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND902 },        // 902 with 28Mhz LO  
+    { "33cm",  902000000,    928000000,  874000000, 0x09,    903100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND902 },        // 902 with 28Mhz LO  
   #else  // typical usage 144 IF for 902, 144 IF for 1296
-    { "33cm",  902000000,    928000000,  758000000, 0x09,    903100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND902 },        // 902  with 144Mhz LO
+    { "33cm",  902000000,    928000000,  758000000, 0x09,    903100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND902 },        // 902  with 144Mhz LO
   #endif
-  { "23cm",   1240000000,   1300000000, 1152000000, 0x13,   1296100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND1296 },       // 1296Mhz with 144Mhz LO
-  { "13cm",   2300000000,   2450000000, 1870000000, 0x15,   2304100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND2400 },       // 2.3 and 2.4GHz
-  { "9cm",    3400000000,   3410000000, 3256000000, 0x15,   3400100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND3300 },       // 3.3GHz
-  { "6cm",    5650000000,   5925000000, 5328000000, 0x15,   5760100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND5760 },       // 5.7GHz
-  { "3cm",   10000000000,  10500000000,          0, 0x15,  10368100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND10G },        // 10GHz
-  { "24G",   24000000000,  24002000000,          0, 0x15,  24031000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND24G },        // 24GHz
-  { "47G",   47000000000,  47002000000,          0, 0x15,  47192100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND47G },        // 47GHz
-  { "76G",   76000000000,  76002000000,          0, 0x15,  76000000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND76G },        // 76GHz
-  { "122G", 122000000000, 122002000000,          0, 0x15, 122001000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_BAND122G },       // 122GHz
-  { "GENE",            0, 123000000000,          0, 0x15,    432000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, DECODE_INPUT_B_GENERAL }       // 0 to 122GHz
+  { "23cm",   1240000000,   1300000000, 1152000000, 0x13,   1296100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND1296 },       // 1296Mhz with 144Mhz LO
+  { "13cm",   2300000000,   2450000000, 1870000000, 0x15,   2304100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND2400 },       // 2.3 and 2.4GHz
+  { "9cm",    3400000000,   3410000000, 3256000000, 0x15,   3400100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND3300 },       // 3.3GHz
+  { "6cm",    5650000000,   5925000000, 5328000000, 0x15,   5760100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND5760 },       // 5.7GHz
+  { "3cm",   10000000000,  10500000000,          0, 0x15,  10368100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND10G },        // 10GHz
+  { "24G",   24000000000,  24002000000,          0, 0x15,  24031000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND24G },        // 24GHz
+  { "47G",   47000000000,  47002000000,          0, 0x15,  47192100000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND47G },        // 47GHz
+  { "76G",   76000000000,  76002000000,          0, 0x15,  76000000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND76G },        // 76GHz
+  { "122G", 122000000000, 122002000000,          0, 0x15, 122001000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_BAND122G },       // 122GHz
+  { "GENE",            0, 123000000000,          0, 0x15,    432000000, 1, 1, 0, 1, 0, 0, 0, 25, 0, 0, {0,0}, {0,0}, {0,0,0}, 0, {0,0,0}, {0,0,0,0}, DECODE_INPUT_B_GENERAL }       // 0 to 122GHz
 };
 
-struct BStack BStack_Copy[NUM_OF_BANDS] = {};  // store left side band stack register for every band.  
+struct BStack BStack_Copy[NUM_OF_BANDS] = {};  // store left side band stack register (#1) for every band, real oand virtual.  
 // Use this to recall specific settings or complete per band setup
-// There are several parameters that reading via CI-V do not work properly though writing does work.  
+// There are several parameters that reading via CI-V do not work properly though writing does work.
 // Tone Squelch function, Active memory number, VFO/Memory mode are examples.
 // Can look in the bstack register for the values.  Be sure to use the correct register (there are 3)
 
@@ -709,14 +711,14 @@ void sendCatRequest(const uint8_t cmd_num, const uint8_t Data[], const uint8_t D
 
   //#define SEE_RAW_TX  // an also be set at top of file
   #ifdef SEE_RAW_TX
-  DPRINTF("--> Tx Raw Msg: ");
-  for (uint8_t k = 0; k <= msg_len; k++) {
-    DPRINT(req[k], HEX);
-    DPRINTF(",");
-  }
-  DPRINTF(" msg_len = ");
-  DPRINT(msg_len + 1);
-  DPRINTLNF(" END");
+    DPRINTF("--> Tx Raw Msg: ");
+    for (uint8_t k = 0; k <= msg_len; k++) {
+      DPRINT(req[k], HEX);
+      DPRINTF(",");
+    }
+    DPRINTF(" msg_len = ");
+    DPRINT(msg_len + 1);
+    DPRINTLNF(" END");
   #endif
 
   //#define RAWT  // for a more detailed look
@@ -1144,10 +1146,10 @@ void poll_radio(void) {
     if (millis() >= time_last_split + POLL_RADIO_SPLIT)  // poll every X ms
     {
       sendCatRequest(CIV_C_SPLIT_READ, 0, 0);  // Get mode, filter, and datamode status
-      vTaskDelay(2);
+      vTaskDelay(20);
       processCatMessages();
       sendCatRequest(CIV_R_DUPLEX_OFFSET, 0, 0);  // Get mode, filter, and datamode status
-      vTaskDelay(2);
+      vTaskDelay(20);
       processCatMessages();
       time_last_split = millis();
     }
@@ -1155,22 +1157,33 @@ void poll_radio(void) {
     if (millis() >= time_last_rfpwr + POLL_RADIO_RFPWR)  // poll every X ms
     {
       sendCatRequest(CIV_C_RFPOWER, 0, 0);  // Get RF power level, each Xvtr and real band can be different
-      vTaskDelay(2);
+      vTaskDelay(20);
       processCatMessages();
       time_last_rfpwr = millis();
     }
 
-    if (millis() >= time_last_tone + POLL_RADIO_TONE) { // poll every X ms
-      DPRINTLNF("Polling for Tone");
-      // First get mode so we can figoure out which tone type frequecy or code to get for this band
+    if (millis() >= time_last_tone + POLL_RADIO_PARMS) { // poll every X ms
+      DPRINTLNF("Polling for Bstack and Scope Ref Level");
+
+      // get current band band stack register #1.
+      uint8_t if_code = bands[getBand(frequency)].bstack_band;
+      uint8_t reg[2] = {if_code, 0x01};  // band is IC-705 per CI-V manual.  0x13 is 2M band
+
+      //Serial.println(F("Polling for Bstack"));
+      sendCatRequest(CIV_C_BSTACK, reg, 2);
+      vTaskDelay(50 / portTICK_PERIOD_MS);
+      processCatMessages();
+
+      //Serial.println(F("$$$$$$$$$ Polling for Scope Ref Level"));
+      //sendCatRequest(CIV_C_SCOPE_REF, 0, 0);  // get ref scope level and store per band
+      //vTaskDelay(50 / portTICK_PERIOD_MS);
+      //processCatMessages();
 
       // this works to set but cannot read.  Use read BStack instead
       // get tone on/off state
       sendCatRequest(CIV_C_TONE_SQL_MODE, 0, 0);
-      vTaskDelay(20 / portTICK_PERIOD_MS);
-      processCatMessages();   
-      
-      /*
+      vTaskDelay(5 / portTICK_PERIOD_MS);
+      processCatMessages();              
       sendCatRequest(CIV_C_TONE_STATE, 0, 0);
       vTaskDelay(5 / portTICK_PERIOD_MS);
       processCatMessages();   
@@ -1183,20 +1196,11 @@ void poll_radio(void) {
       sendCatRequest(CIV_C_DSQL_STATE, 0, 0);
       vTaskDelay(5 / portTICK_PERIOD_MS);
       processCatMessages();   
-      */
-
-      /*
-      uint8_t if_code = bands[getBand(frequency)].bstack_band;
-      uint8_t reg[2] = {if_code, 0x01};  // band is IC-705 per CI-V manual.  0x13 is 2M band
-
-      sendCatRequest(CIV_C_BSTACK, reg, 2);
-      vTaskDelay(20 / portTICK_PERIOD_MS);
-      processCatMessages();
-     
+      
       //DPRINTF("RF band index is "); DPRINTF(getBand(frequency));
       //DPRINTF("  RF frequency is "); DPRINTF(frequency);
-      //DPRINTF("  Reading Band stack register for IF band "); DPRINTLN(if_code, HEX);
-      */
+      //DPRINTF("  Reading Band stack register for IF band "); DPRINTLN(if_code, HEX);    
+
       // get frequencies
       sendCatRequest(CIV_C_TONE, 0, 0); // 01=TONE
       vTaskDelay(20 / portTICK_PERIOD_MS);
@@ -1213,9 +1217,7 @@ void poll_radio(void) {
       sendCatRequest(CIV_C_CSQL, 0, 0);
       vTaskDelay(20 / portTICK_PERIOD_MS);
       processCatMessages();
-
-      // Should not need to use band stack
-      //Set_Bandstack_reg(if_code);  // update all 3 band stack registers with any differences
+      
 
       time_last_tone = millis();
     }
@@ -1864,6 +1866,7 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
   uint8_t _input_band = 0;
   bool change_band = false;
   static uint8_t last_band = 255;
+  uint8_t _band;
 
   // if PC or radio side frequency change then go to the band.  If wired or button, then use input pattern
   if (ext_input && !update_radio_settings_flag) {  // skip if freq change a result of wired input change
@@ -1875,8 +1878,7 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
       //Serial.print("Band Selector: External Input = "); Serial.println(bands[band].band_name);
     }
   }    
-  else if (_band_input_pattern != _band_input_pattern_last)  // only do something if it is different
-  {
+  else if (_band_input_pattern != _band_input_pattern_last) { // only do something if it is different
     if (!XVTR_enabled_last && !XVTR_enabled) {  // capture last non-Xvtr band in use
       XVTR_band_before = band;                  // record the non-xvtr band before initial XVTR mode enabled.
       DPRINTF("Band_selector: XVTR_band_before = "); DPRINTLN(XVTR_band_before);
@@ -1917,20 +1919,13 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
     if (bands[_input_band].Xvtr_offset != 0) {  // Xvtr band
       DPRINTF("Xvtr Band Detected = "); DPRINTLN(bands[_input_band].band_name);
       XVTR_Band = _input_band;
-      band = _input_band;
       XVTR_enabled = true;
-      #ifdef M5STAMPC3U
-        band = _input_band;
-      #endif
     } else {  // Not a Xvtr band
       DPRINTF("Not a Xvtr Band = "); DPRINTLN(bands[_input_band].band_name);
-      band = _input_band;
-      XVTR_Band = 0;
+      XVTR_Band = 0;      
       XVTR_enabled = false;   // No match, do nothing
     }
-  } // NO MATCH
-
-  if (change_band) { 
+    band = _input_band;
     update_radio_settings_flag = true;
     DPRINTF("Xvtr enabled = "); DPRINT(XVTR_enabled); 
     if (XVTR_enabled) {
@@ -1942,50 +1937,34 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
     
     draw_new_screen();  // clears the update flag
     PTT_Output(band, false);
-    
-    // Band and Frequency are not yet changed.  Set split to off on band changes else weird things happen.  
-    // Split will be reset after change is stabilized
+
+    // set new band's bandstack register #1 active - copy our local copy
+    uint8_t if_code = bands[getBand(frequency)].bstack_band;
+    uint8_t reg[2] = {if_code, 0x01};  // band is IC-705 per CI-V manual.  0x13 is 2M band
+    Set_Bandstack_reg(if_code);  // update band stack register #1 for IF band, then update last frequency to be sure.
+
     #ifndef M5STAMPC3U
       // If changing to a XVTR band, or a different one, update VFO to the last used on that band.   We only get band changes here, never the same band.
       if (XVTR_enabled) {  // set VFO and other values to last used for the target XVTR band
-        //SetSplit(XVTR_Band, true);  // force split off 
+        _band = XVTR_Band;        
+        //SetSplit(XVTR_Band, true);  // force split off         
         if (ext_input) {
           //if (read_buffer[5] == 0x00)
             SetFreq(frequency, CIV_C_F25A_SEND);
-            vTaskDelay(100);
-            //processCatMessages();
+            vTaskDelay(20);
+            processCatMessages();
           //else
-            SetFreq(frequency, CIV_C_F25B_SEND);        
+            SetFreq(frequency, CIV_C_F25B_SEND);      
+            vTaskDelay(20);
+            //processCatMessages();  
         } else {
-          SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied    
-          vTaskDelay(100);
+          SetFreq(bands[_band].VFO_last, CIV_C_F25A_SEND);  // This value always has Xvtr offset applied    
+          vTaskDelay(20);
+          processCatMessages();
+          SetFreq(bands[_band].VFO_last, CIV_C_F25B_SEND);  // This value always has Xvtr offset applied    
+          vTaskDelay(20);
           //processCatMessages();
-          SetFreq(bands[XVTR_Band].VFO_last, CIV_C_F25B_SEND);  // This value always has Xvtr offset applied    
         }
-        vTaskDelay(100);
-        processCatMessages();
-        SetSplit(XVTR_Band, false);
-        vTaskDelay(10);
-        SetMode(XVTR_Band);
-        vTaskDelay(10);
-        SetPre(XVTR_Band);
-        vTaskDelay(10);
-        SetAttn(XVTR_Band);
-        vTaskDelay(10);
-        SetRFPwr(XVTR_Band);
-        vTaskDelay(10);
-        SetAGC(XVTR_Band);
-        vTaskDelay(10);
-        Set_Tone(XVTR_Band);
-        vTaskDelay(10);
-        Set_TSQL(XVTR_Band);
-        vTaskDelay(10);
-        Set_DTCS(XVTR_Band);
-        vTaskDelay(10);
-        Set_CSQL(XVTR_Band);
-        vTaskDelay(10);
-        Set_ToneSquelchMode(XVTR_Band);
-        vTaskDelay(10);
       }
       else
       // Restore the IF to last used values
@@ -1994,40 +1973,49 @@ void band_Selector(uint8_t _band_input_pattern, bool ext_input) {
       {
 
         if (ext_input) XVTR_band_before = band;  // if sent from a PC then use that band, not the last non-Xvtr band
+        _band = XVTR_band_before;
         //SetSplit(XVTR_band_before, true);  // force split off 
         //if (!ext_input)
-        SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25A_SEND);  // set radio to that last non-XVTR band used.
-        vTaskDelay(100);
+        
+        SetFreq(bands[_band].VFO_last, CIV_C_F25A_SEND);  // set radio to that last non-XVTR band used.
+        vTaskDelay(20);
         processCatMessages();
-        SetFreq(bands[XVTR_band_before].VFO_last, CIV_C_F25B_SEND);  // set radio to that last non-XVTR band used.
-        vTaskDelay(100);
-        processCatMessages();
-        SetSplit(XVTR_band_before, false);  // force split off 
-        vTaskDelay(10);
-        SetMode(XVTR_band_before);
-        vTaskDelay(10);
-        SetPre(XVTR_band_before);
-        vTaskDelay(10);
-        SetAttn(XVTR_band_before);
-        vTaskDelay(10);
-        SetRFPwr(XVTR_band_before);
-        vTaskDelay(10);
-        SetAGC(XVTR_band_before);
-        vTaskDelay(10);
-        Set_Tone(XVTR_band_before);
-        vTaskDelay(10);
-        Set_TSQL(XVTR_band_before);
-        vTaskDelay(10);
-        Set_DTCS(XVTR_band_before);
-        vTaskDelay(10);
-        Set_CSQL(XVTR_band_before);
-        vTaskDelay(10);   
-        Set_ToneSquelchMode(XVTR_band_before);
-        vTaskDelay(10);     
+        SetFreq(bands[_band].VFO_last, CIV_C_F25B_SEND);  // set radio to that last non-XVTR band used.
+        vTaskDelay(20);
+        //processCatMessages();
       }
 
+      // Set the things not included in the bstack register
+      SetSplit(_band, false);  // force split off 
+      vTaskDelay(10);
+      SetMode(_band);
+      vTaskDelay(10);
+      SetPre(_band);
+      vTaskDelay(10);
+      SetAttn(_band);
+      vTaskDelay(10);
+      SetRFPwr(_band);
+      vTaskDelay(10);
+      SetAGC(_band);
+      vTaskDelay(10);
+      Set_Scope_Reference_Level(_band);
+      vTaskDelay(10);
+
+      // use band stack reg #1 instead of these individual commands
+
+      Set_TSQL(_band);
+      vTaskDelay(10);
+      Set_DTCS(_band);
+      vTaskDelay(10);
+      Set_CSQL(_band);
+      vTaskDelay(10);   
+      Set_Tone(_band);
+      vTaskDelay(10);
+      Set_ToneSquelchMode(_band);
+      //vTaskDelay(10);     
+
       if (update_radio_settings_flag == true) {
-        vTaskDelay(300);  // Give some time for the radio to change bands
+        vTaskDelay(400);  // Give some time for the radio to change bands
         #ifdef BTCLASSIC
           if (btConnected) SerialBT.flush();
         #endif

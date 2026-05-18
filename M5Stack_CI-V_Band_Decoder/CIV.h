@@ -75,6 +75,7 @@ void Set_TSQL(uint8_t _band);
 void Set_DTCS(uint8_t _band);
 void Set_CSQL(uint8_t _band);
 void Set_Bandstack_reg(uint8_t _band);
+void Set_Scope_Reference_Level(uint8_t _band);
 
 // command "body" of the CIV commands currently in use
 // Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.
@@ -153,6 +154,7 @@ enum cmds {
     CIV_C_TSQL_STATE,
     CIV_C_DTCS_STATE,
     CIV_C_DSQL_STATE,
+    CIV_C_SCOPE_REF,
     End_of_Cmd_List
 };
 

@@ -94,7 +94,7 @@
 #ifndef _M5_BT_USB_
 #define _M5_BT_USB_
 
-//#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
+#define CLEAN_SD_DB_FILE   // used when the data structure has changed, force an overwrite with default data
 
 //#define CORE2LIB   // applies only to Core2 - forces M5Core2 lib vs M5Unified  - Touch works better with M5Unified
 
@@ -214,7 +214,7 @@
 #define POLL_RADIO_PRE   3204 // poll radio for preamp status
 #define POLL_RADIO_SPLIT 3102 // poll radio for split and duplex status
 #define POLL_RADIO_RFPWR 1713 // poll radio for RF power for active band
-#define POLL_RADIO_TONE  8833 // poll radio for RF power for active band
+#define POLL_RADIO_PARMS 4833 // poll radio for scope Ref level and Bstack, others as needed
 
 #ifndef M5STAMPC3U  // None of these apply to the M5StampC3U as used in the 705 Transverter project
   // Chose the combination needed.  Note that at least one comm service must be enabled.
@@ -343,6 +343,7 @@ struct Bands {
   uint8_t dtcs_code[3];   // polarity and DTCS code
   uint8_t csql_code;      // DV code squelch
   uint8_t dup_offset[3];  // duplex frequency offset
+  uint8_t scope_ref[4];   // refence level value (4 bytes, first byte is always 00)
   uint8_t InputMap;       // If input pattern matches this value, then select this band.  First match wins.
 };
 
